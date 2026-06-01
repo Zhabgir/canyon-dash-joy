@@ -19,6 +19,67 @@ type GameState = "menu" | "playing" | "revive" | "over";
 
 const REVIVE_COST = 100;
 const REVIVE_SECONDS = 10;
+
+// ===== Shop catalogs =====
+interface Skin {
+  id: string;
+  name: string;
+  price: number;
+  fuse: [string, string, string];
+  wing: [string, string, string];
+  accent: string;
+}
+interface MapTheme {
+  id: string;
+  name: string;
+  price: number;
+  sky: [string, string, string, string];
+  sun: string;
+  sunAlpha: string;
+}
+
+const SKINS: Skin[] = [
+  { id: "classic", name: "Classic", price: 0, fuse: ["#e0e6ec", "#a8b1bb", "#6e7780"], wing: ["#aab4c0", "#5e6772", "#aab4c0"], accent: "#c8344a" },
+  { id: "crimson", name: "Crimson", price: 200, fuse: ["#ffd0d0", "#d63a3a", "#5a1010"], wing: ["#ff8c8c", "#a02020", "#ff8c8c"], accent: "#ffe040" },
+  { id: "stealth", name: "Stealth", price: 350, fuse: ["#3a3f48", "#15181c", "#000000"], wing: ["#2c3138", "#0e1014", "#2c3138"], accent: "#9b59ff" },
+  { id: "gold", name: "Gold", price: 500, fuse: ["#fff1a8", "#d4a526", "#6a5010"], wing: ["#ffd860", "#a07a18", "#ffd860"], accent: "#ffffff" },
+  { id: "neon", name: "Neon", price: 800, fuse: ["#a8fff0", "#22c2c8", "#0a3a4a"], wing: ["#7af0ff", "#1a8a9a", "#7af0ff"], accent: "#ff40d0" },
+];
+
+const MAPS: MapTheme[] = [
+  { id: "twilight", name: "Twilight Desert", price: 0, sky: ["#0a0814", "#1d1230", "#5a2438", "#1a0a10"], sun: "#ffcf85", sunAlpha: "255,180,90" },
+  { id: "arctic", name: "Arctic", price: 300, sky: ["#0a1a2a", "#1a3a55", "#3a6a8a", "#0e1a26"], sun: "#e8f5ff", sunAlpha: "180,220,255" },
+  { id: "sunset", name: "Sunset", price: 250, sky: ["#1a0a0a", "#4a1418", "#c25028", "#ff8a3a"], sun: "#fff0a0", sunAlpha: "255,200,120" },
+  { id: "neoncity", name: "Neon City", price: 600, sky: ["#0a0220", "#2a0a48", "#600a78", "#10001a"], sun: "#ff60c0", sunAlpha: "255,90,200" },
+  { id: "space", name: "Deep Space", price: 900, sky: ["#000004", "#06061a", "#101030", "#000000"], sun: "#ffffff", sunAlpha: "200,200,255" },
+];
+
+const LS = {
+  wallet: "jr_wallet",
+  ownedSkins: "jr_owned_skins",
+  ownedMaps: "jr_owned_maps",
+  skin: "jr_skin",
+  map: "jr_map",
+};
+
+function loadJSON<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const v = window.localStorage.getItem(key);
+    return v ? (JSON.parse(v) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function saveJSON(key: string, val: unknown) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(val));
+  } catch {
+    /* ignore */
+  }
+}
+
 type PowerKind = "shield" | "slowmo" | "boost";
 
 const W = 800;
@@ -80,12 +141,40 @@ function Game() {
   const [bestCoins, setBestCoins] = useState(0);
   const [reviveLeft, setReviveLeft] = useState(REVIVE_SECONDS);
   const usedRevive = useRef(false);
+  const [wallet, setWallet] = useState(0);
+  const [ownedSkins, setOwnedSkins] = useState<string[]>(["classic"]);
+  const [ownedMaps, setOwnedMaps] = useState<string[]>(["twilight"]);
+  const [skinId, setSkinId] = useState<string>("classic");
+  const [mapId, setMapId] = useState<string>("twilight");
+  const [shopTab, setShopTab] = useState<null | "skins" | "maps">(null);
+  const skinRef = useRef<Skin>(SKINS[0]);
+  const mapRef = useRef<MapTheme>(MAPS[0]);
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(false);
   mutedRef.current = muted;
 
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  // Hydrate persistent shop data from localStorage on mount
+  useEffect(() => {
+    setWallet(loadJSON<number>(LS.wallet, 0));
+    setOwnedSkins(loadJSON<string[]>(LS.ownedSkins, ["classic"]));
+    setOwnedMaps(loadJSON<string[]>(LS.ownedMaps, ["twilight"]));
+    setSkinId(loadJSON<string>(LS.skin, "classic"));
+    setMapId(loadJSON<string>(LS.map, "twilight"));
+  }, []);
+
+  // Keep render refs in sync with current selection
+  useEffect(() => {
+    skinRef.current = SKINS.find((s) => s.id === skinId) ?? SKINS[0];
+    saveJSON(LS.skin, skinId);
+  }, [skinId]);
+  useEffect(() => {
+    mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
+    saveJSON(LS.map, mapId);
+  }, [mapId]);
+
 
   const keys = useRef({ up: false, down: false });
   const planeY = useRef(H / 2);
@@ -311,8 +400,51 @@ function Game() {
     setScore(d);
     setBest((b) => Math.max(b, d));
     setBestCoins((b) => Math.max(b, coinCount.current));
+    // bank the run's coins into the persistent wallet
+    setWallet((w) => {
+      const next = w + coinCount.current;
+      saveJSON(LS.wallet, next);
+      return next;
+    });
     setState("over");
   }, []);
+
+  const buySkin = useCallback(
+    (s: Skin) => {
+      if (ownedSkins.includes(s.id)) {
+        setSkinId(s.id);
+        return;
+      }
+      if (wallet < s.price) return;
+      const nextWallet = wallet - s.price;
+      const nextOwned = [...ownedSkins, s.id];
+      setWallet(nextWallet);
+      setOwnedSkins(nextOwned);
+      setSkinId(s.id);
+      saveJSON(LS.wallet, nextWallet);
+      saveJSON(LS.ownedSkins, nextOwned);
+    },
+    [ownedSkins, wallet],
+  );
+
+  const buyMap = useCallback(
+    (m: MapTheme) => {
+      if (ownedMaps.includes(m.id)) {
+        setMapId(m.id);
+        return;
+      }
+      if (wallet < m.price) return;
+      const nextWallet = wallet - m.price;
+      const nextOwned = [...ownedMaps, m.id];
+      setWallet(nextWallet);
+      setOwnedMaps(nextOwned);
+      setMapId(m.id);
+      saveJSON(LS.wallet, nextWallet);
+      saveJSON(LS.ownedMaps, nextOwned);
+    },
+    [ownedMaps, wallet],
+  );
+
 
   const die = useCallback(() => {
     // explosion particles — big arcade explosion
@@ -717,12 +849,13 @@ function Game() {
         );
       }
 
-      // sky gradient — twilight desert
+      // sky gradient (from selected map)
+      const theme = mapRef.current;
       const sky = ctx.createLinearGradient(0, 0, 0, H);
-      sky.addColorStop(0, "#0a0814");
-      sky.addColorStop(0.35, "#1d1230");
-      sky.addColorStop(0.65, "#5a2438");
-      sky.addColorStop(1, "#1a0a10");
+      sky.addColorStop(0, theme.sky[0]);
+      sky.addColorStop(0.35, theme.sky[1]);
+      sky.addColorStop(0.65, theme.sky[2]);
+      sky.addColorStop(1, theme.sky[3]);
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, H);
 
@@ -730,12 +863,12 @@ function Game() {
       const sunX = W * 0.78;
       const sunY = H * 0.42;
       const sunGlow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 260);
-      sunGlow.addColorStop(0, "rgba(255,180,90,0.55)");
-      sunGlow.addColorStop(0.4, "rgba(255,120,70,0.25)");
-      sunGlow.addColorStop(1, "rgba(255,120,70,0)");
+      sunGlow.addColorStop(0, `rgba(${theme.sunAlpha},0.55)`);
+      sunGlow.addColorStop(0.4, `rgba(${theme.sunAlpha},0.22)`);
+      sunGlow.addColorStop(1, `rgba(${theme.sunAlpha},0)`);
       ctx.fillStyle = sunGlow;
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = "#ffcf85";
+      ctx.fillStyle = theme.sun;
       ctx.beginPath();
       ctx.arc(sunX, sunY, 38, 0, Math.PI * 2);
       ctx.fill();
@@ -779,7 +912,7 @@ function Game() {
 
       // jet
       if (stateRef.current !== "over") {
-        drawJet(ctx, planeY.current, keys.current, boost.current > 0, shield.current, tick.current);
+        drawJet(ctx, planeY.current, keys.current, boost.current > 0, shield.current, tick.current, skinRef.current);
       }
 
       // post-effects
@@ -924,12 +1057,45 @@ function Game() {
               <span className="relative z-10">▶  PLAY</span>
               <span className="absolute inset-0 -z-0 animate-pulse bg-white/20 opacity-0 group-hover:opacity-100" />
             </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShopTab("skins")}
+                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
+              >
+                ✈ Скины
+              </button>
+              <button
+                onClick={() => setShopTab("maps")}
+                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
+              >
+                🗺 Карты
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/60 bg-black/40 px-3 py-1 font-mono text-xs font-bold text-yellow-300">
+              <span>●</span>
+              <span>{wallet.toLocaleString()}</span>
+            </div>
             {best > 0 && (
               <p className="text-xs text-white/50">
                 Лучший: <span className="font-mono text-white/80">{best.toLocaleString()}</span> · ● {bestCoins}
               </p>
             )}
           </Overlay>
+        )}
+
+        {state === "menu" && shopTab && (
+          <ShopOverlay
+            tab={shopTab}
+            wallet={wallet}
+            skinId={skinId}
+            mapId={mapId}
+            ownedSkins={ownedSkins}
+            ownedMaps={ownedMaps}
+            onBuySkin={buySkin}
+            onBuyMap={buyMap}
+            onClose={() => setShopTab(null)}
+            onSwitchTab={(t) => setShopTab(t)}
+          />
         )}
 
         {state === "revive" && (
@@ -1020,6 +1186,164 @@ function Overlay({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+interface ShopOverlayProps {
+  tab: "skins" | "maps";
+  wallet: number;
+  skinId: string;
+  mapId: string;
+  ownedSkins: string[];
+  ownedMaps: string[];
+  onBuySkin: (s: Skin) => void;
+  onBuyMap: (m: MapTheme) => void;
+  onClose: () => void;
+  onSwitchTab: (t: "skins" | "maps") => void;
+}
+
+function ShopOverlay({
+  tab,
+  wallet,
+  skinId,
+  mapId,
+  ownedSkins,
+  ownedMaps,
+  onBuySkin,
+  onBuyMap,
+  onClose,
+  onSwitchTab,
+}: ShopOverlayProps) {
+  return (
+    <div className="absolute inset-0 z-30 flex flex-col bg-black/85 backdrop-blur-md">
+      <div className="flex items-center justify-between border-b border-white/10 p-3">
+        <button
+          onClick={onClose}
+          className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs text-white/80 hover:bg-white/15"
+        >
+          ← Назад
+        </button>
+        <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/60 bg-black/40 px-3 py-1 font-mono text-sm font-bold text-yellow-300">
+          <span>●</span>
+          <span>{wallet.toLocaleString()}</span>
+        </div>
+      </div>
+      <div className="flex justify-center gap-2 p-3">
+        <button
+          onClick={() => onSwitchTab("skins")}
+          className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
+            tab === "skins" ? "bg-orange-500 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"
+          }`}
+        >
+          Скины
+        </button>
+        <button
+          onClick={() => onSwitchTab("maps")}
+          className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
+            tab === "maps" ? "bg-orange-500 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"
+          }`}
+        >
+          Карты
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto px-3 pb-4">
+        <div className="grid grid-cols-1 gap-2.5">
+          {tab === "skins" &&
+            SKINS.map((s) => {
+              const owned = ownedSkins.includes(s.id);
+              const selected = skinId === s.id;
+              const canBuy = owned || wallet >= s.price;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => onBuySkin(s)}
+                  disabled={!canBuy}
+                  className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                    selected
+                      ? "border-orange-400 bg-orange-500/15"
+                      : "border-white/15 bg-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="h-10 w-14 rounded-md border border-white/20"
+                      style={{
+                        background: `linear-gradient(180deg, ${s.fuse[0]}, ${s.fuse[1]} 55%, ${s.fuse[2]})`,
+                      }}
+                    />
+                    <div>
+                      <div className="text-sm font-bold text-white">{s.name}</div>
+                      <div className="text-[10px] uppercase tracking-wider text-white/50">
+                        {owned ? (selected ? "Выбрано" : "Куплено") : `● ${s.price}`}
+                      </div>
+                    </div>
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                      selected
+                        ? "bg-orange-500 text-white"
+                        : owned
+                          ? "bg-white/15 text-white"
+                          : canBuy
+                            ? "bg-yellow-400 text-black"
+                            : "bg-white/10 text-white/40"
+                    }`}
+                  >
+                    {selected ? "✓" : owned ? "Выбрать" : canBuy ? "Купить" : "Не хватает"}
+                  </span>
+                </button>
+              );
+            })}
+          {tab === "maps" &&
+            MAPS.map((m) => {
+              const owned = ownedMaps.includes(m.id);
+              const selected = mapId === m.id;
+              const canBuy = owned || wallet >= m.price;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => onBuyMap(m)}
+                  disabled={!canBuy}
+                  className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                    selected
+                      ? "border-orange-400 bg-orange-500/15"
+                      : "border-white/15 bg-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="h-10 w-14 rounded-md border border-white/20"
+                      style={{
+                        background: `linear-gradient(180deg, ${m.sky[0]}, ${m.sky[1]} 40%, ${m.sky[2]} 75%, ${m.sky[3]})`,
+                      }}
+                    />
+                    <div>
+                      <div className="text-sm font-bold text-white">{m.name}</div>
+                      <div className="text-[10px] uppercase tracking-wider text-white/50">
+                        {owned ? (selected ? "Выбрано" : "Куплено") : `● ${m.price}`}
+                      </div>
+                    </div>
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                      selected
+                        ? "bg-orange-500 text-white"
+                        : owned
+                          ? "bg-white/15 text-white"
+                          : canBuy
+                            ? "bg-yellow-400 text-black"
+                            : "bg-white/10 text-white/40"
+                    }`}
+                  >
+                    {selected ? "✓" : owned ? "Выбрать" : canBuy ? "Купить" : "Не хватает"}
+                  </span>
+                </button>
+              );
+            })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function Badge({ color, children }: { color: string; children: React.ReactNode }) {
   return (
@@ -1331,6 +1655,7 @@ function drawJet(
   isBoost: boolean,
   hasShield: boolean,
   tick: number,
+  skin: Skin,
 ) {
   ctx.save();
   ctx.translate(PLANE_X, y);
@@ -1379,9 +1704,9 @@ function drawJet(
 
   // main swept wings
   const wing = ctx.createLinearGradient(0, -20, 0, 20);
-  wing.addColorStop(0, "#aab4c0");
-  wing.addColorStop(0.5, "#5e6772");
-  wing.addColorStop(1, "#aab4c0");
+  wing.addColorStop(0, skin.wing[0]);
+  wing.addColorStop(0.5, skin.wing[1]);
+  wing.addColorStop(1, skin.wing[2]);
   ctx.fillStyle = wing;
   ctx.beginPath();
   ctx.moveTo(8, -4);
@@ -1431,9 +1756,9 @@ function drawJet(
 
   // fuselage
   const fuse = ctx.createLinearGradient(0, -6, 0, 6);
-  fuse.addColorStop(0, "#e0e6ec");
-  fuse.addColorStop(0.5, "#a8b1bb");
-  fuse.addColorStop(1, "#6e7780");
+  fuse.addColorStop(0, skin.fuse[0]);
+  fuse.addColorStop(0.5, skin.fuse[1]);
+  fuse.addColorStop(1, skin.fuse[2]);
   ctx.fillStyle = fuse;
   ctx.beginPath();
   ctx.moveTo(28, 0);
@@ -1507,7 +1832,7 @@ function drawJet(
   ctx.beginPath();
   ctx.arc(-2, 0, 1.7, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "#c8344a";
+  ctx.fillStyle = skin.accent;
   ctx.beginPath();
   ctx.arc(-2, 0, 0.9, 0, Math.PI * 2);
   ctx.fill();
