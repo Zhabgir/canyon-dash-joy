@@ -1097,7 +1097,6 @@ function Game() {
             onBuySkin={buySkin}
             onBuyMap={buyMap}
             onClose={() => setShopTab(null)}
-            onSwitchTab={(t) => setShopTab(t)}
           />
         )}
 
@@ -1238,7 +1237,6 @@ interface ShopOverlayProps {
   onBuySkin: (s: Skin) => void;
   onBuyMap: (m: MapTheme) => void;
   onClose: () => void;
-  onSwitchTab: (t: "skins" | "maps") => void;
 }
 
 function ShopOverlay({
@@ -1251,7 +1249,6 @@ function ShopOverlay({
   onBuySkin,
   onBuyMap,
   onClose,
-  onSwitchTab,
 }: ShopOverlayProps) {
   return (
     <div className="absolute inset-0 z-30 flex flex-col bg-black/85 backdrop-blur-md">
@@ -1267,23 +1264,10 @@ function ShopOverlay({
           <span>{wallet.toLocaleString()}</span>
         </div>
       </div>
-      <div className="flex justify-center gap-2 p-3">
-        <button
-          onClick={() => onSwitchTab("skins")}
-          className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
-            tab === "skins" ? "bg-orange-500 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"
-          }`}
-        >
-          Скины
-        </button>
-        <button
-          onClick={() => onSwitchTab("maps")}
-          className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
-            tab === "maps" ? "bg-orange-500 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"
-          }`}
-        >
-          Карты
-        </button>
+      <div className="flex justify-center p-3">
+        <div className="text-sm font-bold uppercase tracking-wider text-white/90">
+          {tab === "skins" ? "Скины" : "Карты"}
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto px-3 pb-4">
         <div className="grid grid-cols-1 gap-2.5">
