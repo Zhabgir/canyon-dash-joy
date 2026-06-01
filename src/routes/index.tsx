@@ -651,8 +651,11 @@ function Game() {
             <p className="text-white/80">
               Score: <span className="font-mono">{score.toLocaleString()}</span>
             </p>
-            {best > 0 && (
-              <p className="text-xs text-white/60">Best: {best.toLocaleString()}</p>
+            <p className="font-mono text-yellow-300">● {coins} coins</p>
+            {(best > 0 || bestCoins > 0) && (
+              <p className="text-xs text-white/60">
+                Best: {best.toLocaleString()} · ● {bestCoins}
+              </p>
             )}
             <button
               onClick={start}
