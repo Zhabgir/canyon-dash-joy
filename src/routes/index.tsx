@@ -141,6 +141,14 @@ function Game() {
   const [bestCoins, setBestCoins] = useState(0);
   const [reviveLeft, setReviveLeft] = useState(REVIVE_SECONDS);
   const usedRevive = useRef(false);
+  const [wallet, setWallet] = useState(0);
+  const [ownedSkins, setOwnedSkins] = useState<string[]>(["classic"]);
+  const [ownedMaps, setOwnedMaps] = useState<string[]>(["twilight"]);
+  const [skinId, setSkinId] = useState<string>("classic");
+  const [mapId, setMapId] = useState<string>("twilight");
+  const [shopTab, setShopTab] = useState<null | "skins" | "maps">(null);
+  const skinRef = useRef<Skin>(SKINS[0]);
+  const mapRef = useRef<MapTheme>(MAPS[0]);
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(false);
   mutedRef.current = muted;
