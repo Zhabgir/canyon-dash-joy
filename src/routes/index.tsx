@@ -119,13 +119,13 @@ function Game() {
           let newCenter: number;
 
           if (isPipe) {
-            const minPipeGap = 130 - 40 * difficulty;
+            const minPipeGap = 170 - 30 * difficulty;
             newGap = minPipeGap + Math.random() * 40;
             newCenter = 60 + newGap / 2 + Math.random() * (H - 120 - newGap);
           } else {
-            const minGap = 230 - 110 * difficulty;
-            newGap = Math.max(minGap, prevGap + (Math.random() - 0.5) * 50);
-            const drift = 40 + 50 * difficulty;
+            const minGap = 260 - 80 * difficulty;
+            newGap = Math.max(minGap, prevGap + (Math.random() - 0.5) * 40);
+            const drift = 30 + 40 * difficulty;
             newCenter = Math.max(
               newGap / 2 + 20,
               Math.min(H - newGap / 2 - 20, prevCenter + (Math.random() - 0.5) * drift),
