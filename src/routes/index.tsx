@@ -75,6 +75,9 @@ function Game() {
   const [hud, setHud] = useState({ shield: false, slowmo: 0, boost: 0 });
   const [coins, setCoins] = useState(0);
   const [bestCoins, setBestCoins] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const mutedRef = useRef(false);
+  mutedRef.current = muted;
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -100,6 +103,112 @@ function Game() {
   const shake = useRef(0);
   const flash = useRef(0);
   const tick = useRef(0);
+  const speedLines = useRef<{ x: number; y: number; len: number; spd: number }[]>([]);
+
+  // ===== Sound engine (WebAudio) =====
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
+  const engineRef = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
+
+  const ensureAudio = useCallback(() => {
+    if (audioCtxRef.current) return audioCtxRef.current;
+    const Ctx =
+      (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+    if (!Ctx) return null;
+    const ctx = new Ctx();
+    const master = ctx.createGain();
+    master.gain.value = 0.35;
+    master.connect(ctx.destination);
+    audioCtxRef.current = ctx;
+    masterGainRef.current = master;
+    return ctx;
+  }, []);
+
+  const playBeep = useCallback(
+    (freq: number, dur: number, type: OscillatorType = "sine", vol = 0.4, slide = 0) => {
+      if (mutedRef.current) return;
+      const ctx = ensureAudio();
+      if (!ctx || !masterGainRef.current) return;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), ctx.currentTime + dur);
+      g.gain.setValueAtTime(0, ctx.currentTime);
+      g.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+      osc.connect(g);
+      g.connect(masterGainRef.current);
+      osc.start();
+      osc.stop(ctx.currentTime + dur + 0.02);
+    },
+    [ensureAudio],
+  );
+
+  const playNoise = useCallback(
+    (dur: number, vol = 0.6) => {
+      if (mutedRef.current) return;
+      const ctx = ensureAudio();
+      if (!ctx || !masterGainRef.current) return;
+      const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const g = ctx.createGain();
+      g.gain.value = vol;
+      const filt = ctx.createBiquadFilter();
+      filt.type = "lowpass";
+      filt.frequency.value = 900;
+      src.connect(filt);
+      filt.connect(g);
+      g.connect(masterGainRef.current);
+      src.start();
+    },
+    [ensureAudio],
+  );
+
+  const sfxCoin = useCallback(() => playBeep(1320, 0.09, "square", 0.18, 400), [playBeep]);
+  const sfxPower = useCallback(() => {
+    playBeep(660, 0.12, "triangle", 0.3, 400);
+    setTimeout(() => playBeep(990, 0.16, "triangle", 0.25, 300), 70);
+  }, [playBeep]);
+  const sfxHit = useCallback(() => {
+    playNoise(0.5, 0.7);
+    playBeep(120, 0.45, "sawtooth", 0.4, -80);
+  }, [playNoise, playBeep]);
+  const sfxShieldHit = useCallback(() => playBeep(520, 0.15, "square", 0.25, -200), [playBeep]);
+
+  const startEngine = useCallback(() => {
+    if (mutedRef.current) return;
+    const ctx = ensureAudio();
+    if (!ctx || !masterGainRef.current || engineRef.current) return;
+    const osc = ctx.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.value = 80;
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    const filt = ctx.createBiquadFilter();
+    filt.type = "lowpass";
+    filt.frequency.value = 600;
+    osc.connect(filt);
+    filt.connect(g);
+    g.connect(masterGainRef.current);
+    osc.start();
+    g.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.3);
+    engineRef.current = { osc, gain: g };
+  }, [ensureAudio]);
+
+  const stopEngine = useCallback(() => {
+    const ctx = audioCtxRef.current;
+    const e = engineRef.current;
+    if (!ctx || !e) return;
+    e.gain.gain.cancelScheduledValues(ctx.currentTime);
+    e.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
+    e.osc.stop(ctx.currentTime + 0.2);
+    engineRef.current = null;
+  }, []);
+
 
   const resetWorld = useCallback(() => {
     planeY.current = H / 2;
