@@ -41,12 +41,18 @@ function Game() {
   const offset = useRef(0);
   const distance = useRef(0);
   const SEG_W = 20;
+  const rocks = useRef<
+    { x: number; y: number; r: number; vy: number; vx: number; rot: number; spin: number }[]
+  >([]);
+  const rockTimer = useRef(0);
 
   const resetWorld = useCallback(() => {
     planeY.current = H / 2;
     offset.current = 0;
     distance.current = 0;
     segments.current = [];
+    rocks.current = [];
+    rockTimer.current = 60;
     const count = Math.ceil(W / SEG_W) + 2;
     const gap = 260;
     const center = H / 2;
