@@ -1206,7 +1206,7 @@ function Game() {
             )}
             <button
               onClick={start}
-              className="mt-1 rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-8 py-2.5 text-base font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95"
+              className="mt-1 w-full max-w-[260px] rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-6 py-2.5 text-base font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95 sm:px-8"
             >
               ↻  RETRY
             </button>
