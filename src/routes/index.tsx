@@ -425,6 +425,7 @@ function Game() {
             missiles.current.splice(i, 1);
             if (shield.current) {
               shield.current = false;
+              sfxShieldHit();
               shake.current = 8;
               flash.current = 6;
               for (let k = 0; k < 18; k++) {
