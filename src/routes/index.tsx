@@ -613,10 +613,16 @@ function Game() {
             <span className="ml-3 text-sm opacity-70">Best {best.toLocaleString()}</span>
           )}
         </div>
-        <div className="pointer-events-none absolute right-4 top-3 flex items-center gap-2 font-mono text-xs text-white/90 drop-shadow">
-          {hud.shield && <Badge color="#6bd4ff">⛨ SHIELD</Badge>}
-          {hud.slowmo > 0 && <Badge color="#b48bff">⧖ {Math.ceil(hud.slowmo / 60)}s</Badge>}
-          {hud.boost > 0 && <Badge color="#ffce4a">⚡ {Math.ceil(hud.boost / 60)}s</Badge>}
+        <div className="pointer-events-none absolute right-4 top-3 flex flex-col items-end gap-1.5 font-mono text-xs text-white/90 drop-shadow">
+          <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/60 bg-black/50 px-3 py-1 text-sm font-bold text-yellow-300">
+            <span className="text-base leading-none">●</span>
+            <span>{coins}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {hud.shield && <Badge color="#6bd4ff">⛨ SHIELD</Badge>}
+            {hud.slowmo > 0 && <Badge color="#b48bff">⧖ {Math.ceil(hud.slowmo / 60)}s</Badge>}
+            {hud.boost > 0 && <Badge color="#ffce4a">⚡ {Math.ceil(hud.boost / 60)}s</Badge>}
+          </div>
         </div>
 
         {state === "menu" && (
