@@ -142,6 +142,8 @@ function Game() {
   const [reviveLeft, setReviveLeft] = useState(REVIVE_SECONDS);
   const usedRevive = useRef(false);
   const [wallet, setWallet] = useState(0);
+  const walletRef = useRef(0);
+  walletRef.current = wallet;
   const [ownedSkins, setOwnedSkins] = useState<string[]>(["classic"]);
   const [ownedMaps, setOwnedMaps] = useState<string[]>(["twilight"]);
   const [skinId, setSkinId] = useState<string>("classic");
@@ -400,14 +402,9 @@ function Game() {
     setScore(d);
     setBest((b) => Math.max(b, d));
     setBestCoins((b) => Math.max(b, coinCount.current));
-    // bank the run's coins into the persistent wallet
-    setWallet((w) => {
-      const next = w + coinCount.current;
-      saveJSON(LS.wallet, next);
-      return next;
-    });
     setState("over");
   }, []);
+
 
   const buySkin = useCallback(
     (s: Skin) => {
@@ -480,7 +477,7 @@ function Game() {
     flash.current = 18;
     sfxHit();
     stopEngine();
-    if (!usedRevive.current && coinCount.current >= REVIVE_COST) {
+    if (!usedRevive.current && walletRef.current >= REVIVE_COST) {
       setReviveLeft(REVIVE_SECONDS);
       setState("revive");
     } else {
@@ -489,9 +486,10 @@ function Game() {
   }, [sfxHit, stopEngine, finalizeOver]);
 
   const revive = useCallback(() => {
-    if (coinCount.current < REVIVE_COST) return;
-    coinCount.current -= REVIVE_COST;
-    setCoins(coinCount.current);
+    if (walletRef.current < REVIVE_COST) return;
+    const next = walletRef.current - REVIVE_COST;
+    setWallet(next);
+    saveJSON(LS.wallet, next);
     usedRevive.current = true;
     // clear nearby threats
     missiles.current = [];
@@ -723,6 +721,11 @@ function Game() {
             coinsRef.current.splice(i, 1);
             coinCount.current += 1;
             setCoins(coinCount.current);
+            setWallet((w) => {
+              const next = w + 1;
+              saveJSON(LS.wallet, next);
+              return next;
+            });
             sfxCoin();
             for (let k = 0; k < 8; k++) {
               const a = Math.random() * Math.PI * 2;
@@ -1126,12 +1129,12 @@ function Game() {
             </p>
             <button
               onClick={revive}
-              disabled={coins < REVIVE_COST}
+              disabled={wallet < REVIVE_COST}
               className="group relative overflow-hidden rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-7 py-2.5 text-base font-bold text-black shadow-lg shadow-yellow-500/40 transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="relative z-10">♥ ОЖИВИТЬ · ● {REVIVE_COST}</span>
             </button>
-            <div className="font-mono text-xs text-yellow-300/90">У тебя: ● {coins}</div>
+            <div className="font-mono text-xs text-yellow-300/90">У тебя: ● {wallet}</div>
             <button
               onClick={finalizeOver}
               className="text-xs uppercase tracking-widest text-white/50 hover:text-white/80"
