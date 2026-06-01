@@ -22,8 +22,8 @@ const W = 800;
 const H = 500;
 const PLANE_X = 140;
 const PLANE_SIZE = 22;
-const BASE_SPEED = 6.5;
-const MAX_SPEED = 16;
+const BASE_SPEED = 4.5;
+const MAX_SPEED = 10;
 const PLAYER_SPEED = 4.7;
 const SEG_W = 20;
 
@@ -207,7 +207,7 @@ function Game() {
         // time scale: slowmo halves, boost speeds up
         const timeScale =
           (slowmo.current > 0 ? 0.5 : 1) * (boost.current > 0 ? 1.55 : 1);
-        const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + distance.current / 1800);
+        const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + distance.current / 4000);
         const speed = baseSpeed * timeScale;
 
         offset.current += speed;
@@ -474,7 +474,7 @@ function Game() {
         if (p.life <= 0) particles.current.splice(i, 1);
       }
       // parallax stars drift left
-      const driftSpeed = playing ? Math.min(MAX_SPEED, BASE_SPEED + distance.current / 1800) : 1;
+      const driftSpeed = playing ? Math.min(MAX_SPEED, BASE_SPEED + distance.current / 4000) : 1;
       for (const s of stars.current) {
         s.x -= s.z * driftSpeed * 0.4;
         if (s.x < -2) {
