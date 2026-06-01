@@ -231,9 +231,9 @@ function Game() {
   useEffect(() => {
     setWallet(loadJSON<number>(LS.wallet, 0));
     setOwnedSkins(loadJSON<string[]>(LS.ownedSkins, ["classic"]));
-    setOwnedMaps(loadJSON<string[]>(LS.ownedMaps, ["twilight"]));
+    setOwnedMaps(loadJSON<string[]>(LS.ownedMaps, ["space"]));
     setSkinId(loadJSON<string>(LS.skin, "classic"));
-    setMapId(loadJSON<string>(LS.map, "twilight"));
+    setMapId(loadJSON<string>(LS.map, "space"));
     setQuestState(loadQuests());
   }, []);
 
