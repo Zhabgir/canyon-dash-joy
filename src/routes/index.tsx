@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
+import gameIcon from "../assets/game-icon.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
