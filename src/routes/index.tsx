@@ -692,17 +692,17 @@ function Game() {
           }
         }
 
-        // ===== Coin spawn (single or short row) =====
+        // ===== Coin spawn (scattered) =====
         coinTimer.current -= 1 * timeScale;
         if (coinTimer.current <= 0) {
           const rightIdx = segments.current.length - 3;
           const segR = segments.current[rightIdx];
           const topY = (segR ? segR.topH : 30) + 26;
           const botY = (segR ? H - segR.botH : H - 30) - 26;
-          const y = topY + Math.random() * Math.max(20, botY - topY);
-          const count = 1 + Math.floor(Math.random() * 5); // 1..5 coins in a row
-          const spacing = 26;
+          const count = 1 + Math.floor(Math.random() * 5); // 1..5 coins
+          const spacing = 32;
           for (let i = 0; i < count; i++) {
+            const y = topY + Math.random() * Math.max(20, botY - topY);
             coinsRef.current.push({ x: W + 20 + i * spacing, y, t: Math.random() * 10 });
           }
           coinTimer.current = 70 + Math.random() * 80;
