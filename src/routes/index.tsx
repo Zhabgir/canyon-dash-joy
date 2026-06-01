@@ -1166,16 +1166,16 @@ function Game() {
                 ★ New Record ★
               </p>
             )}
-            <div className="mt-1 flex flex-col gap-3">
+            <div className="mt-1 flex w-full max-w-[280px] flex-col gap-3">
               <button
                 onClick={start}
-                className="rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-8 py-2.5 text-base font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95"
+                className="w-full rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-6 py-2.5 text-base font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95 sm:px-8"
               >
                 ↻  Играть дальше
               </button>
               <button
                 onClick={() => setState("menu")}
-                className="rounded-full border border-white/20 bg-white/10 px-8 py-2.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
+                className="w-full rounded-full border border-white/20 bg-white/10 px-6 py-2.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20 sm:px-8"
               >
                 🏠  Главное меню
               </button>
