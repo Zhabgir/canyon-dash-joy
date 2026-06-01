@@ -368,6 +368,51 @@ function Game() {
           }
         }
 
+        // ===== Coin spawn (single or short row) =====
+        coinTimer.current -= 1 * timeScale;
+        if (coinTimer.current <= 0) {
+          const rightIdx = segments.current.length - 3;
+          const segR = segments.current[rightIdx];
+          const topY = (segR ? segR.topH : 30) + 26;
+          const botY = (segR ? H - segR.botH : H - 30) - 26;
+          const y = topY + Math.random() * Math.max(20, botY - topY);
+          const count = 1 + Math.floor(Math.random() * 5); // 1..5 coins in a row
+          const spacing = 26;
+          for (let i = 0; i < count; i++) {
+            coinsRef.current.push({ x: W + 20 + i * spacing, y, t: Math.random() * 10 });
+          }
+          coinTimer.current = 70 + Math.random() * 80;
+        }
+        for (let i = coinsRef.current.length - 1; i >= 0; i--) {
+          const c = coinsRef.current[i];
+          c.x -= speed;
+          c.t += 1;
+          if (c.x < -20) {
+            coinsRef.current.splice(i, 1);
+            continue;
+          }
+          const dx = c.x - PLANE_X;
+          const dy = c.y - planeY.current;
+          if (dx * dx + dy * dy < 18 * 18) {
+            coinsRef.current.splice(i, 1);
+            coinCount.current += 1;
+            setCoins(coinCount.current);
+            for (let k = 0; k < 8; k++) {
+              const a = Math.random() * Math.PI * 2;
+              particles.current.push({
+                x: c.x,
+                y: c.y,
+                vx: Math.cos(a) * 1.8,
+                vy: Math.sin(a) * 1.8,
+                life: 18,
+                maxLife: 18,
+                color: "#ffd84a",
+                size: 1.6,
+              });
+            }
+          }
+        }
+
         if (slowmo.current > 0) slowmo.current--;
         if (boost.current > 0) boost.current--;
 
