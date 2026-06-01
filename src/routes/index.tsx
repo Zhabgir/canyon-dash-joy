@@ -89,6 +89,9 @@ function Game() {
   const missileTimer = useRef(0);
   const powers = useRef<PowerUp[]>([]);
   const powerTimer = useRef(180);
+  const coinsRef = useRef<Coin[]>([]);
+  const coinTimer = useRef(80);
+  const coinCount = useRef(0);
   const particles = useRef<Particle[]>([]);
   const stars = useRef<Star[]>([]);
   const shield = useRef(false);
