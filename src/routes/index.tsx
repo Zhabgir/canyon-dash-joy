@@ -1522,9 +1522,9 @@ function drawJet(
 
   // fuselage
   const fuse = ctx.createLinearGradient(0, -6, 0, 6);
-  fuse.addColorStop(0, "#e0e6ec");
-  fuse.addColorStop(0.5, "#a8b1bb");
-  fuse.addColorStop(1, "#6e7780");
+  fuse.addColorStop(0, skin.fuse[0]);
+  fuse.addColorStop(0.5, skin.fuse[1]);
+  fuse.addColorStop(1, skin.fuse[2]);
   ctx.fillStyle = fuse;
   ctx.beginPath();
   ctx.moveTo(28, 0);
