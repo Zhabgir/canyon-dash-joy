@@ -495,6 +495,7 @@ function Game() {
             if (p.kind === "slowmo") slowmo.current = 360;
             if (p.kind === "boost") boost.current = 300;
             flash.current = 6;
+            sfxPower();
           }
         }
 
