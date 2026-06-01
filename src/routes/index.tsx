@@ -2054,3 +2054,91 @@ function drawCoin(ctx: CanvasRenderingContext2D, c: Coin) {
   }
   ctx.restore();
 }
+
+function QuestsOverlay({
+  questState,
+  onClaim,
+  onClose,
+}: {
+  questState: QuestState;
+  onClaim: (id: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-30 flex flex-col bg-black/85 backdrop-blur-md">
+      <div className="flex items-center justify-between border-b border-white/10 p-3">
+        <div className="text-base font-bold uppercase tracking-wider text-white">
+          🎯 Ежедневные задания
+        </div>
+        <button
+          onClick={onClose}
+          className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white hover:bg-white/20"
+        >
+          ✕
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3">
+        <div className="flex flex-col gap-2">
+          {questState.quests.map((q) => {
+            const pct = Math.min(100, (q.progress / q.def.target) * 100);
+            const done = q.progress >= q.def.target;
+            const hard = q.def.difficulty === "hard";
+            return (
+              <div
+                key={q.def.id}
+                className={`rounded-lg border p-3 ${
+                  hard
+                    ? "border-orange-400/50 bg-orange-500/10"
+                    : "border-white/15 bg-white/5"
+                }`}
+              >
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        hard
+                          ? "bg-orange-500/30 text-orange-200"
+                          : "bg-white/15 text-white/80"
+                      }`}
+                    >
+                      {hard ? "Сложно" : "Легко"}
+                    </span>
+                    <span className="text-sm font-bold text-white">{q.def.title}</span>
+                  </div>
+                  <div className="font-mono text-xs font-bold text-yellow-300">
+                    ● {q.def.reward}
+                  </div>
+                </div>
+                <div className="mb-2 h-2 overflow-hidden rounded-full bg-black/40">
+                  <div
+                    className={`h-full transition-all ${
+                      hard
+                        ? "bg-gradient-to-r from-orange-400 to-red-500"
+                        : "bg-gradient-to-r from-yellow-300 to-orange-400"
+                    }`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="font-mono text-[11px] text-white/60">
+                    {Math.min(q.progress, q.def.target)} / {q.def.target}
+                  </div>
+                  <button
+                    disabled={!done || q.claimed}
+                    onClick={() => onClaim(q.def.id)}
+                    className="rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-black shadow disabled:cursor-not-allowed disabled:from-white/10 disabled:to-white/10 disabled:text-white/40 disabled:shadow-none"
+                  >
+                    {q.claimed ? "Получено" : done ? "Забрать" : "В процессе"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-white/40">
+          Новые задания каждый день
+        </p>
+      </div>
+    </div>
+  );
+}
