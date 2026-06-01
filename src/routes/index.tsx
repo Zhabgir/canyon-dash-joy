@@ -806,12 +806,13 @@ function Game() {
         );
       }
 
-      // sky gradient — twilight desert
+      // sky gradient (from selected map)
+      const theme = mapRef.current;
       const sky = ctx.createLinearGradient(0, 0, 0, H);
-      sky.addColorStop(0, "#0a0814");
-      sky.addColorStop(0.35, "#1d1230");
-      sky.addColorStop(0.65, "#5a2438");
-      sky.addColorStop(1, "#1a0a10");
+      sky.addColorStop(0, theme.sky[0]);
+      sky.addColorStop(0.35, theme.sky[1]);
+      sky.addColorStop(0.65, theme.sky[2]);
+      sky.addColorStop(1, theme.sky[3]);
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, H);
 
@@ -819,12 +820,12 @@ function Game() {
       const sunX = W * 0.78;
       const sunY = H * 0.42;
       const sunGlow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 260);
-      sunGlow.addColorStop(0, "rgba(255,180,90,0.55)");
-      sunGlow.addColorStop(0.4, "rgba(255,120,70,0.25)");
-      sunGlow.addColorStop(1, "rgba(255,120,70,0)");
+      sunGlow.addColorStop(0, `rgba(${theme.sunAlpha},0.55)`);
+      sunGlow.addColorStop(0.4, `rgba(${theme.sunAlpha},0.22)`);
+      sunGlow.addColorStop(1, `rgba(${theme.sunAlpha},0)`);
       ctx.fillStyle = sunGlow;
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = "#ffcf85";
+      ctx.fillStyle = theme.sun;
       ctx.beginPath();
       ctx.arc(sunX, sunY, 38, 0, Math.PI * 2);
       ctx.fill();
