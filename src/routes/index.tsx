@@ -78,6 +78,8 @@ function Game() {
   const [hud, setHud] = useState({ shield: false, slowmo: 0, boost: 0 });
   const [coins, setCoins] = useState(0);
   const [bestCoins, setBestCoins] = useState(0);
+  const [reviveLeft, setReviveLeft] = useState(REVIVE_SECONDS);
+  const usedRevive = useRef(false);
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(false);
   mutedRef.current = muted;
