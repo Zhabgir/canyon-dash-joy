@@ -723,6 +723,11 @@ function Game() {
             coinsRef.current.splice(i, 1);
             coinCount.current += 1;
             setCoins(coinCount.current);
+            setWallet((w) => {
+              const next = w + 1;
+              saveJSON(LS.wallet, next);
+              return next;
+            });
             sfxCoin();
             for (let k = 0; k < 8; k++) {
               const a = Math.random() * Math.PI * 2;
