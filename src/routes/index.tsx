@@ -314,6 +314,8 @@ function Game() {
     setBestCoins((b) => Math.max(b, coinCount.current));
     setState("over");
   }, [sfxHit, stopEngine]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
