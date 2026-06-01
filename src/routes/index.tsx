@@ -1184,6 +1184,15 @@ function Game() {
               >
                 🗺 Карты
               </button>
+              <button
+                onClick={() => setQuestsOpen(true)}
+                className="relative rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
+              >
+                🎯 Задания
+                {questState.quests.some((q) => !q.claimed && q.progress >= q.def.target) && (
+                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse rounded-full bg-green-400 ring-2 ring-black/60" />
+                )}
+              </button>
             </div>
             <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/60 bg-black/40 px-3 py-1 font-mono text-xs font-bold text-yellow-300">
               <span>●</span>
