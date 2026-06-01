@@ -220,7 +220,7 @@ function Game() {
           const prevBot = last.botH;
           const prevGap = H - prevTop - prevBot;
           const prevCenter = prevTop + prevGap / 2;
-          const difficulty = Math.min(1, distance.current / 7000);
+          const difficulty = Math.min(1, distance.current / 3000);
           const segIndex = Math.floor(distance.current / SEG_W);
 
           const isPipe = segIndex > 0 && segIndex % 40 === 0;
