@@ -1057,12 +1057,45 @@ function Game() {
               <span className="relative z-10">▶  PLAY</span>
               <span className="absolute inset-0 -z-0 animate-pulse bg-white/20 opacity-0 group-hover:opacity-100" />
             </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShopTab("skins")}
+                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
+              >
+                ✈ Скины
+              </button>
+              <button
+                onClick={() => setShopTab("maps")}
+                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
+              >
+                🗺 Карты
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/60 bg-black/40 px-3 py-1 font-mono text-xs font-bold text-yellow-300">
+              <span>●</span>
+              <span>{wallet.toLocaleString()}</span>
+            </div>
             {best > 0 && (
               <p className="text-xs text-white/50">
                 Лучший: <span className="font-mono text-white/80">{best.toLocaleString()}</span> · ● {bestCoins}
               </p>
             )}
           </Overlay>
+        )}
+
+        {state === "menu" && shopTab && (
+          <ShopOverlay
+            tab={shopTab}
+            wallet={wallet}
+            skinId={skinId}
+            mapId={mapId}
+            ownedSkins={ownedSkins}
+            ownedMaps={ownedMaps}
+            onBuySkin={buySkin}
+            onBuyMap={buyMap}
+            onClose={() => setShopTab(null)}
+            onSwitchTab={(t) => setShopTab(t)}
+          />
         )}
 
         {state === "revive" && (
