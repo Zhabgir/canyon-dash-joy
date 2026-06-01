@@ -1089,7 +1089,7 @@ function Game() {
   });
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#1a0a20] via-[#2a0f1a] to-[#0a0510] p-3">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#05021a] via-[#0a0530] to-[#000004] p-3">
       <div
         className="relative w-full overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
         style={{ maxWidth: W, aspectRatio: `${W}/${H}` }}
