@@ -60,7 +60,72 @@ const LS = {
   ownedMaps: "jr_owned_maps",
   skin: "jr_skin",
   map: "jr_map",
+  quests: "jr_quests_v1",
 };
+
+// ===== Daily quests =====
+type QuestMetric = "runCoins" | "runScore" | "games" | "totalCoins";
+interface QuestDef {
+  id: string;
+  metric: QuestMetric;
+  target: number;
+  reward: number;
+  difficulty: "easy" | "hard";
+  title: string;
+}
+interface QuestState {
+  date: string;
+  quests: { def: QuestDef; progress: number; claimed: boolean }[];
+}
+
+const EASY_QUESTS: QuestDef[] = [
+  { id: "e_coins10", metric: "runCoins", target: 10, reward: 35, difficulty: "easy", title: "Собери 10 монет за один забег" },
+  { id: "e_score400", metric: "runScore", target: 400, reward: 40, difficulty: "easy", title: "Набери 400 очков за один забег" },
+  { id: "e_games3", metric: "games", target: 3, reward: 30, difficulty: "easy", title: "Сыграй 3 раунда" },
+  { id: "e_total25", metric: "totalCoins", target: 25, reward: 35, difficulty: "easy", title: "Собери всего 25 монет" },
+  { id: "e_score700", metric: "runScore", target: 700, reward: 50, difficulty: "easy", title: "Набери 700 очков за один забег" },
+];
+const HARD_QUESTS: QuestDef[] = [
+  { id: "h_coins40", metric: "runCoins", target: 40, reward: 125, difficulty: "hard", title: "Собери 40 монет за один забег" },
+  { id: "h_score2000", metric: "runScore", target: 2000, reward: 125, difficulty: "hard", title: "Набери 2000 очков за один забег" },
+  { id: "h_games10", metric: "games", target: 10, reward: 125, difficulty: "hard", title: "Сыграй 10 раундов" },
+  { id: "h_total150", metric: "totalCoins", target: 150, reward: 125, difficulty: "hard", title: "Собери всего 150 монет" },
+];
+
+function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+function seedFrom(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+function pickDailyQuests(date: string): QuestState["quests"] {
+  let seed = seedFrom(date);
+  const rng = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 0xffffffff;
+  };
+  const pick = <T,>(arr: T[], n: number): T[] => {
+    const copy = [...arr];
+    const out: T[] = [];
+    for (let i = 0; i < n && copy.length; i++) {
+      const idx = Math.floor(rng() * copy.length);
+      out.push(copy.splice(idx, 1)[0]);
+    }
+    return out;
+  };
+  const hard = pick(HARD_QUESTS, 1);
+  const easy = pick(EASY_QUESTS, 2);
+  return [...hard, ...easy].map((def) => ({ def, progress: 0, claimed: false }));
+}
+function loadQuests(): QuestState {
+  const today = todayStr();
+  const saved = loadJSON<QuestState | null>(LS.quests, null);
+  if (saved && saved.date === today && saved.quests?.length) return saved;
+  return { date: today, quests: pickDailyQuests(today) };
+}
 
 function loadJSON<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
