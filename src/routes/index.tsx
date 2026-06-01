@@ -528,6 +528,7 @@ function Game() {
             coinsRef.current.splice(i, 1);
             coinCount.current += 1;
             setCoins(coinCount.current);
+            sfxCoin();
             for (let k = 0; k < 8; k++) {
               const a = Math.random() * Math.PI * 2;
               particles.current.push({
