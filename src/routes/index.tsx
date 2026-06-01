@@ -313,7 +313,7 @@ function Game() {
     distance.current = 0;
     segments.current = [];
     missiles.current = [];
-    missileTimer.current = 120;
+    missileTimer.current = 240;
     powers.current = [];
     powerTimer.current = 200;
     coinsRef.current = [];
@@ -594,7 +594,7 @@ function Game() {
             vy: (dy / dist) * sp,
             trail: [],
           });
-          missileTimer.current = Math.max(28, 105 - difficultyFor() * 60 - Math.random() * 25);
+          missileTimer.current = Math.max(56, 210 - difficultyFor() * 120 - Math.random() * 50);
         }
 
         // ===== Missile update + collision =====
