@@ -477,7 +477,7 @@ function Game() {
     flash.current = 18;
     sfxHit();
     stopEngine();
-    if (!usedRevive.current && coinCount.current >= REVIVE_COST) {
+    if (!usedRevive.current && walletRef.current >= REVIVE_COST) {
       setReviveLeft(REVIVE_SECONDS);
       setState("revive");
     } else {
@@ -486,9 +486,10 @@ function Game() {
   }, [sfxHit, stopEngine, finalizeOver]);
 
   const revive = useCallback(() => {
-    if (coinCount.current < REVIVE_COST) return;
-    coinCount.current -= REVIVE_COST;
-    setCoins(coinCount.current);
+    if (walletRef.current < REVIVE_COST) return;
+    const next = walletRef.current - REVIVE_COST;
+    setWallet(next);
+    saveJSON(LS.wallet, next);
     usedRevive.current = true;
     // clear nearby threats
     missiles.current = [];
