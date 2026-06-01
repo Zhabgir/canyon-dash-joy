@@ -42,7 +42,7 @@ function Game() {
   const distance = useRef(0);
   const SEG_W = 20;
   const rocks = useRef<
-    { x: number; y: number; r: number; vy: number; vx: number; rot: number; spin: number }[]
+    { x: number; y: number; vx: number; vy: number; trail: { x: number; y: number }[] }[]
   >([]);
   const rockTimer = useRef(0);
 
@@ -154,53 +154,52 @@ function Game() {
           });
         }
 
-        // spawn falling rocks
+        // spawn missiles flying toward the player from ahead (right side)
         const difficultyAll = Math.min(1, distance.current / 6000);
         rockTimer.current -= 1;
         if (rockTimer.current <= 0) {
-          // find a safe-ish x (within visible play area)
-          const x = 200 + Math.random() * (W - 250);
-          // y starts above the canyon ceiling for that column
-          const colIdx = Math.floor((x + offset.current) / SEG_W);
-          const topAtX = segments.current[colIdx]?.topH ?? 0;
-          const r = 6 + Math.random() * 10;
+          // spawn from right edge, aimed roughly at current plane position
+          const spawnX = W + 20;
+          // pick a y inside the canyon gap at the right edge
+          const rightIdx = segments.current.length - 2;
+          const segR = segments.current[rightIdx];
+          const topY = segR ? segR.topH + 10 : 30;
+          const botY = segR ? H - segR.botH - 10 : H - 30;
+          const spawnY = topY + Math.random() * Math.max(20, botY - topY);
+          // aim toward plane with slight lead/jitter
+          const targetY = planeY.current + (Math.random() - 0.5) * 80;
+          const baseSpeed = 5 + difficultyAll * 3.5 + Math.random() * 1.5;
+          const dx = -W; // distance to travel leftward
+          const dy = targetY - spawnY;
+          const dist = Math.hypot(dx, dy);
           rocks.current.push({
-            x,
-            y: topAtX - r - 4,
-            r,
-            vy: 1.4 + Math.random() * 1.6 + difficultyAll * 2.5,
-            vx: -speed * 0.4 + (Math.random() - 0.5) * 1.2,
-            rot: Math.random() * Math.PI,
-            spin: (Math.random() - 0.5) * 0.12,
+            x: spawnX,
+            y: spawnY,
+            vx: (dx / dist) * baseSpeed,
+            vy: (dy / dist) * baseSpeed,
+            trail: [],
           });
-          rockTimer.current = Math.max(18, 75 - difficultyAll * 45 - Math.random() * 20);
+          rockTimer.current = Math.max(28, 95 - difficultyAll * 55 - Math.random() * 25);
         }
-        // update rocks
+        // update missiles
         for (let i = rocks.current.length - 1; i >= 0; i--) {
-          const rk = rocks.current[i];
-          rk.x += rk.vx;
-          rk.y += rk.vy;
-          rk.vy += 0.08;
-          rk.rot += rk.spin;
-          // remove offscreen or buried in bottom wall
-          const colIdx = Math.floor((rk.x + offset.current) / SEG_W);
-          const segR = segments.current[colIdx];
-          if (
-            rk.x < -30 ||
-            rk.x > W + 30 ||
-            (segR && rk.y - rk.r > H - segR.botH)
-          ) {
+          const m = rocks.current[i];
+          m.trail.push({ x: m.x, y: m.y });
+          if (m.trail.length > 10) m.trail.shift();
+          m.x += m.vx;
+          m.y += m.vy;
+          if (m.x < -40 || m.x > W + 60 || m.y < -40 || m.y > H + 40) {
             rocks.current.splice(i, 1);
             continue;
           }
-          // collision with plane (circle vs rect)
-          const dx = Math.max(PLANE_X - PLANE_SIZE / 2, Math.min(rk.x, PLANE_X + PLANE_SIZE / 2));
-          const dy = Math.max(
-            planeY.current - PLANE_SIZE / 2,
-            Math.min(rk.y, planeY.current + PLANE_SIZE / 2),
-          );
-          const dd = (dx - rk.x) ** 2 + (dy - rk.y) ** 2;
-          if (dd < rk.r * rk.r) {
+          // collision with plane (point vs rect with small radius)
+          const hitR = 5;
+          if (
+            m.x > PLANE_X - PLANE_SIZE / 2 - hitR &&
+            m.x < PLANE_X + PLANE_SIZE / 2 + hitR &&
+            m.y > planeY.current - PLANE_SIZE / 2 - hitR &&
+            m.y < planeY.current + PLANE_SIZE / 2 + hitR
+          ) {
             const d = Math.floor(distance.current / 10);
             setScore(d);
             setBest((b) => Math.max(b, d));
@@ -344,47 +343,70 @@ function Game() {
       drawRockBand(true);
       drawRockBand(false);
 
-      // falling rocks
-      for (const rk of rocks.current) {
-        ctx.save();
-        ctx.translate(rk.x, rk.y);
-        ctx.rotate(rk.rot);
-        // shadow
-        ctx.fillStyle = "rgba(0,0,0,0.45)";
-        ctx.beginPath();
-        ctx.ellipse(2, 3, rk.r, rk.r * 0.95, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // body gradient
-        const rg = ctx.createRadialGradient(-rk.r * 0.4, -rk.r * 0.4, 1, 0, 0, rk.r);
-        rg.addColorStop(0, "#8a7060");
-        rg.addColorStop(0.6, "#5a4030");
-        rg.addColorStop(1, "#2a1a12");
-        ctx.fillStyle = rg;
-        ctx.beginPath();
-        // irregular polygon
-        const sides = 7;
-        for (let s = 0; s < sides; s++) {
-          const a = (s / sides) * Math.PI * 2;
-          const rad = rk.r * (0.78 + ((Math.sin(s * 9.13 + rk.r) + 1) / 2) * 0.35);
-          const px = Math.cos(a) * rad;
-          const py = Math.sin(a) * rad;
-          if (s === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
+      // enemy missiles flying toward the player
+      for (const m of rocks.current) {
+        const angle = Math.atan2(m.vy, m.vx);
+        // smoke trail
+        for (let t = 0; t < m.trail.length; t++) {
+          const p = m.trail[t];
+          const alpha = (t / m.trail.length) * 0.5;
+          const radius = 1.5 + (t / m.trail.length) * 3.5;
+          ctx.fillStyle = `rgba(200,200,210,${alpha})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+          ctx.fill();
         }
+        ctx.save();
+        ctx.translate(m.x, m.y);
+        ctx.rotate(angle);
+        // flame at tail (behind missile = +x in local since missile travels in -x world but we rotated)
+        const fl = 8 + Math.random() * 5;
+        const fg = ctx.createLinearGradient(fl + 8, 0, 4, 0);
+        fg.addColorStop(0, "rgba(255,80,0,0)");
+        fg.addColorStop(0.5, "rgba(255,160,40,0.9)");
+        fg.addColorStop(1, "rgba(255,240,180,1)");
+        ctx.fillStyle = fg;
+        ctx.beginPath();
+        ctx.moveTo(6, -1.6);
+        ctx.lineTo(6 + fl, 0);
+        ctx.lineTo(6, 1.6);
         ctx.closePath();
         ctx.fill();
-        // crack
-        ctx.strokeStyle = "rgba(0,0,0,0.5)";
-        ctx.lineWidth = 1;
+        // body
+        const bg = ctx.createLinearGradient(0, -3, 0, 3);
+        bg.addColorStop(0, "#cdd3db");
+        bg.addColorStop(0.5, "#8a929c");
+        bg.addColorStop(1, "#3d434b");
+        ctx.fillStyle = bg;
         ctx.beginPath();
-        ctx.moveTo(-rk.r * 0.5, -rk.r * 0.2);
-        ctx.lineTo(rk.r * 0.2, rk.r * 0.1);
-        ctx.lineTo(rk.r * 0.5, -rk.r * 0.3);
-        ctx.stroke();
-        // highlight speck
-        ctx.fillStyle = "rgba(255,220,180,0.4)";
+        ctx.moveTo(-12, 0); // nose tip (points in direction of travel)
+        ctx.lineTo(-6, -2.5);
+        ctx.lineTo(6, -2.5);
+        ctx.lineTo(6, 2.5);
+        ctx.lineTo(-6, 2.5);
+        ctx.closePath();
+        ctx.fill();
+        // fins at back
+        ctx.fillStyle = "#2a2f36";
         ctx.beginPath();
-        ctx.arc(-rk.r * 0.35, -rk.r * 0.4, rk.r * 0.18, 0, Math.PI * 2);
+        ctx.moveTo(4, -2.5);
+        ctx.lineTo(8, -5);
+        ctx.lineTo(7, -2.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(4, 2.5);
+        ctx.lineTo(8, 5);
+        ctx.lineTo(7, 2.5);
+        ctx.closePath();
+        ctx.fill();
+        // red warning tip
+        ctx.fillStyle = "#e34a3a";
+        ctx.beginPath();
+        ctx.moveTo(-12, 0);
+        ctx.lineTo(-7, -1.6);
+        ctx.lineTo(-7, 1.6);
+        ctx.closePath();
         ctx.fill();
         ctx.restore();
       }
