@@ -400,8 +400,51 @@ function Game() {
     setScore(d);
     setBest((b) => Math.max(b, d));
     setBestCoins((b) => Math.max(b, coinCount.current));
+    // bank the run's coins into the persistent wallet
+    setWallet((w) => {
+      const next = w + coinCount.current;
+      saveJSON(LS.wallet, next);
+      return next;
+    });
     setState("over");
   }, []);
+
+  const buySkin = useCallback(
+    (s: Skin) => {
+      if (ownedSkins.includes(s.id)) {
+        setSkinId(s.id);
+        return;
+      }
+      if (wallet < s.price) return;
+      const nextWallet = wallet - s.price;
+      const nextOwned = [...ownedSkins, s.id];
+      setWallet(nextWallet);
+      setOwnedSkins(nextOwned);
+      setSkinId(s.id);
+      saveJSON(LS.wallet, nextWallet);
+      saveJSON(LS.ownedSkins, nextOwned);
+    },
+    [ownedSkins, wallet],
+  );
+
+  const buyMap = useCallback(
+    (m: MapTheme) => {
+      if (ownedMaps.includes(m.id)) {
+        setMapId(m.id);
+        return;
+      }
+      if (wallet < m.price) return;
+      const nextWallet = wallet - m.price;
+      const nextOwned = [...ownedMaps, m.id];
+      setWallet(nextWallet);
+      setOwnedMaps(nextOwned);
+      setMapId(m.id);
+      saveJSON(LS.wallet, nextWallet);
+      saveJSON(LS.ownedMaps, nextOwned);
+    },
+    [ownedMaps, wallet],
+  );
+
 
   const die = useCallback(() => {
     // explosion particles — big arcade explosion
