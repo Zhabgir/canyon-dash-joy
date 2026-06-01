@@ -250,8 +250,8 @@ function Game() {
         for (let i = 0; i < segs.length; i += 2) {
           const x = i * SEG_W - offset.current;
           const seedIdx = Math.floor(distance.current / SEG_W) + i + (isTop ? 333 : 777);
-          const r1 = ((Math.sin(seedIdx * 7.13) * 43758.5453) % 1 + 1) % 1;
-          const r2 = ((Math.sin(seedIdx * 3.71) * 43758.5453) % 1 + 1) % 1;
+          const r1 = (((Math.sin(seedIdx * 7.13) * 43758.5453) % 1) + 1) % 1;
+          const r2 = (((Math.sin(seedIdx * 3.71) * 43758.5453) % 1) + 1) % 1;
           ctx.beginPath();
           if (isTop) {
             const y1 = segs[i].topH - 4 - r1 * 40;
@@ -272,11 +272,9 @@ function Game() {
         for (let i = 0; i < segs.length; i++) {
           const x = i * SEG_W - offset.current;
           const seedIdx = Math.floor(distance.current / SEG_W) + i + (isTop ? 111 : 555);
-          const r = ((Math.sin(seedIdx * 5.17) * 43758.5453) % 1 + 1) % 1;
+          const r = (((Math.sin(seedIdx * 5.17) * 43758.5453) % 1) + 1) % 1;
           if (r > 0.7) {
-            const y = isTop
-              ? segs[i].topH - 6 - r * 30
-              : H - segs[i].botH + 6 + r * 30;
+            const y = isTop ? segs[i].topH - 6 - r * 30 : H - segs[i].botH + 6 + r * 30;
             ctx.fillRect(x + 4, y, 3, 2);
           }
         }
