@@ -22,8 +22,8 @@ const W = 800;
 const H = 500;
 const PLANE_X = 140;
 const PLANE_SIZE = 22;
-const BASE_SPEED = 3.5;
-const MAX_SPEED = 10;
+const BASE_SPEED = 3.2;
+const MAX_SPEED = 8;
 const PLAYER_SPEED = 4.7;
 const SEG_W = 20;
 
@@ -61,6 +61,11 @@ interface Star {
   z: number; // parallax depth 0.2..1
   s: number;
 }
+interface Coin {
+  x: number;
+  y: number;
+  t: number;
+}
 
 function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -68,6 +73,8 @@ function Game() {
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
   const [hud, setHud] = useState({ shield: false, slowmo: 0, boost: 0 });
+  const [coins, setCoins] = useState(0);
+  const [bestCoins, setBestCoins] = useState(0);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -82,6 +89,9 @@ function Game() {
   const missileTimer = useRef(0);
   const powers = useRef<PowerUp[]>([]);
   const powerTimer = useRef(180);
+  const coinsRef = useRef<Coin[]>([]);
+  const coinTimer = useRef(80);
+  const coinCount = useRef(0);
   const particles = useRef<Particle[]>([]);
   const stars = useRef<Star[]>([]);
   const shield = useRef(false);
@@ -101,6 +111,9 @@ function Game() {
     missileTimer.current = 120;
     powers.current = [];
     powerTimer.current = 200;
+    coinsRef.current = [];
+    coinTimer.current = 90;
+    coinCount.current = 0;
     particles.current = [];
     shield.current = false;
     slowmo.current = 0;
@@ -120,6 +133,7 @@ function Game() {
       s: Math.random() * 1.5 + 0.3,
     }));
     setScore(0);
+    setCoins(0);
     setHud({ shield: false, slowmo: 0, boost: 0 });
   }, []);
 
@@ -169,6 +183,7 @@ function Game() {
     const d = Math.floor(distance.current / 10);
     setScore(d);
     setBest((b) => Math.max(b, d));
+    setBestCoins((b) => Math.max(b, coinCount.current));
     setState("over");
   }, []);
 
@@ -192,7 +207,7 @@ function Game() {
         // time scale: slowmo halves, boost speeds up
         const timeScale =
           (slowmo.current > 0 ? 0.5 : 1) * (boost.current > 0 ? 1.55 : 1);
-        const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + distance.current / 2500);
+        const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + distance.current / 9000);
         const speed = baseSpeed * timeScale;
 
         offset.current += speed;
@@ -205,7 +220,7 @@ function Game() {
           const prevBot = last.botH;
           const prevGap = H - prevTop - prevBot;
           const prevCenter = prevTop + prevGap / 2;
-          const difficulty = Math.min(1, distance.current / 6000);
+          const difficulty = Math.min(1, distance.current / 14000);
           const segIndex = Math.floor(distance.current / SEG_W);
 
           const isPipe = segIndex > 0 && segIndex % 40 === 0;
@@ -354,6 +369,51 @@ function Game() {
           }
         }
 
+        // ===== Coin spawn (single or short row) =====
+        coinTimer.current -= 1 * timeScale;
+        if (coinTimer.current <= 0) {
+          const rightIdx = segments.current.length - 3;
+          const segR = segments.current[rightIdx];
+          const topY = (segR ? segR.topH : 30) + 26;
+          const botY = (segR ? H - segR.botH : H - 30) - 26;
+          const y = topY + Math.random() * Math.max(20, botY - topY);
+          const count = 1 + Math.floor(Math.random() * 5); // 1..5 coins in a row
+          const spacing = 26;
+          for (let i = 0; i < count; i++) {
+            coinsRef.current.push({ x: W + 20 + i * spacing, y, t: Math.random() * 10 });
+          }
+          coinTimer.current = 70 + Math.random() * 80;
+        }
+        for (let i = coinsRef.current.length - 1; i >= 0; i--) {
+          const c = coinsRef.current[i];
+          c.x -= speed;
+          c.t += 1;
+          if (c.x < -20) {
+            coinsRef.current.splice(i, 1);
+            continue;
+          }
+          const dx = c.x - PLANE_X;
+          const dy = c.y - planeY.current;
+          if (dx * dx + dy * dy < 18 * 18) {
+            coinsRef.current.splice(i, 1);
+            coinCount.current += 1;
+            setCoins(coinCount.current);
+            for (let k = 0; k < 8; k++) {
+              const a = Math.random() * Math.PI * 2;
+              particles.current.push({
+                x: c.x,
+                y: c.y,
+                vx: Math.cos(a) * 1.8,
+                vy: Math.sin(a) * 1.8,
+                life: 18,
+                maxLife: 18,
+                color: "#ffd84a",
+                size: 1.6,
+              });
+            }
+          }
+        }
+
         if (slowmo.current > 0) slowmo.current--;
         if (boost.current > 0) boost.current--;
 
@@ -414,7 +474,7 @@ function Game() {
         if (p.life <= 0) particles.current.splice(i, 1);
       }
       // parallax stars drift left
-      const driftSpeed = playing ? Math.min(MAX_SPEED, BASE_SPEED + distance.current / 2500) : 1;
+      const driftSpeed = playing ? Math.min(MAX_SPEED, BASE_SPEED + distance.current / 9000) : 1;
       for (const s of stars.current) {
         s.x -= s.z * driftSpeed * 0.4;
         if (s.x < -2) {
@@ -479,6 +539,9 @@ function Game() {
       // powerups
       for (const p of powers.current) drawPowerup(ctx, p);
 
+      // coins
+      for (const c of coinsRef.current) drawCoin(ctx, c);
+
       // missiles
       for (const m of missiles.current) drawMissile(ctx, m);
 
@@ -524,7 +587,7 @@ function Game() {
     };
 
     function difficultyFor() {
-      return Math.min(1, distance.current / 6000);
+      return Math.min(1, distance.current / 14000);
     }
 
     raf = requestAnimationFrame(loop);
@@ -550,10 +613,16 @@ function Game() {
             <span className="ml-3 text-sm opacity-70">Best {best.toLocaleString()}</span>
           )}
         </div>
-        <div className="pointer-events-none absolute right-4 top-3 flex items-center gap-2 font-mono text-xs text-white/90 drop-shadow">
-          {hud.shield && <Badge color="#6bd4ff">⛨ SHIELD</Badge>}
-          {hud.slowmo > 0 && <Badge color="#b48bff">⧖ {Math.ceil(hud.slowmo / 60)}s</Badge>}
-          {hud.boost > 0 && <Badge color="#ffce4a">⚡ {Math.ceil(hud.boost / 60)}s</Badge>}
+        <div className="pointer-events-none absolute right-4 top-3 flex flex-col items-end gap-1.5 font-mono text-xs text-white/90 drop-shadow">
+          <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/60 bg-black/50 px-3 py-1 text-sm font-bold text-yellow-300">
+            <span className="text-base leading-none">●</span>
+            <span>{coins}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {hud.shield && <Badge color="#6bd4ff">⛨ SHIELD</Badge>}
+            {hud.slowmo > 0 && <Badge color="#b48bff">⧖ {Math.ceil(hud.slowmo / 60)}s</Badge>}
+            {hud.boost > 0 && <Badge color="#ffce4a">⚡ {Math.ceil(hud.boost / 60)}s</Badge>}
+          </div>
         </div>
 
         {state === "menu" && (
@@ -582,8 +651,11 @@ function Game() {
             <p className="text-white/80">
               Score: <span className="font-mono">{score.toLocaleString()}</span>
             </p>
-            {best > 0 && (
-              <p className="text-xs text-white/60">Best: {best.toLocaleString()}</p>
+            <p className="font-mono text-yellow-300">● {coins} coins</p>
+            {(best > 0 || bestCoins > 0) && (
+              <p className="text-xs text-white/60">
+                Best: {best.toLocaleString()} · ● {bestCoins}
+              </p>
             )}
             <button
               onClick={start}
@@ -1115,5 +1187,50 @@ function drawJet(
     ctx.fill();
   }
 
+  ctx.restore();
+}
+
+function drawCoin(ctx: CanvasRenderingContext2D, c: Coin) {
+  const bob = Math.sin(c.t * 0.12) * 3;
+  // flip rotation: scale x by sin to fake 3D spin
+  const sx = Math.cos(c.t * 0.18);
+  const w = Math.max(0.15, Math.abs(sx));
+  ctx.save();
+  ctx.translate(c.x, c.y + bob);
+
+  // glow
+  const glow = ctx.createRadialGradient(0, 0, 1, 0, 0, 18);
+  glow.addColorStop(0, "rgba(255,220,90,0.55)");
+  glow.addColorStop(1, "rgba(255,220,90,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, 18, 0, Math.PI * 2);
+  ctx.fill();
+
+  // coin body
+  ctx.scale(w, 1);
+  const g = ctx.createRadialGradient(-2, -3, 1, 0, 0, 9);
+  g.addColorStop(0, "#fff3a8");
+  g.addColorStop(0.5, "#ffd84a");
+  g.addColorStop(1, "#b07a10");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(0, 0, 9, 0, Math.PI * 2);
+  ctx.fill();
+  // edge
+  ctx.strokeStyle = "rgba(120,70,5,0.8)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  // star mark
+  if (sx > 0) {
+    ctx.fillStyle = "rgba(120,70,5,0.85)";
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("★", 0, 1);
+  } else {
+    ctx.fillStyle = "rgba(120,70,5,0.7)";
+    ctx.fillRect(-5, -1, 10, 2);
+  }
   ctx.restore();
 }
