@@ -111,6 +111,9 @@ function Game() {
     missileTimer.current = 120;
     powers.current = [];
     powerTimer.current = 200;
+    coinsRef.current = [];
+    coinTimer.current = 90;
+    coinCount.current = 0;
     particles.current = [];
     shield.current = false;
     slowmo.current = 0;
@@ -130,6 +133,7 @@ function Game() {
       s: Math.random() * 1.5 + 0.3,
     }));
     setScore(0);
+    setCoins(0);
     setHud({ shield: false, slowmo: 0, boost: 0 });
   }, []);
 
