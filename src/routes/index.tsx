@@ -613,6 +613,35 @@ function Game() {
           s.y = Math.random() * H * 0.55;
         }
       }
+
+      // speed lines (intensity scales with speed) — always when playing
+      if (playing) {
+        const intensity = (driftSpeed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED);
+        const spawnEvery = boost.current > 0 ? 1 : Math.max(2, Math.round(5 - intensity * 3));
+        if (tick.current % spawnEvery === 0) {
+          const len = 18 + Math.random() * 28 + intensity * 30 + (boost.current > 0 ? 50 : 0);
+          speedLines.current.push({
+            x: W + 10,
+            y: Math.random() * H,
+            len,
+            spd: 8 + driftSpeed * 2.2 + (boost.current > 0 ? 7 : 0),
+          });
+        }
+        for (let i = speedLines.current.length - 1; i >= 0; i--) {
+          const sl = speedLines.current[i];
+          sl.x -= sl.spd;
+          if (sl.x < -sl.len) speedLines.current.splice(i, 1);
+        }
+      } else {
+        speedLines.current = [];
+      }
+
+      // engine sound modulation
+      if (engineRef.current && audioCtxRef.current) {
+        const targetFreq = 70 + driftSpeed * 22 + (boost.current > 0 ? 60 : 0);
+        engineRef.current.osc.frequency.setTargetAtTime(targetFreq, audioCtxRef.current.currentTime, 0.08);
+      }
+
       if (shake.current > 0) shake.current--;
       if (flash.current > 0) flash.current--;
 
