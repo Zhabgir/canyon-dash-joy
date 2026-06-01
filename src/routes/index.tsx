@@ -48,8 +48,8 @@ function Game() {
     distance.current = 0;
     segments.current = [];
     const count = Math.ceil(W / SEG_W) + 2;
-    let gap = 260;
-    let center = H / 2;
+    const gap = 260;
+    const center = H / 2;
     for (let i = 0; i < count; i++) {
       const top = center - gap / 2;
       const bot = H - (center + gap / 2);
@@ -119,16 +119,27 @@ function Game() {
           let newCenter: number;
 
           if (isPipe) {
-            const minPipeGap = 170 - 30 * difficulty;
-            newGap = minPipeGap + Math.random() * 40;
-            newCenter = 60 + newGap / 2 + Math.random() * (H - 120 - newGap);
-          } else {
-            const minGap = 260 - 80 * difficulty;
-            newGap = Math.max(minGap, prevGap + (Math.random() - 0.5) * 40);
-            const drift = 30 + 40 * difficulty;
+            const minPipeGap = 200 - 20 * difficulty;
+            newGap = minPipeGap + Math.random() * 55;
+            const targetCenter = 70 + newGap / 2 + Math.random() * (H - 140 - newGap);
+            const maxCenterStep = 34 + 8 * difficulty;
             newCenter = Math.max(
-              newGap / 2 + 20,
-              Math.min(H - newGap / 2 - 20, prevCenter + (Math.random() - 0.5) * drift),
+              newGap / 2 + 28,
+              Math.min(
+                H - newGap / 2 - 28,
+                Math.max(
+                  prevCenter - maxCenterStep,
+                  Math.min(prevCenter + maxCenterStep, targetCenter),
+                ),
+              ),
+            );
+          } else {
+            const minGap = 285 - 55 * difficulty;
+            newGap = Math.max(minGap, prevGap + (Math.random() - 0.5) * 28);
+            const drift = 22 + 26 * difficulty;
+            newCenter = Math.max(
+              newGap / 2 + 28,
+              Math.min(H - newGap / 2 - 28, prevCenter + (Math.random() - 0.5) * drift),
             );
           }
           segments.current.push({
@@ -239,8 +250,8 @@ function Game() {
         for (let i = 0; i < segs.length; i += 2) {
           const x = i * SEG_W - offset.current;
           const seedIdx = Math.floor(distance.current / SEG_W) + i + (isTop ? 333 : 777);
-          const r1 = ((Math.sin(seedIdx * 7.13) * 43758.5453) % 1 + 1) % 1;
-          const r2 = ((Math.sin(seedIdx * 3.71) * 43758.5453) % 1 + 1) % 1;
+          const r1 = (((Math.sin(seedIdx * 7.13) * 43758.5453) % 1) + 1) % 1;
+          const r2 = (((Math.sin(seedIdx * 3.71) * 43758.5453) % 1) + 1) % 1;
           ctx.beginPath();
           if (isTop) {
             const y1 = segs[i].topH - 4 - r1 * 40;
@@ -261,11 +272,9 @@ function Game() {
         for (let i = 0; i < segs.length; i++) {
           const x = i * SEG_W - offset.current;
           const seedIdx = Math.floor(distance.current / SEG_W) + i + (isTop ? 111 : 555);
-          const r = ((Math.sin(seedIdx * 5.17) * 43758.5453) % 1 + 1) % 1;
+          const r = (((Math.sin(seedIdx * 5.17) * 43758.5453) % 1) + 1) % 1;
           if (r > 0.7) {
-            const y = isTop
-              ? segs[i].topH - 6 - r * 30
-              : H - segs[i].botH + 6 + r * 30;
+            const y = isTop ? segs[i].topH - 6 - r * 30 : H - segs[i].botH + 6 + r * 30;
             ctx.fillRect(x + 4, y, 3, 2);
           }
         }
