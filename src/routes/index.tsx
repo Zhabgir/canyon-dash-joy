@@ -932,6 +932,50 @@ function Game() {
           </Overlay>
         )}
 
+        {state === "revive" && (
+          <Overlay>
+            <h2 className="text-2xl font-black uppercase tracking-wider text-orange-300 drop-shadow-[0_2px_8px_rgba(255,140,40,0.6)]">
+              Продолжить?
+            </h2>
+            <div className="relative flex h-24 w-24 items-center justify-center">
+              <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="44" stroke="rgba(255,255,255,0.15)" strokeWidth="6" fill="none" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="44"
+                  stroke="#ffce4a"
+                  strokeWidth="6"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 44}
+                  strokeDashoffset={2 * Math.PI * 44 * (1 - reviveLeft / REVIVE_SECONDS)}
+                  style={{ transition: "stroke-dashoffset 0.1s linear" }}
+                />
+              </svg>
+              <span className="font-mono text-3xl font-bold text-white">{reviveLeft}</span>
+            </div>
+            <p className="text-center text-xs text-white/70">
+              Восстанови самолёт и продолжи забег
+            </p>
+            <button
+              onClick={revive}
+              disabled={coins < REVIVE_COST}
+              className="group relative overflow-hidden rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-7 py-2.5 text-base font-bold text-black shadow-lg shadow-yellow-500/40 transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span className="relative z-10">♥ ОЖИВИТЬ · ● {REVIVE_COST}</span>
+            </button>
+            <div className="font-mono text-xs text-yellow-300/90">У тебя: ● {coins}</div>
+            <button
+              onClick={finalizeOver}
+              className="text-xs uppercase tracking-widest text-white/50 hover:text-white/80"
+            >
+              Пропустить
+            </button>
+          </Overlay>
+        )}
+
+
         {state === "over" && (
           <Overlay>
             <h2 className="text-3xl font-black uppercase tracking-wider text-red-400 drop-shadow-[0_2px_8px_rgba(255,60,40,0.6)]">
