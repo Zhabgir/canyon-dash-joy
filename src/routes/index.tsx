@@ -1189,3 +1189,48 @@ function drawJet(
 
   ctx.restore();
 }
+
+function drawCoin(ctx: CanvasRenderingContext2D, c: Coin) {
+  const bob = Math.sin(c.t * 0.12) * 3;
+  // flip rotation: scale x by sin to fake 3D spin
+  const sx = Math.cos(c.t * 0.18);
+  const w = Math.max(0.15, Math.abs(sx));
+  ctx.save();
+  ctx.translate(c.x, c.y + bob);
+
+  // glow
+  const glow = ctx.createRadialGradient(0, 0, 1, 0, 0, 18);
+  glow.addColorStop(0, "rgba(255,220,90,0.55)");
+  glow.addColorStop(1, "rgba(255,220,90,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, 18, 0, Math.PI * 2);
+  ctx.fill();
+
+  // coin body
+  ctx.scale(w, 1);
+  const g = ctx.createRadialGradient(-2, -3, 1, 0, 0, 9);
+  g.addColorStop(0, "#fff3a8");
+  g.addColorStop(0.5, "#ffd84a");
+  g.addColorStop(1, "#b07a10");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(0, 0, 9, 0, Math.PI * 2);
+  ctx.fill();
+  // edge
+  ctx.strokeStyle = "rgba(120,70,5,0.8)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  // star mark
+  if (sx > 0) {
+    ctx.fillStyle = "rgba(120,70,5,0.85)";
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("★", 0, 1);
+  } else {
+    ctx.fillStyle = "rgba(120,70,5,0.7)";
+    ctx.fillRect(-5, -1, 10, 2);
+  }
+  ctx.restore();
+}
