@@ -539,6 +539,9 @@ function Game() {
       // powerups
       for (const p of powers.current) drawPowerup(ctx, p);
 
+      // coins
+      for (const c of coinsRef.current) drawCoin(ctx, c);
+
       // missiles
       for (const m of missiles.current) drawMissile(ctx, m);
 
