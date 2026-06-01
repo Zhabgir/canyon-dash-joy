@@ -1598,7 +1598,7 @@ function drawJet(
   ctx.beginPath();
   ctx.arc(-2, 0, 1.7, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "#c8344a";
+  ctx.fillStyle = skin.accent;
   ctx.beginPath();
   ctx.arc(-2, 0, 0.9, 0, Math.PI * 2);
   ctx.fill();
