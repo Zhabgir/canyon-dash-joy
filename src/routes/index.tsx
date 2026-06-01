@@ -19,6 +19,67 @@ type GameState = "menu" | "playing" | "revive" | "over";
 
 const REVIVE_COST = 100;
 const REVIVE_SECONDS = 10;
+
+// ===== Shop catalogs =====
+interface Skin {
+  id: string;
+  name: string;
+  price: number;
+  fuse: [string, string, string];
+  wing: [string, string, string];
+  accent: string;
+}
+interface MapTheme {
+  id: string;
+  name: string;
+  price: number;
+  sky: [string, string, string, string];
+  sun: string;
+  sunAlpha: string;
+}
+
+const SKINS: Skin[] = [
+  { id: "classic", name: "Classic", price: 0, fuse: ["#e0e6ec", "#a8b1bb", "#6e7780"], wing: ["#aab4c0", "#5e6772", "#aab4c0"], accent: "#c8344a" },
+  { id: "crimson", name: "Crimson", price: 200, fuse: ["#ffd0d0", "#d63a3a", "#5a1010"], wing: ["#ff8c8c", "#a02020", "#ff8c8c"], accent: "#ffe040" },
+  { id: "stealth", name: "Stealth", price: 350, fuse: ["#3a3f48", "#15181c", "#000000"], wing: ["#2c3138", "#0e1014", "#2c3138"], accent: "#9b59ff" },
+  { id: "gold", name: "Gold", price: 500, fuse: ["#fff1a8", "#d4a526", "#6a5010"], wing: ["#ffd860", "#a07a18", "#ffd860"], accent: "#ffffff" },
+  { id: "neon", name: "Neon", price: 800, fuse: ["#a8fff0", "#22c2c8", "#0a3a4a"], wing: ["#7af0ff", "#1a8a9a", "#7af0ff"], accent: "#ff40d0" },
+];
+
+const MAPS: MapTheme[] = [
+  { id: "twilight", name: "Twilight Desert", price: 0, sky: ["#0a0814", "#1d1230", "#5a2438", "#1a0a10"], sun: "#ffcf85", sunAlpha: "255,180,90" },
+  { id: "arctic", name: "Arctic", price: 300, sky: ["#0a1a2a", "#1a3a55", "#3a6a8a", "#0e1a26"], sun: "#e8f5ff", sunAlpha: "180,220,255" },
+  { id: "sunset", name: "Sunset", price: 250, sky: ["#1a0a0a", "#4a1418", "#c25028", "#ff8a3a"], sun: "#fff0a0", sunAlpha: "255,200,120" },
+  { id: "neoncity", name: "Neon City", price: 600, sky: ["#0a0220", "#2a0a48", "#600a78", "#10001a"], sun: "#ff60c0", sunAlpha: "255,90,200" },
+  { id: "space", name: "Deep Space", price: 900, sky: ["#000004", "#06061a", "#101030", "#000000"], sun: "#ffffff", sunAlpha: "200,200,255" },
+];
+
+const LS = {
+  wallet: "jr_wallet",
+  ownedSkins: "jr_owned_skins",
+  ownedMaps: "jr_owned_maps",
+  skin: "jr_skin",
+  map: "jr_map",
+};
+
+function loadJSON<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const v = window.localStorage.getItem(key);
+    return v ? (JSON.parse(v) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function saveJSON(key: string, val: unknown) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(val));
+  } catch {
+    /* ignore */
+  }
+}
+
 type PowerKind = "shield" | "slowmo" | "boost";
 
 const W = 800;
