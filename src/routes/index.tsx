@@ -22,8 +22,8 @@ const W = 800;
 const H = 500;
 const PLANE_X = 140;
 const PLANE_SIZE = 22;
-const BASE_SPEED = 4.0;
-const MAX_SPEED = 11;
+const BASE_SPEED = 6.5;
+const MAX_SPEED = 16;
 const PLAYER_SPEED = 4.7;
 const SEG_W = 20;
 
