@@ -1136,7 +1136,7 @@ function Game() {
             </button>
             <div className="font-mono text-xs text-yellow-300/90">У тебя: ● {wallet}</div>
             <button
-              onClick={finalizeOver}
+              onClick={() => finalizeOver("choice")}
               className="text-xs uppercase tracking-widest text-white/50 hover:text-white/80"
             >
               Пропустить
