@@ -60,7 +60,72 @@ const LS = {
   ownedMaps: "jr_owned_maps",
   skin: "jr_skin",
   map: "jr_map",
+  quests: "jr_quests_v1",
 };
+
+// ===== Daily quests =====
+type QuestMetric = "runCoins" | "runScore" | "games" | "totalCoins";
+interface QuestDef {
+  id: string;
+  metric: QuestMetric;
+  target: number;
+  reward: number;
+  difficulty: "easy" | "hard";
+  title: string;
+}
+interface QuestState {
+  date: string;
+  quests: { def: QuestDef; progress: number; claimed: boolean }[];
+}
+
+const EASY_QUESTS: QuestDef[] = [
+  { id: "e_coins10", metric: "runCoins", target: 10, reward: 35, difficulty: "easy", title: "Собери 10 монет за один забег" },
+  { id: "e_score400", metric: "runScore", target: 400, reward: 40, difficulty: "easy", title: "Набери 400 очков за один забег" },
+  { id: "e_games3", metric: "games", target: 3, reward: 30, difficulty: "easy", title: "Сыграй 3 раунда" },
+  { id: "e_total25", metric: "totalCoins", target: 25, reward: 35, difficulty: "easy", title: "Собери всего 25 монет" },
+  { id: "e_score700", metric: "runScore", target: 700, reward: 50, difficulty: "easy", title: "Набери 700 очков за один забег" },
+];
+const HARD_QUESTS: QuestDef[] = [
+  { id: "h_coins40", metric: "runCoins", target: 40, reward: 125, difficulty: "hard", title: "Собери 40 монет за один забег" },
+  { id: "h_score2000", metric: "runScore", target: 2000, reward: 125, difficulty: "hard", title: "Набери 2000 очков за один забег" },
+  { id: "h_games10", metric: "games", target: 10, reward: 125, difficulty: "hard", title: "Сыграй 10 раундов" },
+  { id: "h_total150", metric: "totalCoins", target: 150, reward: 125, difficulty: "hard", title: "Собери всего 150 монет" },
+];
+
+function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+function seedFrom(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+function pickDailyQuests(date: string): QuestState["quests"] {
+  let seed = seedFrom(date);
+  const rng = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 0xffffffff;
+  };
+  const pick = <T,>(arr: T[], n: number): T[] => {
+    const copy = [...arr];
+    const out: T[] = [];
+    for (let i = 0; i < n && copy.length; i++) {
+      const idx = Math.floor(rng() * copy.length);
+      out.push(copy.splice(idx, 1)[0]);
+    }
+    return out;
+  };
+  const hard = pick(HARD_QUESTS, 1);
+  const easy = pick(EASY_QUESTS, 2);
+  return [...hard, ...easy].map((def) => ({ def, progress: 0, claimed: false }));
+}
+function loadQuests(): QuestState {
+  const today = todayStr();
+  const saved = loadJSON<QuestState | null>(LS.quests, null);
+  if (saved && saved.date === today && saved.quests?.length) return saved;
+  return { date: today, quests: pickDailyQuests(today) };
+}
 
 function loadJSON<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -149,6 +214,9 @@ function Game() {
   const [skinId, setSkinId] = useState<string>("classic");
   const [mapId, setMapId] = useState<string>("twilight");
   const [shopTab, setShopTab] = useState<null | "skins" | "maps">(null);
+  const [questsOpen, setQuestsOpen] = useState(false);
+  const [questState, setQuestState] = useState<QuestState>({ date: todayStr(), quests: [] });
+  const totalCoinsRef = useRef(0);
   const skinRef = useRef<Skin>(SKINS[0]);
   const mapRef = useRef<MapTheme>(MAPS[0]);
   const [muted, setMuted] = useState(false);
@@ -165,6 +233,7 @@ function Game() {
     setOwnedMaps(loadJSON<string[]>(LS.ownedMaps, ["twilight"]));
     setSkinId(loadJSON<string>(LS.skin, "classic"));
     setMapId(loadJSON<string>(LS.map, "twilight"));
+    setQuestState(loadQuests());
   }, []);
 
   // Keep render refs in sync with current selection
@@ -402,7 +471,49 @@ function Game() {
     setScore(d);
     setBest((b) => Math.max(b, d));
     setBestCoins((b) => Math.max(b, coinCount.current));
+    const runCoins = coinCount.current;
+    totalCoinsRef.current += runCoins;
+    setQuestState((qs) => {
+      const today = todayStr();
+      if (qs.date !== today) {
+        const fresh = { date: today, quests: pickDailyQuests(today) };
+        saveJSON(LS.quests, fresh);
+        return fresh;
+      }
+      const next = {
+        ...qs,
+        quests: qs.quests.map((q) => {
+          if (q.claimed) return q;
+          let inc = 0;
+          if (q.def.metric === "runCoins") inc = Math.max(q.progress, runCoins);
+          else if (q.def.metric === "runScore") inc = Math.max(q.progress, d);
+          else if (q.def.metric === "games") inc = q.progress + 1;
+          else if (q.def.metric === "totalCoins") inc = q.progress + runCoins;
+          return { ...q, progress: Math.min(q.def.target, inc) };
+        }),
+      };
+      saveJSON(LS.quests, next);
+      return next;
+    });
     setState(nextState);
+  }, []);
+
+  const claimQuest = useCallback((id: string) => {
+    setQuestState((qs) => {
+      const q = qs.quests.find((x) => x.def.id === id);
+      if (!q || q.claimed || q.progress < q.def.target) return qs;
+      const next = {
+        ...qs,
+        quests: qs.quests.map((x) => (x.def.id === id ? { ...x, claimed: true } : x)),
+      };
+      saveJSON(LS.quests, next);
+      setWallet((w) => {
+        const nw = w + q.def.reward;
+        saveJSON(LS.wallet, nw);
+        return nw;
+      });
+      return next;
+    });
   }, []);
 
 
@@ -1073,6 +1184,15 @@ function Game() {
               >
                 🗺 Карты
               </button>
+              <button
+                onClick={() => setQuestsOpen(true)}
+                className="relative rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
+              >
+                🎯 Задания
+                {questState.quests.some((q) => !q.claimed && q.progress >= q.def.target) && (
+                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse rounded-full bg-green-400 ring-2 ring-black/60" />
+                )}
+              </button>
             </div>
             <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/60 bg-black/40 px-3 py-1 font-mono text-xs font-bold text-yellow-300">
               <span>●</span>
@@ -1097,6 +1217,14 @@ function Game() {
             onBuySkin={buySkin}
             onBuyMap={buyMap}
             onClose={() => setShopTab(null)}
+          />
+        )}
+
+        {state === "menu" && questsOpen && (
+          <QuestsOverlay
+            questState={questState}
+            onClaim={claimQuest}
+            onClose={() => setQuestsOpen(false)}
           />
         )}
 
@@ -1925,4 +2053,92 @@ function drawCoin(ctx: CanvasRenderingContext2D, c: Coin) {
     ctx.fillRect(-5, -1, 10, 2);
   }
   ctx.restore();
+}
+
+function QuestsOverlay({
+  questState,
+  onClaim,
+  onClose,
+}: {
+  questState: QuestState;
+  onClaim: (id: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-30 flex flex-col bg-black/85 backdrop-blur-md">
+      <div className="flex items-center justify-between border-b border-white/10 p-3">
+        <div className="text-base font-bold uppercase tracking-wider text-white">
+          🎯 Ежедневные задания
+        </div>
+        <button
+          onClick={onClose}
+          className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white hover:bg-white/20"
+        >
+          ✕
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3">
+        <div className="flex flex-col gap-2">
+          {questState.quests.map((q) => {
+            const pct = Math.min(100, (q.progress / q.def.target) * 100);
+            const done = q.progress >= q.def.target;
+            const hard = q.def.difficulty === "hard";
+            return (
+              <div
+                key={q.def.id}
+                className={`rounded-lg border p-3 ${
+                  hard
+                    ? "border-orange-400/50 bg-orange-500/10"
+                    : "border-white/15 bg-white/5"
+                }`}
+              >
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        hard
+                          ? "bg-orange-500/30 text-orange-200"
+                          : "bg-white/15 text-white/80"
+                      }`}
+                    >
+                      {hard ? "Сложно" : "Легко"}
+                    </span>
+                    <span className="text-sm font-bold text-white">{q.def.title}</span>
+                  </div>
+                  <div className="font-mono text-xs font-bold text-yellow-300">
+                    ● {q.def.reward}
+                  </div>
+                </div>
+                <div className="mb-2 h-2 overflow-hidden rounded-full bg-black/40">
+                  <div
+                    className={`h-full transition-all ${
+                      hard
+                        ? "bg-gradient-to-r from-orange-400 to-red-500"
+                        : "bg-gradient-to-r from-yellow-300 to-orange-400"
+                    }`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="font-mono text-[11px] text-white/60">
+                    {Math.min(q.progress, q.def.target)} / {q.def.target}
+                  </div>
+                  <button
+                    disabled={!done || q.claimed}
+                    onClick={() => onClaim(q.def.id)}
+                    className="rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-black shadow disabled:cursor-not-allowed disabled:from-white/10 disabled:to-white/10 disabled:text-white/40 disabled:shadow-none"
+                  >
+                    {q.claimed ? "Получено" : done ? "Забрать" : "В процессе"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-white/40">
+          Новые задания каждый день
+        </p>
+      </div>
+    </div>
+  );
 }
