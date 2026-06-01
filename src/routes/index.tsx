@@ -1187,6 +1187,164 @@ function Overlay({ children }: { children: React.ReactNode }) {
   );
 }
 
+interface ShopOverlayProps {
+  tab: "skins" | "maps";
+  wallet: number;
+  skinId: string;
+  mapId: string;
+  ownedSkins: string[];
+  ownedMaps: string[];
+  onBuySkin: (s: Skin) => void;
+  onBuyMap: (m: MapTheme) => void;
+  onClose: () => void;
+  onSwitchTab: (t: "skins" | "maps") => void;
+}
+
+function ShopOverlay({
+  tab,
+  wallet,
+  skinId,
+  mapId,
+  ownedSkins,
+  ownedMaps,
+  onBuySkin,
+  onBuyMap,
+  onClose,
+  onSwitchTab,
+}: ShopOverlayProps) {
+  return (
+    <div className="absolute inset-0 z-30 flex flex-col bg-black/85 backdrop-blur-md">
+      <div className="flex items-center justify-between border-b border-white/10 p-3">
+        <button
+          onClick={onClose}
+          className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs text-white/80 hover:bg-white/15"
+        >
+          ← Назад
+        </button>
+        <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/60 bg-black/40 px-3 py-1 font-mono text-sm font-bold text-yellow-300">
+          <span>●</span>
+          <span>{wallet.toLocaleString()}</span>
+        </div>
+      </div>
+      <div className="flex justify-center gap-2 p-3">
+        <button
+          onClick={() => onSwitchTab("skins")}
+          className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
+            tab === "skins" ? "bg-orange-500 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"
+          }`}
+        >
+          Скины
+        </button>
+        <button
+          onClick={() => onSwitchTab("maps")}
+          className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
+            tab === "maps" ? "bg-orange-500 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"
+          }`}
+        >
+          Карты
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto px-3 pb-4">
+        <div className="grid grid-cols-1 gap-2.5">
+          {tab === "skins" &&
+            SKINS.map((s) => {
+              const owned = ownedSkins.includes(s.id);
+              const selected = skinId === s.id;
+              const canBuy = owned || wallet >= s.price;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => onBuySkin(s)}
+                  disabled={!canBuy}
+                  className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                    selected
+                      ? "border-orange-400 bg-orange-500/15"
+                      : "border-white/15 bg-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="h-10 w-14 rounded-md border border-white/20"
+                      style={{
+                        background: `linear-gradient(180deg, ${s.fuse[0]}, ${s.fuse[1]} 55%, ${s.fuse[2]})`,
+                      }}
+                    />
+                    <div>
+                      <div className="text-sm font-bold text-white">{s.name}</div>
+                      <div className="text-[10px] uppercase tracking-wider text-white/50">
+                        {owned ? (selected ? "Выбрано" : "Куплено") : `● ${s.price}`}
+                      </div>
+                    </div>
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                      selected
+                        ? "bg-orange-500 text-white"
+                        : owned
+                          ? "bg-white/15 text-white"
+                          : canBuy
+                            ? "bg-yellow-400 text-black"
+                            : "bg-white/10 text-white/40"
+                    }`}
+                  >
+                    {selected ? "✓" : owned ? "Выбрать" : canBuy ? "Купить" : "Не хватает"}
+                  </span>
+                </button>
+              );
+            })}
+          {tab === "maps" &&
+            MAPS.map((m) => {
+              const owned = ownedMaps.includes(m.id);
+              const selected = mapId === m.id;
+              const canBuy = owned || wallet >= m.price;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => onBuyMap(m)}
+                  disabled={!canBuy}
+                  className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                    selected
+                      ? "border-orange-400 bg-orange-500/15"
+                      : "border-white/15 bg-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="h-10 w-14 rounded-md border border-white/20"
+                      style={{
+                        background: `linear-gradient(180deg, ${m.sky[0]}, ${m.sky[1]} 40%, ${m.sky[2]} 75%, ${m.sky[3]})`,
+                      }}
+                    />
+                    <div>
+                      <div className="text-sm font-bold text-white">{m.name}</div>
+                      <div className="text-[10px] uppercase tracking-wider text-white/50">
+                        {owned ? (selected ? "Выбрано" : "Куплено") : `● ${m.price}`}
+                      </div>
+                    </div>
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                      selected
+                        ? "bg-orange-500 text-white"
+                        : owned
+                          ? "bg-white/15 text-white"
+                          : canBuy
+                            ? "bg-yellow-400 text-black"
+                            : "bg-white/10 text-white/40"
+                    }`}
+                  >
+                    {selected ? "✓" : owned ? "Выбрать" : canBuy ? "Купить" : "Не хватает"}
+                  </span>
+                </button>
+              );
+            })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 function Badge({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <span
