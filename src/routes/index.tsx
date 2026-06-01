@@ -17,7 +17,7 @@ export const Route = createFileRoute("/")({
 
 type GameState = "menu" | "playing" | "revive" | "over";
 
-const REVIVE_COST = 600;
+const REVIVE_COST = 100;
 const REVIVE_SECONDS = 10;
 type PowerKind = "shield" | "slowmo" | "boost";
 
