@@ -5,11 +5,11 @@ import gameIcon from "../assets/game-icon.png";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Jet Rush" },
+      { title: "Space Rush" },
       {
         name: "description",
         content:
-          "Jet Rush — pilot a fighter jet through a deadly canyon, dodge homing missiles and grab power-ups.",
+          "Space Rush — пилотируй звездолёт через астероидный коридор, уворачивайся от ракет и собирай космические бонусы.",
       },
     ],
   }),
@@ -48,11 +48,11 @@ const SKINS: Skin[] = [
 ];
 
 const MAPS: MapTheme[] = [
-  { id: "twilight", name: "Twilight Desert", price: 0, sky: ["#0a0814", "#1d1230", "#5a2438", "#1a0a10"], sun: "#ffcf85", sunAlpha: "255,180,90" },
-  { id: "arctic", name: "Arctic", price: 300, sky: ["#0a1a2a", "#1a3a55", "#3a6a8a", "#0e1a26"], sun: "#e8f5ff", sunAlpha: "180,220,255" },
-  { id: "sunset", name: "Sunset", price: 250, sky: ["#1a0a0a", "#4a1418", "#c25028", "#ff8a3a"], sun: "#fff0a0", sunAlpha: "255,200,120" },
-  { id: "neoncity", name: "Neon City", price: 600, sky: ["#0a0220", "#2a0a48", "#600a78", "#10001a"], sun: "#ff60c0", sunAlpha: "255,90,200" },
-  { id: "space", name: "Deep Space", price: 900, sky: ["#000004", "#06061a", "#101030", "#000000"], sun: "#ffffff", sunAlpha: "200,200,255" },
+  { id: "space", name: "Глубокий Космос", price: 0, sky: ["#000004", "#06061a", "#101030", "#000000"], sun: "#ffffff", sunAlpha: "200,200,255" },
+  { id: "nebula", name: "Туманность", price: 250, sky: ["#1a0028", "#3a0a55", "#7028a0", "#10001a"], sun: "#ff90f0", sunAlpha: "255,150,240" },
+  { id: "mars", name: "Орбита Марса", price: 300, sky: ["#1a0808", "#3a1410", "#8a3018", "#2a0a08"], sun: "#ffb070", sunAlpha: "255,170,100" },
+  { id: "ice", name: "Ледяной Пояс", price: 400, sky: ["#04101a", "#0a2845", "#2a6a9a", "#06121c"], sun: "#d0f0ff", sunAlpha: "180,220,255" },
+  { id: "blackhole", name: "Чёрная Дыра", price: 900, sky: ["#000000", "#0a0218", "#3a0848", "#000000"], sun: "#c060ff", sunAlpha: "180,80,255" },
 ];
 
 const LS = {
@@ -211,9 +211,9 @@ function Game() {
   const walletRef = useRef(0);
   walletRef.current = wallet;
   const [ownedSkins, setOwnedSkins] = useState<string[]>(["classic"]);
-  const [ownedMaps, setOwnedMaps] = useState<string[]>(["twilight"]);
+  const [ownedMaps, setOwnedMaps] = useState<string[]>(["space"]);
   const [skinId, setSkinId] = useState<string>("classic");
-  const [mapId, setMapId] = useState<string>("twilight");
+  const [mapId, setMapId] = useState<string>("space");
   const [shopTab, setShopTab] = useState<null | "skins" | "maps">(null);
   const [questsOpen, setQuestsOpen] = useState(false);
   const [questState, setQuestState] = useState<QuestState>({ date: todayStr(), quests: [] });
@@ -231,9 +231,9 @@ function Game() {
   useEffect(() => {
     setWallet(loadJSON<number>(LS.wallet, 0));
     setOwnedSkins(loadJSON<string[]>(LS.ownedSkins, ["classic"]));
-    setOwnedMaps(loadJSON<string[]>(LS.ownedMaps, ["twilight"]));
+    setOwnedMaps(loadJSON<string[]>(LS.ownedMaps, ["space"]));
     setSkinId(loadJSON<string>(LS.skin, "classic"));
-    setMapId(loadJSON<string>(LS.map, "twilight"));
+    setMapId(loadJSON<string>(LS.map, "space"));
     setQuestState(loadQuests());
   }, []);
 
@@ -1089,7 +1089,7 @@ function Game() {
   });
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#1a0a20] via-[#2a0f1a] to-[#0a0510] p-3">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#05021a] via-[#0a0530] to-[#000004] p-3">
       <div
         className="relative w-full overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
         style={{ maxWidth: W, aspectRatio: `${W}/${H}` }}
@@ -1155,19 +1155,19 @@ function Game() {
               <div className="relative">
                 <img
                   src={gameIcon}
-                  alt="Jet Rush"
+                  alt="Space Rush"
                   width={96}
                   height={96}
-                  className="h-20 w-20 rounded-2xl shadow-lg shadow-orange-500/30 sm:h-24 sm:w-24"
+                  className="h-20 w-20 rounded-2xl shadow-lg shadow-indigo-500/40 sm:h-24 sm:w-24"
                 />
-                <div className="absolute -inset-2 -z-10 animate-pulse rounded-full bg-orange-500/20 blur-2xl" />
+                <div className="absolute -inset-2 -z-10 animate-pulse rounded-full bg-indigo-500/30 blur-2xl" />
               </div>
-              <h2 className="bg-gradient-to-b from-yellow-200 via-orange-400 to-red-600 bg-clip-text text-3xl font-black tracking-tighter text-transparent drop-shadow-[0_4px_12px_rgba(255,120,40,0.5)] sm:text-4xl md:text-5xl">
-                JET RUSH
+              <h2 className="bg-gradient-to-b from-cyan-200 via-indigo-400 to-fuchsia-600 bg-clip-text text-3xl font-black tracking-tighter text-transparent drop-shadow-[0_4px_12px_rgba(120,120,255,0.5)] sm:text-4xl md:text-5xl">
+                SPACE RUSH
               </h2>
             </div>
             <p className="max-w-xs text-center text-sm text-white/80">
-              Тапай <b>верх</b> / <b>низ</b> экрана, чтобы маневрировать. Уворачивайся от ракет, собирай монеты и бонусы.
+              Тапай <b>верх</b> / <b>низ</b> экрана, чтобы маневрировать. Уворачивайся от ракет, собирай космо-монеты и бонусы.
             </p>
             <div className="flex flex-wrap justify-center gap-2.5 text-[11px] text-white/85">
               <LegendChip color="#6bd4ff" label="Щит" />
