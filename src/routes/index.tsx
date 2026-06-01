@@ -17,8 +17,9 @@ const W = 800;
 const H = 500;
 const PLANE_X = 120;
 const PLANE_SIZE = 24;
-const SCROLL_SPEED = 4;
-const PLAYER_SPEED = 4;
+const BASE_SPEED = 3.5;
+const MAX_SPEED = 10;
+const PLAYER_SPEED = 4.5;
 
 interface Segment {
   topH: number;
@@ -94,31 +95,46 @@ function Game() {
         if (keys.current.up) planeY.current -= PLAYER_SPEED;
         if (keys.current.down) planeY.current += PLAYER_SPEED;
 
+        // dynamic speed — grows with distance
+        const speed = Math.min(MAX_SPEED, BASE_SPEED + distance.current / 2500);
+
         // scroll
-        offset.current += SCROLL_SPEED;
-        distance.current += SCROLL_SPEED;
+        offset.current += speed;
+        distance.current += speed;
         while (offset.current >= SEG_W) {
           offset.current -= SEG_W;
           segments.current.shift();
           const last = segments.current[segments.current.length - 1];
-          const lastCenter = H / 2 + (H / 2 - last.topH - (H - last.topH - last.botH) / 2);
-          // smooth random walk
           const prevTop = last.topH;
           const prevBot = last.botH;
           const prevGap = H - prevTop - prevBot;
           const prevCenter = prevTop + prevGap / 2;
-          const difficulty = Math.min(1, distance.current / 8000);
-          const minGap = 220 - 90 * difficulty;
-          const newGap = Math.max(minGap, prevGap + (Math.random() - 0.5) * 30);
-          const newCenter = Math.max(
-            newGap / 2 + 30,
-            Math.min(H - newGap / 2 - 30, prevCenter + (Math.random() - 0.5) * 50),
-          );
+
+          const difficulty = Math.min(1, distance.current / 6000);
+          const segIndex = Math.floor(distance.current / SEG_W);
+
+          // every ~40 segments spawn a Flappy-style "pipe" chokepoint with random gap height
+          const isPipe = segIndex > 0 && segIndex % 40 === 0;
+          let newGap: number;
+          let newCenter: number;
+
+          if (isPipe) {
+            const minPipeGap = 130 - 40 * difficulty;
+            newGap = minPipeGap + Math.random() * 40;
+            newCenter = 60 + newGap / 2 + Math.random() * (H - 120 - newGap);
+          } else {
+            const minGap = 230 - 110 * difficulty;
+            newGap = Math.max(minGap, prevGap + (Math.random() - 0.5) * 50);
+            const drift = 40 + 50 * difficulty;
+            newCenter = Math.max(
+              newGap / 2 + 20,
+              Math.min(H - newGap / 2 - 20, prevCenter + (Math.random() - 0.5) * drift),
+            );
+          }
           segments.current.push({
             topH: newCenter - newGap / 2,
             botH: H - (newCenter + newGap / 2),
           });
-          void lastCenter;
         }
 
         // collision
@@ -263,6 +279,9 @@ function Game() {
         />
         <div className="pointer-events-none absolute left-4 top-3 font-mono text-lg text-white drop-shadow">
           Score: {score} {best > 0 && <span className="ml-3 opacity-70">Best: {best}</span>}
+        </div>
+        <div className="pointer-events-none absolute right-4 top-3 font-mono text-sm text-white/80 drop-shadow">
+          Speed: {Math.min(MAX_SPEED, BASE_SPEED + score / 250).toFixed(1)}x
         </div>
 
         {state === "menu" && (
