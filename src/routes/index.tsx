@@ -1238,7 +1238,6 @@ interface ShopOverlayProps {
   onBuySkin: (s: Skin) => void;
   onBuyMap: (m: MapTheme) => void;
   onClose: () => void;
-  onSwitchTab: (t: "skins" | "maps") => void;
 }
 
 function ShopOverlay({
@@ -1251,7 +1250,6 @@ function ShopOverlay({
   onBuySkin,
   onBuyMap,
   onClose,
-  onSwitchTab,
 }: ShopOverlayProps) {
   return (
     <div className="absolute inset-0 z-30 flex flex-col bg-black/85 backdrop-blur-md">
