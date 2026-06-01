@@ -1129,12 +1129,12 @@ function Game() {
             </p>
             <button
               onClick={revive}
-              disabled={coins < REVIVE_COST}
+              disabled={wallet < REVIVE_COST}
               className="group relative overflow-hidden rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-7 py-2.5 text-base font-bold text-black shadow-lg shadow-yellow-500/40 transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="relative z-10">♥ ОЖИВИТЬ · ● {REVIVE_COST}</span>
             </button>
-            <div className="font-mono text-xs text-yellow-300/90">У тебя: ● {coins}</div>
+            <div className="font-mono text-xs text-yellow-300/90">У тебя: ● {wallet}</div>
             <button
               onClick={finalizeOver}
               className="text-xs uppercase tracking-widest text-white/50 hover:text-white/80"
