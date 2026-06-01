@@ -142,6 +142,8 @@ function Game() {
   const [reviveLeft, setReviveLeft] = useState(REVIVE_SECONDS);
   const usedRevive = useRef(false);
   const [wallet, setWallet] = useState(0);
+  const walletRef = useRef(0);
+  walletRef.current = wallet;
   const [ownedSkins, setOwnedSkins] = useState<string[]>(["classic"]);
   const [ownedMaps, setOwnedMaps] = useState<string[]>(["twilight"]);
   const [skinId, setSkinId] = useState<string>("classic");
