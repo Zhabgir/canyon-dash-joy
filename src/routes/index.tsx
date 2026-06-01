@@ -756,79 +756,152 @@ function Game() {
     return () => cancelAnimationFrame(raf);
   }, [die, sfxCoin, sfxPower, sfxShieldHit]);
 
+  // touch controls — tap/hold top half = up, bottom half = down
+  const touchHandlers = (which: "up" | "down") => ({
+    onTouchStart: (e: React.TouchEvent) => {
+      e.preventDefault();
+      keys.current[which] = true;
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      e.preventDefault();
+      keys.current[which] = false;
+    },
+    onMouseDown: () => {
+      keys.current[which] = true;
+    },
+    onMouseUp: () => {
+      keys.current[which] = false;
+    },
+    onMouseLeave: () => {
+      keys.current[which] = false;
+    },
+  });
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-4">
-      <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
-        Jet <span className="text-primary">Rush</span>
-      </h1>
-      <div className="relative" style={{ width: W, maxWidth: "100%" }}>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#1a0a20] via-[#2a0f1a] to-[#0a0510] p-3">
+      <div
+        className="relative w-full overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
+        style={{ maxWidth: W, aspectRatio: `${W}/${H}` }}
+      >
         <canvas
           ref={canvasRef}
           width={W}
           height={H}
-          className="w-full rounded-lg border border-border shadow-lg"
-          style={{ aspectRatio: `${W}/${H}` }}
+          className="block h-full w-full"
         />
-        <div className="pointer-events-none absolute left-4 top-3 font-mono text-lg text-white drop-shadow">
-          {score.toLocaleString()}{" "}
+
+        {/* HUD: score & best */}
+        <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-0.5 font-mono text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          <div className="text-2xl font-extrabold tracking-tight">
+            {score.toLocaleString()}
+          </div>
           {best > 0 && (
-            <span className="ml-3 text-sm opacity-70">Best {best.toLocaleString()}</span>
+            <div className="text-[10px] uppercase tracking-widest text-white/60">
+              Best {best.toLocaleString()}
+            </div>
           )}
         </div>
-        <div className="pointer-events-none absolute right-4 top-3 flex flex-col items-end gap-1.5 font-mono text-xs text-white/90 drop-shadow">
-          <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/60 bg-black/50 px-3 py-1 text-sm font-bold text-yellow-300">
+
+        {/* coins + active buffs */}
+        <div className="pointer-events-none absolute right-3 top-3 flex flex-col items-end gap-1.5 font-mono drop-shadow">
+          <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/70 bg-black/60 px-3 py-1 text-sm font-bold text-yellow-300 backdrop-blur-sm">
             <span className="text-base leading-none">●</span>
             <span>{coins}</span>
           </div>
-          <div className="flex items-center gap-2">
-            {hud.shield && <Badge color="#6bd4ff">⛨ SHIELD</Badge>}
-            {hud.slowmo > 0 && <Badge color="#b48bff">⧖ {Math.ceil(hud.slowmo / 60)}s</Badge>}
-            {hud.boost > 0 && <Badge color="#ffce4a">⚡ {Math.ceil(hud.boost / 60)}s</Badge>}
+          <div className="flex items-center gap-1.5">
+            {hud.shield && <Badge color="#6bd4ff">⛨</Badge>}
+            {hud.slowmo > 0 && <Badge color="#b48bff">⧖ {Math.ceil(hud.slowmo / 60)}</Badge>}
+            {hud.boost > 0 && <Badge color="#ffce4a">⚡ {Math.ceil(hud.boost / 60)}</Badge>}
           </div>
         </div>
 
+        {/* mute toggle */}
+        <button
+          onClick={() => setMuted((m) => !m)}
+          className="absolute bottom-3 right-3 z-20 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs text-white/80 backdrop-blur-sm hover:bg-black/80"
+          aria-label={muted ? "Unmute" : "Mute"}
+        >
+          {muted ? "🔇" : "🔊"}
+        </button>
+
+        {/* touch zones — only active during play */}
+        {state === "playing" && (
+          <>
+            <div
+              className="absolute inset-x-0 top-0 z-10 h-1/2"
+              {...touchHandlers("up")}
+            />
+            <div
+              className="absolute inset-x-0 bottom-0 z-10 h-1/2"
+              {...touchHandlers("down")}
+            />
+          </>
+        )}
+
         {state === "menu" && (
           <Overlay>
-            <h2 className="text-3xl font-bold tracking-tight text-white">JET RUSH</h2>
-            <p className="max-w-sm text-center text-sm text-white/80">
-              Управление: ↑ / ↓ (или W / S). Пролетай каньон, уворачивайся от ракет, собирай бонусы.
+            <div className="relative">
+              <h2 className="bg-gradient-to-b from-yellow-200 via-orange-400 to-red-600 bg-clip-text text-5xl font-black tracking-tighter text-transparent drop-shadow-[0_4px_12px_rgba(255,120,40,0.5)] sm:text-6xl">
+                JET RUSH
+              </h2>
+              <div className="absolute -inset-2 -z-10 animate-pulse rounded-full bg-orange-500/20 blur-2xl" />
+            </div>
+            <p className="max-w-xs text-center text-sm text-white/80">
+              Тапай <b>верх</b> / <b>низ</b> экрана, чтобы маневрировать. Уворачивайся от ракет, собирай монеты и бонусы.
             </p>
-            <div className="flex gap-3 text-xs text-white/80">
+            <div className="flex gap-2.5 text-[11px] text-white/85">
               <LegendChip color="#6bd4ff" label="Щит" />
-              <LegendChip color="#b48bff" label="Замедление" />
-              <LegendChip color="#ffce4a" label="Ускорение" />
+              <LegendChip color="#b48bff" label="Slow-Mo" />
+              <LegendChip color="#ffce4a" label="Boost" />
             </div>
             <button
               onClick={start}
-              className="rounded-md bg-primary px-6 py-2 text-base font-medium text-primary-foreground hover:bg-primary/90"
+              className="group relative mt-2 overflow-hidden rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-10 py-3 text-lg font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95"
             >
-              Start
+              <span className="relative z-10">▶  PLAY</span>
+              <span className="absolute inset-0 -z-0 animate-pulse bg-white/20 opacity-0 group-hover:opacity-100" />
             </button>
+            {best > 0 && (
+              <p className="text-xs text-white/50">
+                Лучший: <span className="font-mono text-white/80">{best.toLocaleString()}</span> · ● {bestCoins}
+              </p>
+            )}
           </Overlay>
         )}
 
         {state === "over" && (
           <Overlay>
-            <h2 className="text-2xl font-semibold text-white">Mission Failed</h2>
-            <p className="text-white/80">
-              Score: <span className="font-mono">{score.toLocaleString()}</span>
-            </p>
-            <p className="font-mono text-yellow-300">● {coins} coins</p>
+            <h2 className="text-3xl font-black uppercase tracking-wider text-red-400 drop-shadow-[0_2px_8px_rgba(255,60,40,0.6)]">
+              Crashed
+            </h2>
+            <div className="flex flex-col items-center gap-1">
+              <div className="font-mono text-4xl font-bold text-white">
+                {score.toLocaleString()}
+              </div>
+              <div className="font-mono text-base text-yellow-300">● {coins}</div>
+            </div>
             {(best > 0 || bestCoins > 0) && (
               <p className="text-xs text-white/60">
-                Best: {best.toLocaleString()} · ● {bestCoins}
+                Best: <span className="font-mono text-white/85">{best.toLocaleString()}</span> · ● {bestCoins}
+              </p>
+            )}
+            {score >= best && score > 0 && (
+              <p className="animate-pulse text-sm font-bold uppercase tracking-widest text-yellow-300">
+                ★ New Record ★
               </p>
             )}
             <button
               onClick={start}
-              className="rounded-md bg-primary px-6 py-2 text-base font-medium text-primary-foreground hover:bg-primary/90"
+              className="mt-1 rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-8 py-2.5 text-base font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95"
             >
-              Restart
+              ↻  RETRY
             </button>
           </Overlay>
         )}
       </div>
-      <p className="text-sm text-muted-foreground">↑ / ↓ — управление · Space — старт</p>
+      <p className="text-center text-xs text-white/50">
+        ↑ / ↓ или тапай по экрану · Space — старт
+      </p>
     </div>
   );
 }
