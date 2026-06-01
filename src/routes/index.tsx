@@ -154,7 +154,61 @@ function Game() {
           });
         }
 
-        // collision
+        // spawn falling rocks
+        const difficultyAll = Math.min(1, distance.current / 6000);
+        rockTimer.current -= 1;
+        if (rockTimer.current <= 0) {
+          // find a safe-ish x (within visible play area)
+          const x = 200 + Math.random() * (W - 250);
+          // y starts above the canyon ceiling for that column
+          const colIdx = Math.floor((x + offset.current) / SEG_W);
+          const topAtX = segments.current[colIdx]?.topH ?? 0;
+          const r = 6 + Math.random() * 10;
+          rocks.current.push({
+            x,
+            y: topAtX - r - 4,
+            r,
+            vy: 1.4 + Math.random() * 1.6 + difficultyAll * 2.5,
+            vx: -speed * 0.4 + (Math.random() - 0.5) * 1.2,
+            rot: Math.random() * Math.PI,
+            spin: (Math.random() - 0.5) * 0.12,
+          });
+          rockTimer.current = Math.max(18, 75 - difficultyAll * 45 - Math.random() * 20);
+        }
+        // update rocks
+        for (let i = rocks.current.length - 1; i >= 0; i--) {
+          const rk = rocks.current[i];
+          rk.x += rk.vx;
+          rk.y += rk.vy;
+          rk.vy += 0.08;
+          rk.rot += rk.spin;
+          // remove offscreen or buried in bottom wall
+          const colIdx = Math.floor((rk.x + offset.current) / SEG_W);
+          const segR = segments.current[colIdx];
+          if (
+            rk.x < -30 ||
+            rk.x > W + 30 ||
+            (segR && rk.y - rk.r > H - segR.botH)
+          ) {
+            rocks.current.splice(i, 1);
+            continue;
+          }
+          // collision with plane (circle vs rect)
+          const dx = Math.max(PLANE_X - PLANE_SIZE / 2, Math.min(rk.x, PLANE_X + PLANE_SIZE / 2));
+          const dy = Math.max(
+            planeY.current - PLANE_SIZE / 2,
+            Math.min(rk.y, planeY.current + PLANE_SIZE / 2),
+          );
+          const dd = (dx - rk.x) ** 2 + (dy - rk.y) ** 2;
+          if (dd < rk.r * rk.r) {
+            const d = Math.floor(distance.current / 10);
+            setScore(d);
+            setBest((b) => Math.max(b, d));
+            setState("over");
+          }
+        }
+
+        // collision with canyon walls
         const idx = Math.floor((PLANE_X + offset.current) / SEG_W);
         const seg = segments.current[idx];
         if (seg) {
