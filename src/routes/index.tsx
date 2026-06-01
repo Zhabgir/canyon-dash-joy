@@ -397,7 +397,7 @@ function Game() {
           const spawnY = topY + Math.random() * Math.max(20, botY - topY);
           const spawnX = W + 20;
           const targetY = planeY.current + (Math.random() - 0.5) * 70;
-          const sp = 5 + difficultyFor() * 3.5 + Math.random() * 1.5;
+          const sp = (5 + difficultyFor() * 3.5 + Math.random() * 1.5) * 0.7;
           const dx = -W;
           const dy = targetY - spawnY;
           const dist = Math.hypot(dx, dy);
