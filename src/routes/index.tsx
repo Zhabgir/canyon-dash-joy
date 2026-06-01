@@ -48,8 +48,8 @@ function Game() {
     distance.current = 0;
     segments.current = [];
     const count = Math.ceil(W / SEG_W) + 2;
-    let gap = 260;
-    let center = H / 2;
+    const gap = 260;
+    const center = H / 2;
     for (let i = 0; i < count; i++) {
       const top = center - gap / 2;
       const bot = H - (center + gap / 2);
@@ -127,7 +127,10 @@ function Game() {
               newGap / 2 + 28,
               Math.min(
                 H - newGap / 2 - 28,
-                Math.max(prevCenter - maxCenterStep, Math.min(prevCenter + maxCenterStep, targetCenter)),
+                Math.max(
+                  prevCenter - maxCenterStep,
+                  Math.min(prevCenter + maxCenterStep, targetCenter),
+                ),
               ),
             );
           } else {
