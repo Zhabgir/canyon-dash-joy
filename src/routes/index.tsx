@@ -154,53 +154,52 @@ function Game() {
           });
         }
 
-        // spawn falling rocks
+        // spawn missiles flying toward the player from ahead (right side)
         const difficultyAll = Math.min(1, distance.current / 6000);
         rockTimer.current -= 1;
         if (rockTimer.current <= 0) {
-          // find a safe-ish x (within visible play area)
-          const x = 200 + Math.random() * (W - 250);
-          // y starts above the canyon ceiling for that column
-          const colIdx = Math.floor((x + offset.current) / SEG_W);
-          const topAtX = segments.current[colIdx]?.topH ?? 0;
-          const r = 6 + Math.random() * 10;
+          // spawn from right edge, aimed roughly at current plane position
+          const spawnX = W + 20;
+          // pick a y inside the canyon gap at the right edge
+          const rightIdx = segments.current.length - 2;
+          const segR = segments.current[rightIdx];
+          const topY = segR ? segR.topH + 10 : 30;
+          const botY = segR ? H - segR.botH - 10 : H - 30;
+          const spawnY = topY + Math.random() * Math.max(20, botY - topY);
+          // aim toward plane with slight lead/jitter
+          const targetY = planeY.current + (Math.random() - 0.5) * 80;
+          const baseSpeed = 5 + difficultyAll * 3.5 + Math.random() * 1.5;
+          const dx = -W; // distance to travel leftward
+          const dy = targetY - spawnY;
+          const dist = Math.hypot(dx, dy);
           rocks.current.push({
-            x,
-            y: topAtX - r - 4,
-            r,
-            vy: 1.4 + Math.random() * 1.6 + difficultyAll * 2.5,
-            vx: -speed * 0.4 + (Math.random() - 0.5) * 1.2,
-            rot: Math.random() * Math.PI,
-            spin: (Math.random() - 0.5) * 0.12,
+            x: spawnX,
+            y: spawnY,
+            vx: (dx / dist) * baseSpeed,
+            vy: (dy / dist) * baseSpeed,
+            trail: [],
           });
-          rockTimer.current = Math.max(18, 75 - difficultyAll * 45 - Math.random() * 20);
+          rockTimer.current = Math.max(28, 95 - difficultyAll * 55 - Math.random() * 25);
         }
-        // update rocks
+        // update missiles
         for (let i = rocks.current.length - 1; i >= 0; i--) {
-          const rk = rocks.current[i];
-          rk.x += rk.vx;
-          rk.y += rk.vy;
-          rk.vy += 0.08;
-          rk.rot += rk.spin;
-          // remove offscreen or buried in bottom wall
-          const colIdx = Math.floor((rk.x + offset.current) / SEG_W);
-          const segR = segments.current[colIdx];
-          if (
-            rk.x < -30 ||
-            rk.x > W + 30 ||
-            (segR && rk.y - rk.r > H - segR.botH)
-          ) {
+          const m = rocks.current[i];
+          m.trail.push({ x: m.x, y: m.y });
+          if (m.trail.length > 10) m.trail.shift();
+          m.x += m.vx;
+          m.y += m.vy;
+          if (m.x < -40 || m.x > W + 60 || m.y < -40 || m.y > H + 40) {
             rocks.current.splice(i, 1);
             continue;
           }
-          // collision with plane (circle vs rect)
-          const dx = Math.max(PLANE_X - PLANE_SIZE / 2, Math.min(rk.x, PLANE_X + PLANE_SIZE / 2));
-          const dy = Math.max(
-            planeY.current - PLANE_SIZE / 2,
-            Math.min(rk.y, planeY.current + PLANE_SIZE / 2),
-          );
-          const dd = (dx - rk.x) ** 2 + (dy - rk.y) ** 2;
-          if (dd < rk.r * rk.r) {
+          // collision with plane (point vs rect with small radius)
+          const hitR = 5;
+          if (
+            m.x > PLANE_X - PLANE_SIZE / 2 - hitR &&
+            m.x < PLANE_X + PLANE_SIZE / 2 + hitR &&
+            m.y > planeY.current - PLANE_SIZE / 2 - hitR &&
+            m.y < planeY.current + PLANE_SIZE / 2 + hitR
+          ) {
             const d = Math.floor(distance.current / 10);
             setScore(d);
             setBest((b) => Math.max(b, d));
