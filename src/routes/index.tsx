@@ -477,7 +477,7 @@ function Game() {
     flash.current = 18;
     sfxHit();
     stopEngine();
-    if (!usedRevive.current && walletRef.current >= REVIVE_COST) {
+    if (!usedRevive.current) {
       setReviveLeft(REVIVE_SECONDS);
       setState("revive");
     } else {
