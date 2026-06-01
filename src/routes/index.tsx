@@ -214,6 +214,9 @@ function Game() {
   const [skinId, setSkinId] = useState<string>("classic");
   const [mapId, setMapId] = useState<string>("twilight");
   const [shopTab, setShopTab] = useState<null | "skins" | "maps">(null);
+  const [questsOpen, setQuestsOpen] = useState(false);
+  const [questState, setQuestState] = useState<QuestState>({ date: todayStr(), quests: [] });
+  const totalCoinsRef = useRef(0);
   const skinRef = useRef<Skin>(SKINS[0]);
   const mapRef = useRef<MapTheme>(MAPS[0]);
   const [muted, setMuted] = useState(false);
