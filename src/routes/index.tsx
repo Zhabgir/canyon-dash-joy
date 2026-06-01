@@ -233,6 +233,7 @@ function Game() {
     setOwnedMaps(loadJSON<string[]>(LS.ownedMaps, ["twilight"]));
     setSkinId(loadJSON<string>(LS.skin, "classic"));
     setMapId(loadJSON<string>(LS.map, "twilight"));
+    setQuestState(loadQuests());
   }, []);
 
   // Keep render refs in sync with current selection
