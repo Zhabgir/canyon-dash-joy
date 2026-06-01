@@ -159,18 +159,121 @@ function Game() {
         setScore(Math.floor(distance.current / 10));
       }
 
-      // draw
-      ctx.fillStyle = "#0b1220";
+      // sky / background gradient
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, "#1a1228");
+      sky.addColorStop(0.5, "#3a1f2e");
+      sky.addColorStop(1, "#0b0a16");
+      ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, H);
 
-      // canyon walls
-      ctx.fillStyle = "#e85d3a";
-      for (let i = 0; i < segments.current.length; i++) {
-        const x = i * SEG_W - offset.current;
-        const s = segments.current[i];
-        ctx.fillRect(x, 0, SEG_W + 1, s.topH);
-        ctx.fillRect(x, H - s.botH, SEG_W + 1, s.botH);
-      }
+      // distant sun haze
+      const sun = ctx.createRadialGradient(W * 0.75, H * 0.35, 0, W * 0.75, H * 0.35, 220);
+      sun.addColorStop(0, "rgba(255,180,90,0.35)");
+      sun.addColorStop(1, "rgba(255,180,90,0)");
+      ctx.fillStyle = sun;
+      ctx.fillRect(0, 0, W, H);
+
+      // canyon rock walls — jagged silhouette + texture
+      const segs = segments.current;
+      const drawRockBand = (isTop: boolean) => {
+        // silhouette path
+        ctx.beginPath();
+        if (isTop) {
+          ctx.moveTo(-SEG_W, -10);
+          for (let i = 0; i < segs.length; i++) {
+            const x = i * SEG_W - offset.current;
+            // deterministic jitter so edge doesn't shimmer
+            const seedIdx = Math.floor(distance.current / SEG_W) + i;
+            const j = ((Math.sin(seedIdx * 12.9898) * 43758.5453) % 1) * 14;
+            ctx.lineTo(x + SEG_W / 2, segs[i].topH + j - 4);
+          }
+          ctx.lineTo(W + SEG_W, -10);
+        } else {
+          ctx.moveTo(-SEG_W, H + 10);
+          for (let i = 0; i < segs.length; i++) {
+            const x = i * SEG_W - offset.current;
+            const seedIdx = Math.floor(distance.current / SEG_W) + i + 999;
+            const j = ((Math.sin(seedIdx * 12.9898) * 43758.5453) % 1) * 14;
+            ctx.lineTo(x + SEG_W / 2, H - segs[i].botH - j + 4);
+          }
+          ctx.lineTo(W + SEG_W, H + 10);
+        }
+        ctx.closePath();
+
+        // base fill — warm canyon rock gradient
+        const grd = isTop
+          ? ctx.createLinearGradient(0, 0, 0, H / 2)
+          : ctx.createLinearGradient(0, H / 2, 0, H);
+        if (isTop) {
+          grd.addColorStop(0, "#3a1810");
+          grd.addColorStop(0.6, "#6b2e1a");
+          grd.addColorStop(1, "#9a4a28");
+        } else {
+          grd.addColorStop(0, "#9a4a28");
+          grd.addColorStop(0.4, "#6b2e1a");
+          grd.addColorStop(1, "#2a1208");
+        }
+        ctx.fillStyle = grd;
+        ctx.fill();
+
+        // edge highlight (rim light along the gap)
+        ctx.save();
+        ctx.clip();
+        ctx.strokeStyle = "rgba(255,170,90,0.55)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < segs.length; i++) {
+          const x = i * SEG_W - offset.current;
+          const seedIdx = Math.floor(distance.current / SEG_W) + i + (isTop ? 0 : 999);
+          const j = ((Math.sin(seedIdx * 12.9898) * 43758.5453) % 1) * 14;
+          const y = isTop ? segs[i].topH + j - 4 : H - segs[i].botH - j + 4;
+          if (i === 0) ctx.moveTo(x + SEG_W / 2, y);
+          else ctx.lineTo(x + SEG_W / 2, y);
+        }
+        ctx.stroke();
+
+        // rock striations / cracks
+        ctx.strokeStyle = "rgba(0,0,0,0.25)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < segs.length; i += 2) {
+          const x = i * SEG_W - offset.current;
+          const seedIdx = Math.floor(distance.current / SEG_W) + i + (isTop ? 333 : 777);
+          const r1 = ((Math.sin(seedIdx * 7.13) * 43758.5453) % 1 + 1) % 1;
+          const r2 = ((Math.sin(seedIdx * 3.71) * 43758.5453) % 1 + 1) % 1;
+          ctx.beginPath();
+          if (isTop) {
+            const y1 = segs[i].topH - 4 - r1 * 40;
+            const y2 = segs[i].topH - 18 - r2 * 60;
+            ctx.moveTo(x, y1);
+            ctx.lineTo(x + SEG_W * 1.5, y2);
+          } else {
+            const y1 = H - segs[i].botH + 4 + r1 * 40;
+            const y2 = H - segs[i].botH + 18 + r2 * 60;
+            ctx.moveTo(x, y1);
+            ctx.lineTo(x + SEG_W * 1.5, y2);
+          }
+          ctx.stroke();
+        }
+
+        // speckle highlights
+        ctx.fillStyle = "rgba(255,200,140,0.18)";
+        for (let i = 0; i < segs.length; i++) {
+          const x = i * SEG_W - offset.current;
+          const seedIdx = Math.floor(distance.current / SEG_W) + i + (isTop ? 111 : 555);
+          const r = ((Math.sin(seedIdx * 5.17) * 43758.5453) % 1 + 1) % 1;
+          if (r > 0.7) {
+            const y = isTop
+              ? segs[i].topH - 6 - r * 30
+              : H - segs[i].botH + 6 + r * 30;
+            ctx.fillRect(x + 4, y, 3, 2);
+          }
+        }
+        ctx.restore();
+      };
+
+      drawRockBand(true);
+      drawRockBand(false);
 
       // fighter jet
       ctx.save();
