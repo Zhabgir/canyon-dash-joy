@@ -1151,11 +1151,20 @@ function Game() {
 
         {state === "menu" && (
           <Overlay>
-            <div className="relative w-full text-center">
+            <div className="relative flex flex-col items-center gap-3">
+              <div className="relative">
+                <img
+                  src={gameIcon}
+                  alt="Jet Rush"
+                  width={96}
+                  height={96}
+                  className="h-20 w-20 rounded-2xl shadow-lg shadow-orange-500/30 sm:h-24 sm:w-24"
+                />
+                <div className="absolute -inset-2 -z-10 animate-pulse rounded-full bg-orange-500/20 blur-2xl" />
+              </div>
               <h2 className="bg-gradient-to-b from-yellow-200 via-orange-400 to-red-600 bg-clip-text text-3xl font-black tracking-tighter text-transparent drop-shadow-[0_4px_12px_rgba(255,120,40,0.5)] sm:text-4xl md:text-5xl">
                 JET RUSH
               </h2>
-              <div className="absolute -inset-2 -z-10 animate-pulse rounded-full bg-orange-500/20 blur-2xl" />
             </div>
             <p className="max-w-xs text-center text-sm text-white/80">
               Тапай <b>верх</b> / <b>низ</b> экрана, чтобы маневрировать. Уворачивайся от ракет, собирай монеты и бонусы.
