@@ -42,7 +42,7 @@ function Game() {
   const distance = useRef(0);
   const SEG_W = 20;
   const rocks = useRef<
-    { x: number; y: number; r: number; vy: number; vx: number; rot: number; spin: number }[]
+    { x: number; y: number; vx: number; vy: number; trail: { x: number; y: number }[] }[]
   >([]);
   const rockTimer = useRef(0);
 
