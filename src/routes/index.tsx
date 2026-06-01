@@ -61,6 +61,11 @@ interface Star {
   z: number; // parallax depth 0.2..1
   s: number;
 }
+interface Coin {
+  x: number;
+  y: number;
+  t: number;
+}
 
 function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
