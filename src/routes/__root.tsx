@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "SPACE RUSH" },
+      { name: "description", content: "Jet Rush is a fast-paced arcade game where players pilot a jet through a treacherous canyon." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "SPACE RUSH" },
+      { property: "og:description", content: "Jet Rush is a fast-paced arcade game where players pilot a jet through a treacherous canyon." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "SPACE RUSH" },
+      { name: "twitter:description", content: "Jet Rush is a fast-paced arcade game where players pilot a jet through a treacherous canyon." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4485fd6a-c4ea-4461-944f-4626b79c78d0/id-preview-3d6ae5e3--e34726a7-a2ba-4d24-95ec-52882dfcd842.lovable.app-1780305962242.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4485fd6a-c4ea-4461-944f-4626b79c78d0/id-preview-3d6ae5e3--e34726a7-a2ba-4d24-95ec-52882dfcd842.lovable.app-1780305962242.png" },
     ],
     links: [
       {
