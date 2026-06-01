@@ -280,6 +280,9 @@ function Game() {
         <div className="pointer-events-none absolute left-4 top-3 font-mono text-lg text-white drop-shadow">
           Score: {score} {best > 0 && <span className="ml-3 opacity-70">Best: {best}</span>}
         </div>
+        <div className="pointer-events-none absolute right-4 top-3 font-mono text-sm text-white/80 drop-shadow">
+          Speed: {Math.min(MAX_SPEED, BASE_SPEED + score / 250).toFixed(1)}x
+        </div>
 
         {state === "menu" && (
           <Overlay>
