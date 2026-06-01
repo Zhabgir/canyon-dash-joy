@@ -156,6 +156,26 @@ function Game() {
   const stateRef = useRef(state);
   stateRef.current = state;
 
+  // Hydrate persistent shop data from localStorage on mount
+  useEffect(() => {
+    setWallet(loadJSON<number>(LS.wallet, 0));
+    setOwnedSkins(loadJSON<string[]>(LS.ownedSkins, ["classic"]));
+    setOwnedMaps(loadJSON<string[]>(LS.ownedMaps, ["twilight"]));
+    setSkinId(loadJSON<string>(LS.skin, "classic"));
+    setMapId(loadJSON<string>(LS.map, "twilight"));
+  }, []);
+
+  // Keep render refs in sync with current selection
+  useEffect(() => {
+    skinRef.current = SKINS.find((s) => s.id === skinId) ?? SKINS[0];
+    saveJSON(LS.skin, skinId);
+  }, [skinId]);
+  useEffect(() => {
+    mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
+    saveJSON(LS.map, mapId);
+  }, [mapId]);
+
+
   const keys = useRef({ up: false, down: false });
   const planeY = useRef(H / 2);
   const planeVy = useRef(0);
