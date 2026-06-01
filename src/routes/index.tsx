@@ -1421,6 +1421,7 @@ function drawJet(
   isBoost: boolean,
   hasShield: boolean,
   tick: number,
+  skin: Skin,
 ) {
   ctx.save();
   ctx.translate(PLANE_X, y);
