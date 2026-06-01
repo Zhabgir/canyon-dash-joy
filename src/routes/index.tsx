@@ -397,12 +397,12 @@ function Game() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
-  const finalizeOver = useCallback(() => {
+  const finalizeOver = useCallback((nextState: GameState = "over") => {
     const d = Math.floor(distance.current / 10);
     setScore(d);
     setBest((b) => Math.max(b, d));
     setBestCoins((b) => Math.max(b, coinCount.current));
-    setState("over");
+    setState(nextState);
   }, []);
 
 
