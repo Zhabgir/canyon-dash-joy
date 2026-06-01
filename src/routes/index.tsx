@@ -538,7 +538,7 @@ function Game() {
     };
 
     function difficultyFor() {
-      return Math.min(1, distance.current / 6000);
+      return Math.min(1, distance.current / 14000);
     }
 
     raf = requestAnimationFrame(loop);
