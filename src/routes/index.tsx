@@ -471,7 +471,49 @@ function Game() {
     setScore(d);
     setBest((b) => Math.max(b, d));
     setBestCoins((b) => Math.max(b, coinCount.current));
+    const runCoins = coinCount.current;
+    totalCoinsRef.current += runCoins;
+    setQuestState((qs) => {
+      const today = todayStr();
+      if (qs.date !== today) {
+        const fresh = { date: today, quests: pickDailyQuests(today) };
+        saveJSON(LS.quests, fresh);
+        return fresh;
+      }
+      const next = {
+        ...qs,
+        quests: qs.quests.map((q) => {
+          if (q.claimed) return q;
+          let inc = 0;
+          if (q.def.metric === "runCoins") inc = Math.max(q.progress, runCoins);
+          else if (q.def.metric === "runScore") inc = Math.max(q.progress, d);
+          else if (q.def.metric === "games") inc = q.progress + 1;
+          else if (q.def.metric === "totalCoins") inc = q.progress + runCoins;
+          return { ...q, progress: Math.min(q.def.target, inc) };
+        }),
+      };
+      saveJSON(LS.quests, next);
+      return next;
+    });
     setState(nextState);
+  }, []);
+
+  const claimQuest = useCallback((id: string) => {
+    setQuestState((qs) => {
+      const q = qs.quests.find((x) => x.def.id === id);
+      if (!q || q.claimed || q.progress < q.def.target) return qs;
+      const next = {
+        ...qs,
+        quests: qs.quests.map((x) => (x.def.id === id ? { ...x, claimed: true } : x)),
+      };
+      saveJSON(LS.quests, next);
+      setWallet((w) => {
+        const nw = w + q.def.reward;
+        saveJSON(LS.wallet, nw);
+        return nw;
+      });
+      return next;
+    });
   }, []);
 
 
