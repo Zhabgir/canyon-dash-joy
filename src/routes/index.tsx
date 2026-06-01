@@ -287,6 +287,14 @@ function Game() {
     };
   }, []);
 
+  const finalizeOver = useCallback(() => {
+    const d = Math.floor(distance.current / 10);
+    setScore(d);
+    setBest((b) => Math.max(b, d));
+    setBestCoins((b) => Math.max(b, coinCount.current));
+    setState("over");
+  }, []);
+
   const die = useCallback(() => {
     // explosion particles — big arcade explosion
     for (let i = 0; i < 80; i++) {
@@ -321,12 +329,35 @@ function Game() {
     flash.current = 18;
     sfxHit();
     stopEngine();
-    const d = Math.floor(distance.current / 10);
-    setScore(d);
-    setBest((b) => Math.max(b, d));
-    setBestCoins((b) => Math.max(b, coinCount.current));
-    setState("over");
-  }, [sfxHit, stopEngine]);
+    if (!usedRevive.current && coinCount.current >= REVIVE_COST) {
+      setReviveLeft(REVIVE_SECONDS);
+      setState("revive");
+    } else {
+      finalizeOver();
+    }
+  }, [sfxHit, stopEngine, finalizeOver]);
+
+  const revive = useCallback(() => {
+    if (coinCount.current < REVIVE_COST) return;
+    coinCount.current -= REVIVE_COST;
+    setCoins(coinCount.current);
+    usedRevive.current = true;
+    // clear nearby threats
+    missiles.current = [];
+    missileTimer.current = 180;
+    particles.current = [];
+    // re-center plane & grant temporary shield
+    planeY.current = H / 2;
+    planeVy.current = 0;
+    shield.current = true;
+    shake.current = 0;
+    flash.current = 8;
+    ensureAudio();
+    if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
+    startEngine();
+    setHud((h) => ({ ...h, shield: true }));
+    setState("playing");
+  }, [ensureAudio, startEngine]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
