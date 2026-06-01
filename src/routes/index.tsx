@@ -255,6 +255,13 @@ function Game() {
   }, [resetWorld, ensureAudio, startEngine]);
 
   useEffect(() => {
+    return () => {
+      stopEngine();
+      audioCtxRef.current?.close();
+    };
+  }, [stopEngine]);
+
+  useEffect(() => {
     const onDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.current.up = true;
       if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.current.down = true;
