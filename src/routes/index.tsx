@@ -428,7 +428,7 @@ function Game() {
         if (p.life <= 0) particles.current.splice(i, 1);
       }
       // parallax stars drift left
-      const driftSpeed = playing ? Math.min(MAX_SPEED, BASE_SPEED + distance.current / 2500) : 1;
+      const driftSpeed = playing ? Math.min(MAX_SPEED, BASE_SPEED + distance.current / 9000) : 1;
       for (const s of stars.current) {
         s.x -= s.z * driftSpeed * 0.4;
         if (s.x < -2) {
