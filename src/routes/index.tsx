@@ -5,11 +5,11 @@ import gameIcon from "../assets/game-icon.png";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Jet Rush" },
+      { title: "Space Rush" },
       {
         name: "description",
         content:
-          "Jet Rush — pilot a fighter jet through a deadly canyon, dodge homing missiles and grab power-ups.",
+          "Space Rush — пилотируй звездолёт через астероидный коридор, уворачивайся от ракет и собирай космические бонусы.",
       },
     ],
   }),
