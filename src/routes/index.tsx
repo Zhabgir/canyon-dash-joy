@@ -1470,9 +1470,9 @@ function drawJet(
 
   // main swept wings
   const wing = ctx.createLinearGradient(0, -20, 0, 20);
-  wing.addColorStop(0, "#aab4c0");
-  wing.addColorStop(0.5, "#5e6772");
-  wing.addColorStop(1, "#aab4c0");
+  wing.addColorStop(0, skin.wing[0]);
+  wing.addColorStop(0.5, skin.wing[1]);
+  wing.addColorStop(1, skin.wing[2]);
   ctx.fillStyle = wing;
   ctx.beginPath();
   ctx.moveTo(8, -4);
