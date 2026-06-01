@@ -1097,7 +1097,6 @@ function Game() {
             onBuySkin={buySkin}
             onBuyMap={buyMap}
             onClose={() => setShopTab(null)}
-            onSwitchTab={(t) => setShopTab(t)}
           />
         )}
 
