@@ -73,6 +73,8 @@ function Game() {
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
   const [hud, setHud] = useState({ shield: false, slowmo: 0, boost: 0 });
+  const [coins, setCoins] = useState(0);
+  const [bestCoins, setBestCoins] = useState(0);
 
   const stateRef = useRef(state);
   stateRef.current = state;
