@@ -156,17 +156,91 @@ function Game() {
         ctx.fillRect(x, H - s.botH, SEG_W + 1, s.botH);
       }
 
-      // plane
+      // fighter jet
       ctx.save();
       ctx.translate(PLANE_X, planeY.current);
-      ctx.fillStyle = "#f5f5f5";
+
+      // afterburner flame
+      const flameLen = 10 + Math.random() * 6;
+      const grad = ctx.createLinearGradient(-18 - flameLen, 0, -18, 0);
+      grad.addColorStop(0, "rgba(255,80,0,0)");
+      grad.addColorStop(0.5, "rgba(255,160,40,0.9)");
+      grad.addColorStop(1, "rgba(255,230,120,1)");
+      ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.moveTo(16, 0);
-      ctx.lineTo(-12, -10);
-      ctx.lineTo(-6, 0);
-      ctx.lineTo(-12, 10);
+      ctx.moveTo(-18, -3);
+      ctx.lineTo(-18 - flameLen, 0);
+      ctx.lineTo(-18, 3);
       ctx.closePath();
       ctx.fill();
+
+      // rear wings (tail)
+      ctx.fillStyle = "#5a6470";
+      ctx.beginPath();
+      ctx.moveTo(-14, -2);
+      ctx.lineTo(-22, -12);
+      ctx.lineTo(-10, -2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-14, 2);
+      ctx.lineTo(-22, 12);
+      ctx.lineTo(-10, 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // main delta wings
+      ctx.fillStyle = "#7a8693";
+      ctx.beginPath();
+      ctx.moveTo(2, -3);
+      ctx.lineTo(-12, -18);
+      ctx.lineTo(-16, -18);
+      ctx.lineTo(-8, -3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(2, 3);
+      ctx.lineTo(-12, 18);
+      ctx.lineTo(-16, 18);
+      ctx.lineTo(-8, 3);
+      ctx.closePath();
+      ctx.fill();
+
+      // fuselage
+      ctx.fillStyle = "#c8ced6";
+      ctx.beginPath();
+      ctx.moveTo(22, 0);
+      ctx.lineTo(8, -5);
+      ctx.lineTo(-18, -4);
+      ctx.lineTo(-18, 4);
+      ctx.lineTo(8, 5);
+      ctx.closePath();
+      ctx.fill();
+
+      // nose tip
+      ctx.fillStyle = "#9aa3ad";
+      ctx.beginPath();
+      ctx.moveTo(22, 0);
+      ctx.lineTo(14, -2);
+      ctx.lineTo(14, 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // cockpit canopy
+      ctx.fillStyle = "#3b6ea8";
+      ctx.beginPath();
+      ctx.ellipse(6, -1, 5, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.beginPath();
+      ctx.ellipse(7, -1.8, 2, 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // missile under each wing
+      ctx.fillStyle = "#444b54";
+      ctx.fillRect(-10, -14, 8, 2);
+      ctx.fillRect(-10, 12, 8, 2);
+
       ctx.restore();
 
       raf = requestAnimationFrame(loop);
