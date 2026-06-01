@@ -287,6 +287,25 @@ function Game() {
     };
   }, []);
 
+  // Revive countdown — auto-finalize when time runs out
+  useEffect(() => {
+    if (state !== "revive") return;
+    setReviveLeft(REVIVE_SECONDS);
+    const started = Date.now();
+    const id = window.setInterval(() => {
+      const left = REVIVE_SECONDS - Math.floor((Date.now() - started) / 1000);
+      if (left <= 0) {
+        window.clearInterval(id);
+        setReviveLeft(0);
+        finalizeOver();
+      } else {
+        setReviveLeft(left);
+      }
+    }, 100);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
   const finalizeOver = useCallback(() => {
     const d = Math.floor(distance.current / 10);
     setScore(d);
