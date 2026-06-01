@@ -723,7 +723,7 @@ function Game() {
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [die]);
+  }, [die, sfxCoin, sfxPower, sfxShieldHit]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-4">
