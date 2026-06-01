@@ -343,47 +343,70 @@ function Game() {
       drawRockBand(true);
       drawRockBand(false);
 
-      // falling rocks
-      for (const rk of rocks.current) {
-        ctx.save();
-        ctx.translate(rk.x, rk.y);
-        ctx.rotate(rk.rot);
-        // shadow
-        ctx.fillStyle = "rgba(0,0,0,0.45)";
-        ctx.beginPath();
-        ctx.ellipse(2, 3, rk.r, rk.r * 0.95, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // body gradient
-        const rg = ctx.createRadialGradient(-rk.r * 0.4, -rk.r * 0.4, 1, 0, 0, rk.r);
-        rg.addColorStop(0, "#8a7060");
-        rg.addColorStop(0.6, "#5a4030");
-        rg.addColorStop(1, "#2a1a12");
-        ctx.fillStyle = rg;
-        ctx.beginPath();
-        // irregular polygon
-        const sides = 7;
-        for (let s = 0; s < sides; s++) {
-          const a = (s / sides) * Math.PI * 2;
-          const rad = rk.r * (0.78 + ((Math.sin(s * 9.13 + rk.r) + 1) / 2) * 0.35);
-          const px = Math.cos(a) * rad;
-          const py = Math.sin(a) * rad;
-          if (s === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
+      // enemy missiles flying toward the player
+      for (const m of rocks.current) {
+        const angle = Math.atan2(m.vy, m.vx);
+        // smoke trail
+        for (let t = 0; t < m.trail.length; t++) {
+          const p = m.trail[t];
+          const alpha = (t / m.trail.length) * 0.5;
+          const radius = 1.5 + (t / m.trail.length) * 3.5;
+          ctx.fillStyle = `rgba(200,200,210,${alpha})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+          ctx.fill();
         }
+        ctx.save();
+        ctx.translate(m.x, m.y);
+        ctx.rotate(angle);
+        // flame at tail (behind missile = +x in local since missile travels in -x world but we rotated)
+        const fl = 8 + Math.random() * 5;
+        const fg = ctx.createLinearGradient(fl + 8, 0, 4, 0);
+        fg.addColorStop(0, "rgba(255,80,0,0)");
+        fg.addColorStop(0.5, "rgba(255,160,40,0.9)");
+        fg.addColorStop(1, "rgba(255,240,180,1)");
+        ctx.fillStyle = fg;
+        ctx.beginPath();
+        ctx.moveTo(6, -1.6);
+        ctx.lineTo(6 + fl, 0);
+        ctx.lineTo(6, 1.6);
         ctx.closePath();
         ctx.fill();
-        // crack
-        ctx.strokeStyle = "rgba(0,0,0,0.5)";
-        ctx.lineWidth = 1;
+        // body
+        const bg = ctx.createLinearGradient(0, -3, 0, 3);
+        bg.addColorStop(0, "#cdd3db");
+        bg.addColorStop(0.5, "#8a929c");
+        bg.addColorStop(1, "#3d434b");
+        ctx.fillStyle = bg;
         ctx.beginPath();
-        ctx.moveTo(-rk.r * 0.5, -rk.r * 0.2);
-        ctx.lineTo(rk.r * 0.2, rk.r * 0.1);
-        ctx.lineTo(rk.r * 0.5, -rk.r * 0.3);
-        ctx.stroke();
-        // highlight speck
-        ctx.fillStyle = "rgba(255,220,180,0.4)";
+        ctx.moveTo(-12, 0); // nose tip (points in direction of travel)
+        ctx.lineTo(-6, -2.5);
+        ctx.lineTo(6, -2.5);
+        ctx.lineTo(6, 2.5);
+        ctx.lineTo(-6, 2.5);
+        ctx.closePath();
+        ctx.fill();
+        // fins at back
+        ctx.fillStyle = "#2a2f36";
         ctx.beginPath();
-        ctx.arc(-rk.r * 0.35, -rk.r * 0.4, rk.r * 0.18, 0, Math.PI * 2);
+        ctx.moveTo(4, -2.5);
+        ctx.lineTo(8, -5);
+        ctx.lineTo(7, -2.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(4, 2.5);
+        ctx.lineTo(8, 5);
+        ctx.lineTo(7, 2.5);
+        ctx.closePath();
+        ctx.fill();
+        // red warning tip
+        ctx.fillStyle = "#e34a3a";
+        ctx.beginPath();
+        ctx.moveTo(-12, 0);
+        ctx.lineTo(-7, -1.6);
+        ctx.lineTo(-7, 1.6);
+        ctx.closePath();
         ctx.fill();
         ctx.restore();
       }
