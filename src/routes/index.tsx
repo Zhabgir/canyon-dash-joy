@@ -344,90 +344,225 @@ function Game() {
       drawRockBand(true);
       drawRockBand(false);
 
-      // fighter jet
+      // falling rocks
+      for (const rk of rocks.current) {
+        ctx.save();
+        ctx.translate(rk.x, rk.y);
+        ctx.rotate(rk.rot);
+        // shadow
+        ctx.fillStyle = "rgba(0,0,0,0.45)";
+        ctx.beginPath();
+        ctx.ellipse(2, 3, rk.r, rk.r * 0.95, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // body gradient
+        const rg = ctx.createRadialGradient(-rk.r * 0.4, -rk.r * 0.4, 1, 0, 0, rk.r);
+        rg.addColorStop(0, "#8a7060");
+        rg.addColorStop(0.6, "#5a4030");
+        rg.addColorStop(1, "#2a1a12");
+        ctx.fillStyle = rg;
+        ctx.beginPath();
+        // irregular polygon
+        const sides = 7;
+        for (let s = 0; s < sides; s++) {
+          const a = (s / sides) * Math.PI * 2;
+          const rad = rk.r * (0.78 + ((Math.sin(s * 9.13 + rk.r) + 1) / 2) * 0.35);
+          const px = Math.cos(a) * rad;
+          const py = Math.sin(a) * rad;
+          if (s === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        // crack
+        ctx.strokeStyle = "rgba(0,0,0,0.5)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-rk.r * 0.5, -rk.r * 0.2);
+        ctx.lineTo(rk.r * 0.2, rk.r * 0.1);
+        ctx.lineTo(rk.r * 0.5, -rk.r * 0.3);
+        ctx.stroke();
+        // highlight speck
+        ctx.fillStyle = "rgba(255,220,180,0.4)";
+        ctx.beginPath();
+        ctx.arc(-rk.r * 0.35, -rk.r * 0.4, rk.r * 0.18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // ============ Realistic fighter jet (top-down) ============
       ctx.save();
       ctx.translate(PLANE_X, planeY.current);
+      // slight bank based on input
+      const bank = (keys.current.down ? 1 : 0) - (keys.current.up ? 1 : 0);
+      ctx.scale(1, 1 + bank * 0.04);
 
-      // afterburner flame
-      const flameLen = 10 + Math.random() * 6;
-      const grad = ctx.createLinearGradient(-18 - flameLen, 0, -18, 0);
-      grad.addColorStop(0, "rgba(255,80,0,0)");
-      grad.addColorStop(0.5, "rgba(255,160,40,0.9)");
-      grad.addColorStop(1, "rgba(255,230,120,1)");
-      ctx.fillStyle = grad;
+      // afterburner — twin flames
+      const flameLen = 12 + Math.random() * 8;
+      for (const off of [-4, 4]) {
+        const fg = ctx.createLinearGradient(-20 - flameLen, off, -18, off);
+        fg.addColorStop(0, "rgba(255,60,0,0)");
+        fg.addColorStop(0.4, "rgba(255,120,30,0.85)");
+        fg.addColorStop(0.8, "rgba(255,220,120,1)");
+        fg.addColorStop(1, "rgba(255,255,230,1)");
+        ctx.fillStyle = fg;
+        ctx.beginPath();
+        ctx.moveTo(-20, off - 2.2);
+        ctx.lineTo(-20 - flameLen, off);
+        ctx.lineTo(-20, off + 2.2);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // shadow under jet
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
       ctx.beginPath();
-      ctx.moveTo(-18, -3);
-      ctx.lineTo(-18 - flameLen, 0);
-      ctx.lineTo(-18, 3);
+      ctx.ellipse(2, 18, 22, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // horizontal stabilizers (rear small wings)
+      ctx.fillStyle = "#3d4651";
+      ctx.beginPath();
+      ctx.moveTo(-12, -3);
+      ctx.lineTo(-24, -11);
+      ctx.lineTo(-22, -11);
+      ctx.lineTo(-10, -3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-12, 3);
+      ctx.lineTo(-24, 11);
+      ctx.lineTo(-22, 11);
+      ctx.lineTo(-10, 3);
       ctx.closePath();
       ctx.fill();
 
-      // rear wings (tail)
+      // main swept wings with gradient
+      const wingGrad = ctx.createLinearGradient(0, -20, 0, 20);
+      wingGrad.addColorStop(0, "#9ba6b3");
+      wingGrad.addColorStop(0.5, "#6b7480");
+      wingGrad.addColorStop(1, "#9ba6b3");
+      ctx.fillStyle = wingGrad;
+      ctx.beginPath();
+      ctx.moveTo(6, -4);
+      ctx.lineTo(-4, -22);
+      ctx.lineTo(-14, -22);
+      ctx.lineTo(-14, -16);
+      ctx.lineTo(-6, -4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(6, 4);
+      ctx.lineTo(-4, 22);
+      ctx.lineTo(-14, 22);
+      ctx.lineTo(-14, 16);
+      ctx.lineTo(-6, 4);
+      ctx.closePath();
+      ctx.fill();
+
+      // wing panel lines
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(0, -6);
+      ctx.lineTo(-8, -20);
+      ctx.moveTo(0, 6);
+      ctx.lineTo(-8, 20);
+      ctx.stroke();
+
+      // missiles under wings
+      ctx.fillStyle = "#2c333c";
+      for (const wy of [-15, 13]) {
+        ctx.beginPath();
+        ctx.moveTo(8, wy);
+        ctx.lineTo(-10, wy);
+        ctx.lineTo(-12, wy + 1);
+        ctx.lineTo(-10, wy + 2);
+        ctx.lineTo(8, wy + 2);
+        ctx.closePath();
+        ctx.fill();
+        // missile tip
+        ctx.fillStyle = "#e34a3a";
+        ctx.beginPath();
+        ctx.moveTo(8, wy);
+        ctx.lineTo(11, wy + 1);
+        ctx.lineTo(8, wy + 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#2c333c";
+      }
+
+      // fuselage — sleek metallic
+      const fuseGrad = ctx.createLinearGradient(0, -6, 0, 6);
+      fuseGrad.addColorStop(0, "#d9dfe6");
+      fuseGrad.addColorStop(0.5, "#aab3bd");
+      fuseGrad.addColorStop(1, "#7c858f");
+      ctx.fillStyle = fuseGrad;
+      ctx.beginPath();
+      ctx.moveTo(26, 0);
+      ctx.lineTo(20, -3);
+      ctx.lineTo(6, -6);
+      ctx.lineTo(-18, -5);
+      ctx.lineTo(-20, -3);
+      ctx.lineTo(-20, 3);
+      ctx.lineTo(-18, 5);
+      ctx.lineTo(6, 6);
+      ctx.lineTo(20, 3);
+      ctx.closePath();
+      ctx.fill();
+
+      // intake (side)
+      ctx.fillStyle = "#1a1f25";
+      ctx.beginPath();
+      ctx.ellipse(-4, -5, 5, 1.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(-4, 5, 5, 1.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // vertical tail fin (cast as a triangle behind cockpit)
       ctx.fillStyle = "#5a6470";
       ctx.beginPath();
-      ctx.moveTo(-14, -2);
-      ctx.lineTo(-22, -12);
-      ctx.lineTo(-10, -2);
-      ctx.closePath();
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(-14, 2);
-      ctx.lineTo(-22, 12);
-      ctx.lineTo(-10, 2);
+      ctx.moveTo(-8, 0);
+      ctx.lineTo(-18, -1);
+      ctx.lineTo(-14, 1);
       ctx.closePath();
       ctx.fill();
 
-      // main delta wings
-      ctx.fillStyle = "#7a8693";
+      // nose cone
+      ctx.fillStyle = "#6b7480";
       ctx.beginPath();
-      ctx.moveTo(2, -3);
-      ctx.lineTo(-12, -18);
-      ctx.lineTo(-16, -18);
-      ctx.lineTo(-8, -3);
-      ctx.closePath();
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(2, 3);
-      ctx.lineTo(-12, 18);
-      ctx.lineTo(-16, 18);
-      ctx.lineTo(-8, 3);
+      ctx.moveTo(26, 0);
+      ctx.lineTo(18, -2);
+      ctx.lineTo(18, 2);
       ctx.closePath();
       ctx.fill();
 
-      // fuselage
-      ctx.fillStyle = "#c8ced6";
+      // cockpit canopy — glass with reflection
+      const canopyGrad = ctx.createLinearGradient(2, -3, 12, 3);
+      canopyGrad.addColorStop(0, "#1c3a66");
+      canopyGrad.addColorStop(0.6, "#5b8fc9");
+      canopyGrad.addColorStop(1, "#0f1f3a");
+      ctx.fillStyle = canopyGrad;
       ctx.beginPath();
-      ctx.moveTo(22, 0);
-      ctx.lineTo(8, -5);
-      ctx.lineTo(-18, -4);
-      ctx.lineTo(-18, 4);
-      ctx.lineTo(8, 5);
-      ctx.closePath();
+      ctx.ellipse(8, 0, 6, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.6)";
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.65)";
+      ctx.beginPath();
+      ctx.ellipse(9, -1.2, 2.5, 0.8, -0.2, 0, Math.PI * 2);
       ctx.fill();
 
-      // nose tip
-      ctx.fillStyle = "#9aa3ad";
+      // roundel marking
+      ctx.fillStyle = "#c8d0d8";
       ctx.beginPath();
-      ctx.moveTo(22, 0);
-      ctx.lineTo(14, -2);
-      ctx.lineTo(14, 2);
-      ctx.closePath();
+      ctx.arc(-2, 0, 1.6, 0, Math.PI * 2);
       ctx.fill();
-
-      // cockpit canopy
-      ctx.fillStyle = "#3b6ea8";
+      ctx.fillStyle = "#c8344a";
       ctx.beginPath();
-      ctx.ellipse(6, -1, 5, 2.5, 0, 0, Math.PI * 2);
+      ctx.arc(-2, 0, 0.8, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
-      ctx.beginPath();
-      ctx.ellipse(7, -1.8, 2, 0.8, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // missile under each wing
-      ctx.fillStyle = "#444b54";
-      ctx.fillRect(-10, -14, 8, 2);
-      ctx.fillRect(-10, 12, 8, 2);
 
       ctx.restore();
 
