@@ -402,14 +402,9 @@ function Game() {
     setScore(d);
     setBest((b) => Math.max(b, d));
     setBestCoins((b) => Math.max(b, coinCount.current));
-    // bank the run's coins into the persistent wallet
-    setWallet((w) => {
-      const next = w + coinCount.current;
-      saveJSON(LS.wallet, next);
-      return next;
-    });
     setState("over");
   }, []);
+
 
   const buySkin = useCallback(
     (s: Skin) => {
