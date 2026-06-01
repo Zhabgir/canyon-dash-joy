@@ -1220,6 +1220,14 @@ function Game() {
           />
         )}
 
+        {state === "menu" && questsOpen && (
+          <QuestsOverlay
+            questState={questState}
+            onClaim={claimQuest}
+            onClose={() => setQuestsOpen(false)}
+          />
+        )}
+
         {state === "revive" && (
           <Overlay>
             <h2 className="text-2xl font-black uppercase tracking-wider text-orange-300 drop-shadow-[0_2px_8px_rgba(255,140,40,0.6)]">
