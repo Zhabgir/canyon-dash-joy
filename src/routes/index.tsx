@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
   component: Game,
 });
 
-type GameState = "menu" | "playing" | "revive" | "over";
+type GameState = "menu" | "playing" | "revive" | "over" | "choice";
 
 const REVIVE_COST = 100;
 const REVIVE_SECONDS = 10;
@@ -397,12 +397,12 @@ function Game() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
-  const finalizeOver = useCallback(() => {
+  const finalizeOver = useCallback((nextState: GameState = "over") => {
     const d = Math.floor(distance.current / 10);
     setScore(d);
     setBest((b) => Math.max(b, d));
     setBestCoins((b) => Math.max(b, coinCount.current));
-    setState("over");
+    setState(nextState);
   }, []);
 
 
@@ -1136,7 +1136,7 @@ function Game() {
             </button>
             <div className="font-mono text-xs text-yellow-300/90">У тебя: ● {wallet}</div>
             <button
-              onClick={finalizeOver}
+              onClick={() => finalizeOver("choice")}
               className="text-xs uppercase tracking-widest text-white/50 hover:text-white/80"
             >
               Пропустить
@@ -1144,6 +1144,44 @@ function Game() {
           </Overlay>
         )}
 
+
+        {state === "choice" && (
+          <Overlay>
+            <h2 className="text-3xl font-black uppercase tracking-wider text-red-400 drop-shadow-[0_2px_8px_rgba(255,60,40,0.6)]">
+              Crashed
+            </h2>
+            <div className="flex flex-col items-center gap-1">
+              <div className="font-mono text-4xl font-bold text-white">
+                {score.toLocaleString()}
+              </div>
+              <div className="font-mono text-base text-yellow-300">● {coins}</div>
+            </div>
+            {(best > 0 || bestCoins > 0) && (
+              <p className="text-xs text-white/60">
+                Best: <span className="font-mono text-white/85">{best.toLocaleString()}</span> · ● {bestCoins}
+              </p>
+            )}
+            {score >= best && score > 0 && (
+              <p className="animate-pulse text-sm font-bold uppercase tracking-widest text-yellow-300">
+                ★ New Record ★
+              </p>
+            )}
+            <div className="mt-1 flex flex-col gap-3">
+              <button
+                onClick={start}
+                className="rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-8 py-2.5 text-base font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95"
+              >
+                ↻  Играть дальше
+              </button>
+              <button
+                onClick={() => setState("menu")}
+                className="rounded-full border border-white/20 bg-white/10 px-8 py-2.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
+              >
+                🏠  Главное меню
+              </button>
+            </div>
+          </Overlay>
+        )}
 
         {state === "over" && (
           <Overlay>
