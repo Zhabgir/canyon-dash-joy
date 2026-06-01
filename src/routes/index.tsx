@@ -1039,28 +1039,28 @@ function Game() {
 
         {state === "menu" && (
           <Overlay>
-            <div className="relative">
-              <h2 className="bg-gradient-to-b from-yellow-200 via-orange-400 to-red-600 bg-clip-text text-5xl font-black tracking-tighter text-transparent drop-shadow-[0_4px_12px_rgba(255,120,40,0.5)] sm:text-6xl">
-                JET RUSH
+            <div className="relative w-full text-center">
+              <h2 className="bg-gradient-to-b from-yellow-200 via-orange-400 to-red-600 bg-clip-text text-3xl font-black tracking-tighter text-transparent drop-shadow-[0_4px_12px_rgba(255,120,40,0.5)] sm:text-4xl md:text-5xl">
+                ДЖЕТ ШАР
               </h2>
               <div className="absolute -inset-2 -z-10 animate-pulse rounded-full bg-orange-500/20 blur-2xl" />
             </div>
             <p className="max-w-xs text-center text-sm text-white/80">
               Тапай <b>верх</b> / <b>низ</b> экрана, чтобы маневрировать. Уворачивайся от ракет, собирай монеты и бонусы.
             </p>
-            <div className="flex gap-2.5 text-[11px] text-white/85">
+            <div className="flex flex-wrap justify-center gap-2.5 text-[11px] text-white/85">
               <LegendChip color="#6bd4ff" label="Щит" />
               <LegendChip color="#b48bff" label="Slow-Mo" />
               <LegendChip color="#ffce4a" label="Boost" />
             </div>
             <button
               onClick={start}
-              className="group relative mt-2 overflow-hidden rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-10 py-3 text-lg font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95"
+              className="group relative mt-2 w-full max-w-[260px] overflow-hidden rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-6 py-3 text-lg font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95 sm:px-10"
             >
               <span className="relative z-10">▶  PLAY</span>
               <span className="absolute inset-0 -z-0 animate-pulse bg-white/20 opacity-0 group-hover:opacity-100" />
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <button
                 onClick={() => setShopTab("skins")}
                 className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
@@ -1130,7 +1130,7 @@ function Game() {
             <button
               onClick={revive}
               disabled={wallet < REVIVE_COST}
-              className="group relative overflow-hidden rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-7 py-2.5 text-base font-bold text-black shadow-lg shadow-yellow-500/40 transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              className="group relative w-full max-w-[260px] overflow-hidden rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-5 py-2.5 text-base font-bold text-black shadow-lg shadow-yellow-500/40 transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:px-7"
             >
               <span className="relative z-10">♥ ОЖИВИТЬ · ● {REVIVE_COST}</span>
             </button>
@@ -1166,16 +1166,16 @@ function Game() {
                 ★ New Record ★
               </p>
             )}
-            <div className="mt-1 flex flex-col gap-3">
+            <div className="mt-1 flex w-full max-w-[280px] flex-col gap-3">
               <button
                 onClick={start}
-                className="rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-8 py-2.5 text-base font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95"
+                className="w-full rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-6 py-2.5 text-base font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95 sm:px-8"
               >
                 ↻  Играть дальше
               </button>
               <button
                 onClick={() => setState("menu")}
-                className="rounded-full border border-white/20 bg-white/10 px-8 py-2.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
+                className="w-full rounded-full border border-white/20 bg-white/10 px-6 py-2.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20 sm:px-8"
               >
                 🏠  Главное меню
               </button>
@@ -1206,7 +1206,7 @@ function Game() {
             )}
             <button
               onClick={start}
-              className="mt-1 rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-8 py-2.5 text-base font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95"
+              className="mt-1 w-full max-w-[260px] rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-6 py-2.5 text-base font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95 sm:px-8"
             >
               ↻  RETRY
             </button>
@@ -1222,7 +1222,7 @@ function Game() {
 
 function Overlay({ children }: { children: React.ReactNode }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-lg bg-black/60 backdrop-blur-sm">
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden rounded-lg bg-black/60 px-3 backdrop-blur-sm">
       {children}
     </div>
   );
