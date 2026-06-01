@@ -17,8 +17,9 @@ const W = 800;
 const H = 500;
 const PLANE_X = 120;
 const PLANE_SIZE = 24;
-const SCROLL_SPEED = 4;
-const PLAYER_SPEED = 4;
+const BASE_SPEED = 3.5;
+const MAX_SPEED = 10;
+const PLAYER_SPEED = 4.5;
 
 interface Segment {
   topH: number;
