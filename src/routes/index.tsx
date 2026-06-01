@@ -724,15 +724,17 @@ function Game() {
         ctx.fillStyle = "rgba(120,90,200,0.10)";
         ctx.fillRect(0, 0, W, H);
       }
-      if (boost.current > 0) {
-        // speed lines
-        ctx.strokeStyle = "rgba(180,230,255,0.5)";
-        ctx.lineWidth = 1.2;
-        for (let i = 0; i < 18; i++) {
-          const ly = (i * 53 + tick.current * 18) % H;
+      // speed lines — always rendered while playing
+      if (speedLines.current.length) {
+        ctx.lineCap = "round";
+        for (const sl of speedLines.current) {
+          const alpha = boost.current > 0 ? 0.7 : 0.32;
+          const color = boost.current > 0 ? "180,230,255" : "255,225,200";
+          ctx.strokeStyle = `rgba(${color},${alpha})`;
+          ctx.lineWidth = boost.current > 0 ? 1.6 : 1.1;
           ctx.beginPath();
-          ctx.moveTo(W, ly);
-          ctx.lineTo(W - 60 - Math.random() * 40, ly);
+          ctx.moveTo(sl.x, sl.y);
+          ctx.lineTo(sl.x + sl.len, sl.y);
           ctx.stroke();
         }
       }
