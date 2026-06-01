@@ -234,6 +234,7 @@ function Game() {
     boost.current = 0;
     shake.current = 0;
     flash.current = 0;
+    usedRevive.current = false;
     const count = Math.ceil(W / SEG_W) + 2;
     const gap = 280;
     const center = H / 2;
