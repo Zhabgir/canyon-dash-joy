@@ -48,11 +48,11 @@ const SKINS: Skin[] = [
 ];
 
 const MAPS: MapTheme[] = [
-  { id: "twilight", name: "Twilight Desert", price: 0, sky: ["#0a0814", "#1d1230", "#5a2438", "#1a0a10"], sun: "#ffcf85", sunAlpha: "255,180,90" },
-  { id: "arctic", name: "Arctic", price: 300, sky: ["#0a1a2a", "#1a3a55", "#3a6a8a", "#0e1a26"], sun: "#e8f5ff", sunAlpha: "180,220,255" },
-  { id: "sunset", name: "Sunset", price: 250, sky: ["#1a0a0a", "#4a1418", "#c25028", "#ff8a3a"], sun: "#fff0a0", sunAlpha: "255,200,120" },
-  { id: "neoncity", name: "Neon City", price: 600, sky: ["#0a0220", "#2a0a48", "#600a78", "#10001a"], sun: "#ff60c0", sunAlpha: "255,90,200" },
-  { id: "space", name: "Deep Space", price: 900, sky: ["#000004", "#06061a", "#101030", "#000000"], sun: "#ffffff", sunAlpha: "200,200,255" },
+  { id: "space", name: "Глубокий Космос", price: 0, sky: ["#000004", "#06061a", "#101030", "#000000"], sun: "#ffffff", sunAlpha: "200,200,255" },
+  { id: "nebula", name: "Туманность", price: 250, sky: ["#1a0028", "#3a0a55", "#7028a0", "#10001a"], sun: "#ff90f0", sunAlpha: "255,150,240" },
+  { id: "mars", name: "Орбита Марса", price: 300, sky: ["#1a0808", "#3a1410", "#8a3018", "#2a0a08"], sun: "#ffb070", sunAlpha: "255,170,100" },
+  { id: "ice", name: "Ледяной Пояс", price: 400, sky: ["#04101a", "#0a2845", "#2a6a9a", "#06121c"], sun: "#d0f0ff", sunAlpha: "180,220,255" },
+  { id: "blackhole", name: "Чёрная Дыра", price: 900, sky: ["#000000", "#0a0218", "#3a0848", "#000000"], sun: "#c060ff", sunAlpha: "180,80,255" },
 ];
 
 const LS = {
