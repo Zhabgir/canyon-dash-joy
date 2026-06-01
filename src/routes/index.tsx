@@ -15,7 +15,10 @@ export const Route = createFileRoute("/")({
   component: Game,
 });
 
-type GameState = "menu" | "playing" | "over";
+type GameState = "menu" | "playing" | "revive" | "over";
+
+const REVIVE_COST = 600;
+const REVIVE_SECONDS = 10;
 type PowerKind = "shield" | "slowmo" | "boost";
 
 const W = 800;
