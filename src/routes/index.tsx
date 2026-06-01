@@ -22,8 +22,8 @@ const W = 800;
 const H = 500;
 const PLANE_X = 140;
 const PLANE_SIZE = 22;
-const BASE_SPEED = 3.2;
-const MAX_SPEED = 8;
+const BASE_SPEED = 4.0;
+const MAX_SPEED = 11;
 const PLAYER_SPEED = 4.7;
 const SEG_W = 20;
 
@@ -207,7 +207,7 @@ function Game() {
         // time scale: slowmo halves, boost speeds up
         const timeScale =
           (slowmo.current > 0 ? 0.5 : 1) * (boost.current > 0 ? 1.55 : 1);
-        const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + distance.current / 9000);
+        const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + distance.current / 4500);
         const speed = baseSpeed * timeScale;
 
         offset.current += speed;
@@ -220,7 +220,7 @@ function Game() {
           const prevBot = last.botH;
           const prevGap = H - prevTop - prevBot;
           const prevCenter = prevTop + prevGap / 2;
-          const difficulty = Math.min(1, distance.current / 14000);
+          const difficulty = Math.min(1, distance.current / 7000);
           const segIndex = Math.floor(distance.current / SEG_W);
 
           const isPipe = segIndex > 0 && segIndex % 40 === 0;
@@ -474,7 +474,7 @@ function Game() {
         if (p.life <= 0) particles.current.splice(i, 1);
       }
       // parallax stars drift left
-      const driftSpeed = playing ? Math.min(MAX_SPEED, BASE_SPEED + distance.current / 9000) : 1;
+      const driftSpeed = playing ? Math.min(MAX_SPEED, BASE_SPEED + distance.current / 4500) : 1;
       for (const s of stars.current) {
         s.x -= s.z * driftSpeed * 0.4;
         if (s.x < -2) {
@@ -587,7 +587,7 @@ function Game() {
     };
 
     function difficultyFor() {
-      return Math.min(1, distance.current / 14000);
+      return Math.min(1, distance.current / 7000);
     }
 
     raf = requestAnimationFrame(loop);
