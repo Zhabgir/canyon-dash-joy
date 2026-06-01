@@ -275,31 +275,45 @@ function Game() {
   }, []);
 
   const die = useCallback(() => {
-    // explosion particles
-    for (let i = 0; i < 50; i++) {
+    // explosion particles — big arcade explosion
+    for (let i = 0; i < 80; i++) {
       const a = Math.random() * Math.PI * 2;
-      const sp = 2 + Math.random() * 5;
+      const sp = 1.5 + Math.random() * 7;
       particles.current.push({
         x: PLANE_X,
         y: planeY.current,
         vx: Math.cos(a) * sp,
         vy: Math.sin(a) * sp,
-        life: 40 + Math.random() * 30,
-        maxLife: 70,
-        color: ["#ffd070", "#ff8030", "#ff4020", "#888"][Math.floor(Math.random() * 4)],
-        size: 2 + Math.random() * 3,
+        life: 40 + Math.random() * 50,
+        maxLife: 90,
+        color: ["#fff2c0", "#ffd070", "#ff8030", "#ff4020", "#882020", "#555"][Math.floor(Math.random() * 6)],
+        size: 2 + Math.random() * 4,
       });
     }
-    shake.current = 18;
-    flash.current = 12;
+    // shockwave ring
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * Math.PI * 2;
+      particles.current.push({
+        x: PLANE_X,
+        y: planeY.current,
+        vx: Math.cos(a) * 6,
+        vy: Math.sin(a) * 6,
+        life: 25,
+        maxLife: 25,
+        color: "#fff8d0",
+        size: 3,
+      });
+    }
+    shake.current = 24;
+    flash.current = 18;
+    sfxHit();
+    stopEngine();
     const d = Math.floor(distance.current / 10);
     setScore(d);
     setBest((b) => Math.max(b, d));
     setBestCoins((b) => Math.max(b, coinCount.current));
     setState("over");
-  }, []);
-
-  useEffect(() => {
+  }, [sfxHit, stopEngine]);
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
