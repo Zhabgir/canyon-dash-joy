@@ -246,10 +246,13 @@ function Game() {
     setHud({ shield: false, slowmo: 0, boost: 0 });
   }, []);
 
-  const start = () => {
+  const start = useCallback(() => {
     resetWorld();
+    ensureAudio();
+    if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
+    startEngine();
     setState("playing");
-  };
+  }, [resetWorld, ensureAudio, startEngine]);
 
   useEffect(() => {
     const onDown = (e: KeyboardEvent) => {
