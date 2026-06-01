@@ -15,7 +15,10 @@ export const Route = createFileRoute("/")({
   component: Game,
 });
 
-type GameState = "menu" | "playing" | "over";
+type GameState = "menu" | "playing" | "revive" | "over";
+
+const REVIVE_COST = 600;
+const REVIVE_SECONDS = 10;
 type PowerKind = "shield" | "slowmo" | "boost";
 
 const W = 800;
@@ -75,6 +78,8 @@ function Game() {
   const [hud, setHud] = useState({ shield: false, slowmo: 0, boost: 0 });
   const [coins, setCoins] = useState(0);
   const [bestCoins, setBestCoins] = useState(0);
+  const [reviveLeft, setReviveLeft] = useState(REVIVE_SECONDS);
+  const usedRevive = useRef(false);
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(false);
   mutedRef.current = muted;
@@ -229,6 +234,7 @@ function Game() {
     boost.current = 0;
     shake.current = 0;
     flash.current = 0;
+    usedRevive.current = false;
     const count = Math.ceil(W / SEG_W) + 2;
     const gap = 280;
     const center = H / 2;
@@ -281,6 +287,33 @@ function Game() {
     };
   }, []);
 
+  // Revive countdown — auto-finalize when time runs out
+  useEffect(() => {
+    if (state !== "revive") return;
+    setReviveLeft(REVIVE_SECONDS);
+    const started = Date.now();
+    const id = window.setInterval(() => {
+      const left = REVIVE_SECONDS - Math.floor((Date.now() - started) / 1000);
+      if (left <= 0) {
+        window.clearInterval(id);
+        setReviveLeft(0);
+        finalizeOver();
+      } else {
+        setReviveLeft(left);
+      }
+    }, 100);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
+  const finalizeOver = useCallback(() => {
+    const d = Math.floor(distance.current / 10);
+    setScore(d);
+    setBest((b) => Math.max(b, d));
+    setBestCoins((b) => Math.max(b, coinCount.current));
+    setState("over");
+  }, []);
+
   const die = useCallback(() => {
     // explosion particles — big arcade explosion
     for (let i = 0; i < 80; i++) {
@@ -315,12 +348,35 @@ function Game() {
     flash.current = 18;
     sfxHit();
     stopEngine();
-    const d = Math.floor(distance.current / 10);
-    setScore(d);
-    setBest((b) => Math.max(b, d));
-    setBestCoins((b) => Math.max(b, coinCount.current));
-    setState("over");
-  }, [sfxHit, stopEngine]);
+    if (!usedRevive.current && coinCount.current >= REVIVE_COST) {
+      setReviveLeft(REVIVE_SECONDS);
+      setState("revive");
+    } else {
+      finalizeOver();
+    }
+  }, [sfxHit, stopEngine, finalizeOver]);
+
+  const revive = useCallback(() => {
+    if (coinCount.current < REVIVE_COST) return;
+    coinCount.current -= REVIVE_COST;
+    setCoins(coinCount.current);
+    usedRevive.current = true;
+    // clear nearby threats
+    missiles.current = [];
+    missileTimer.current = 180;
+    particles.current = [];
+    // re-center plane & grant temporary shield
+    planeY.current = H / 2;
+    planeVy.current = 0;
+    shield.current = true;
+    shake.current = 0;
+    flash.current = 8;
+    ensureAudio();
+    if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
+    startEngine();
+    setHud((h) => ({ ...h, shield: true }));
+    setState("playing");
+  }, [ensureAudio, startEngine]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -875,6 +931,50 @@ function Game() {
             )}
           </Overlay>
         )}
+
+        {state === "revive" && (
+          <Overlay>
+            <h2 className="text-2xl font-black uppercase tracking-wider text-orange-300 drop-shadow-[0_2px_8px_rgba(255,140,40,0.6)]">
+              Продолжить?
+            </h2>
+            <div className="relative flex h-24 w-24 items-center justify-center">
+              <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="44" stroke="rgba(255,255,255,0.15)" strokeWidth="6" fill="none" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="44"
+                  stroke="#ffce4a"
+                  strokeWidth="6"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 44}
+                  strokeDashoffset={2 * Math.PI * 44 * (1 - reviveLeft / REVIVE_SECONDS)}
+                  style={{ transition: "stroke-dashoffset 0.1s linear" }}
+                />
+              </svg>
+              <span className="font-mono text-3xl font-bold text-white">{reviveLeft}</span>
+            </div>
+            <p className="text-center text-xs text-white/70">
+              Восстанови самолёт и продолжи забег
+            </p>
+            <button
+              onClick={revive}
+              disabled={coins < REVIVE_COST}
+              className="group relative overflow-hidden rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-7 py-2.5 text-base font-bold text-black shadow-lg shadow-yellow-500/40 transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span className="relative z-10">♥ ОЖИВИТЬ · ● {REVIVE_COST}</span>
+            </button>
+            <div className="font-mono text-xs text-yellow-300/90">У тебя: ● {coins}</div>
+            <button
+              onClick={finalizeOver}
+              className="text-xs uppercase tracking-widest text-white/50 hover:text-white/80"
+            >
+              Пропустить
+            </button>
+          </Overlay>
+        )}
+
 
         {state === "over" && (
           <Overlay>
