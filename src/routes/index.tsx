@@ -1130,7 +1130,7 @@ function Game() {
             <button
               onClick={revive}
               disabled={wallet < REVIVE_COST}
-              className="group relative overflow-hidden rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-7 py-2.5 text-base font-bold text-black shadow-lg shadow-yellow-500/40 transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              className="group relative w-full max-w-[260px] overflow-hidden rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-5 py-2.5 text-base font-bold text-black shadow-lg shadow-yellow-500/40 transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:px-7"
             >
               <span className="relative z-10">♥ ОЖИВИТЬ · ● {REVIVE_COST}</span>
             </button>
