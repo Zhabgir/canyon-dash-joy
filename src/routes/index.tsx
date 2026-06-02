@@ -1678,6 +1678,34 @@ function Overlay({ children }: { children: React.ReactNode }) {
   );
 }
 
+function RankDisplay({ totalDistance }: { totalDistance: number }) {
+  const { current, next, progress } = getRank(totalDistance);
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div
+        className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider backdrop-blur-sm"
+        style={{ borderColor: `${current.color}60`, color: current.color, backgroundColor: `${current.color}15` }}
+      >
+        <span className="text-base leading-none">{current.emoji}</span>
+        <span>{current.name}</span>
+      </div>
+      {next && (
+        <div className="flex flex-col items-center gap-0.5">
+          <div className="h-1.5 w-32 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${progress}%`, backgroundColor: current.color }}
+            />
+          </div>
+          <span className="text-[10px] text-white/40">
+            {totalDistance.toLocaleString()} / {next.threshold.toLocaleString()} → {next.name}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface ShopOverlayProps {
   tab: "skins" | "maps";
   wallet: number;
