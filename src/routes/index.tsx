@@ -1886,7 +1886,7 @@ function ShopOverlay({
       </div>
       <div className="flex justify-center p-3">
         <div className="text-sm font-bold uppercase tracking-wider text-white/90">
-          {tab === "skins" ? "Скины" : "Карты"}
+          {tab === "skins" ? "Скины" : tab === "maps" ? "Карты" : "Транспорт"}
         </div>
       </div>
       <div className="flex-1 overflow-y-auto px-3 pb-4">
