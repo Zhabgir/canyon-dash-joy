@@ -552,7 +552,7 @@ function Game() {
       return next;
     });
     setState(nextState);
-  }, []);
+  }, [user]);
 
   const claimQuest = useCallback((id: string) => {
     setQuestState((qs) => {
