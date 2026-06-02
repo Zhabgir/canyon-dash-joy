@@ -137,8 +137,8 @@ function pickDailyQuests(date: string): QuestState["quests"] {
     }
     return out;
   };
-  const hard = pick(HARD_QUESTS, 1);
-  const easy = pick(EASY_QUESTS, 2);
+  const hard = pick(HARD_QUESTS, 2);
+  const easy = pick(EASY_QUESTS, 3);
   return [...hard, ...easy].map((def) => ({ def, progress: 0, claimed: false }));
 }
 function loadQuests(): QuestState {
