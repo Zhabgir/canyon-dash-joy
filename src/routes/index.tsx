@@ -363,13 +363,7 @@ function Game() {
     return () => { cancelled = true; };
   }, [user]);
 
-  // Sync total distance from profile when user is signed in
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    // Rank progress is tracked locally per device — do not overwrite from DB
-    return () => { cancelled = true; };
-  }, [user]);
+  // Rank progress is tracked locally per device — not synced from DB
 
   // Keep render refs in sync with current selection
   useEffect(() => {
