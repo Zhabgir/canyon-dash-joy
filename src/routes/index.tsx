@@ -55,6 +55,15 @@ const MAPS: MapTheme[] = [
   { id: "blackhole", name: "Чёрная Дыра", price: 900, sky: ["#000000", "#0a0218", "#3a0848", "#000000"], sun: "#c060ff", sunAlpha: "180,80,255" },
 ];
 
+const OTHER_WORLD: MapTheme = {
+  id: "otherworld",
+  name: "Иной Мир",
+  price: 0,
+  sky: ["#001a0a", "#0a3a28", "#3a0a55", "#1a0030"],
+  sun: "#60ffd0",
+  sunAlpha: "120,255,200",
+};
+
 const LS = {
   wallet: "jr_wallet",
   ownedSkins: "jr_owned_skins",
@@ -270,6 +279,11 @@ function Game() {
   const flash = useRef(0);
   const tick = useRef(0);
   const speedLines = useRef<{ x: number; y: number; len: number; spd: number }[]>([]);
+  const portal = useRef<{ spawned: boolean; entered: boolean; worldX: number }>({
+    spawned: false,
+    entered: false,
+    worldX: 0,
+  });
 
   // ===== Sound engine (WebAudio) =====
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -395,6 +409,8 @@ function Game() {
     boost.current = 0;
     shake.current = 0;
     flash.current = 0;
+    portal.current = { spawned: false, entered: false, worldX: 0 };
+    mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     usedRevive.current = false;
     const count = Math.ceil(W / SEG_W) + 2;
     const gap = 280;
@@ -898,6 +914,38 @@ function Game() {
         }
         if (planeY.current < 0 || planeY.current > H) die();
         setScore(Math.floor(distance.current / 10));
+
+        // Portal to the other world at score 800
+        const curScore = Math.floor(distance.current / 10);
+        if (!portal.current.spawned && curScore >= 800) {
+          portal.current.spawned = true;
+          portal.current.entered = false;
+          portal.current.worldX = distance.current + W * 1.2;
+        }
+        if (portal.current.spawned && !portal.current.entered) {
+          const px = portal.current.worldX - distance.current;
+          const py = H - 60;
+          const dx = px - PLANE_X;
+          const dy = py - planeY.current;
+          if (Math.hypot(dx, dy) < 46) {
+            portal.current.entered = true;
+            mapRef.current = OTHER_WORLD;
+            flash.current = 30;
+            shake.current = 18;
+            for (let i = 0; i < 40; i++) {
+              particles.current.push({
+                x: PLANE_X,
+                y: planeY.current,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6,
+                life: 40,
+                maxLife: 40,
+                color: i % 2 ? "#a060ff" : "#60ffd0",
+                size: 2 + Math.random() * 3,
+              });
+            }
+          }
+        }
         setHud({
           shield: shield.current,
           slowmo: slowmo.current,
@@ -1012,6 +1060,14 @@ function Game() {
 
       // coins
       for (const c of coinsRef.current) drawCoin(ctx, c);
+
+      // portal to other world
+      if (portal.current.spawned && !portal.current.entered) {
+        const px = portal.current.worldX - distance.current;
+        if (px > -80 && px < W + 80) {
+          drawPortal(ctx, px, H - 60, tick.current);
+        }
+      }
 
       // missiles
       for (const m of missiles.current) drawMissile(ctx, m);
@@ -2064,6 +2120,50 @@ function drawCoin(ctx: CanvasRenderingContext2D, c: Coin) {
   } else {
     ctx.fillStyle = "rgba(120,70,5,0.7)";
     ctx.fillRect(-5, -1, 10, 2);
+  }
+  ctx.restore();
+}
+
+function drawPortal(ctx: CanvasRenderingContext2D, x: number, y: number, tick: number) {
+  ctx.save();
+  ctx.translate(x, y);
+  const t = tick * 0.06;
+  // outer glow
+  const glow = ctx.createRadialGradient(0, 0, 4, 0, 0, 80);
+  glow.addColorStop(0, "rgba(160,100,255,0.7)");
+  glow.addColorStop(0.5, "rgba(100,255,200,0.35)");
+  glow.addColorStop(1, "rgba(100,255,200,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, 80, 0, Math.PI * 2);
+  ctx.fill();
+  // swirling rings
+  for (let i = 0; i < 5; i++) {
+    const r = 38 - i * 6;
+    const a = t + i * 0.6;
+    ctx.strokeStyle = i % 2 ? `rgba(160,100,255,${0.5 + i * 0.08})` : `rgba(100,255,200,${0.5 + i * 0.08})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(Math.cos(a) * 3, Math.sin(a) * 2, r, r * 0.85, a, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  // core
+  const core = ctx.createRadialGradient(0, 0, 1, 0, 0, 20);
+  core.addColorStop(0, "#ffffff");
+  core.addColorStop(0.4, "#b080ff");
+  core.addColorStop(1, "rgba(40,0,80,0.9)");
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.arc(0, 0, 20, 0, Math.PI * 2);
+  ctx.fill();
+  // sparkles
+  for (let i = 0; i < 6; i++) {
+    const a = t * 2 + (i * Math.PI * 2) / 6;
+    const r = 32 + Math.sin(t * 3 + i) * 4;
+    ctx.fillStyle = "rgba(220,255,240,0.9)";
+    ctx.beginPath();
+    ctx.arc(Math.cos(a) * r, Math.sin(a) * r * 0.85, 1.6, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.restore();
 }
