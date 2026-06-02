@@ -230,6 +230,47 @@ async function saveQuestsToDB(userId: string, qs: QuestState): Promise<void> {
     );
 }
 
+interface ShopProgress {
+  wallet: number;
+  ownedSkins: string[];
+  ownedMaps: string[];
+  selectedSkin: string;
+  selectedMap: string;
+}
+
+async function fetchShopFromDB(userId: string): Promise<ShopProgress | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("wallet, owned_skins, owned_maps, selected_skin, selected_map")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    wallet: data.wallet ?? 0,
+    ownedSkins: (data.owned_skins as string[]) ?? ["classic"],
+    ownedMaps: (data.owned_maps as string[]) ?? ["space"],
+    selectedSkin: data.selected_skin ?? "classic",
+    selectedMap: data.selected_map ?? "space",
+  };
+}
+
+async function saveShopToDB(userId: string, p: Partial<ShopProgress>): Promise<void> {
+  const payload: {
+    wallet?: number;
+    owned_skins?: string[];
+    owned_maps?: string[];
+    selected_skin?: string;
+    selected_map?: string;
+  } = {};
+  if (p.wallet !== undefined) payload.wallet = p.wallet;
+  if (p.ownedSkins !== undefined) payload.owned_skins = p.ownedSkins;
+  if (p.ownedMaps !== undefined) payload.owned_maps = p.ownedMaps;
+  if (p.selectedSkin !== undefined) payload.selected_skin = p.selectedSkin;
+  if (p.selectedMap !== undefined) payload.selected_map = p.selectedMap;
+  if (Object.keys(payload).length === 0) return;
+  await supabase.from("profiles").update(payload).eq("user_id", userId);
+}
+
 function loadJSON<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
@@ -386,17 +427,62 @@ function Game() {
     return () => { cancelled = true; };
   }, [user]);
 
+  // Sync shop progress (wallet, owned skins/maps, selection) with DB on sign-in.
+  // Remote is the source of truth; if remote is missing fields, push local up.
+  const shopHydrated = useRef(false);
+  useEffect(() => {
+    if (!user) { shopHydrated.current = false; return; }
+    let cancelled = false;
+    (async () => {
+      const remote = await fetchShopFromDB(user.id);
+      if (cancelled) return;
+      if (remote) {
+        // Merge: union owned lists, take max wallet, prefer remote selection
+        const localWallet = loadJSON<number>(LS.wallet, 0);
+        const localSkins = loadJSON<string[]>(LS.ownedSkins, ["classic"]);
+        const localMaps = loadJSON<string[]>(LS.ownedMaps, ["space"]);
+        const mergedSkins = Array.from(new Set([...remote.ownedSkins, ...localSkins]));
+        const mergedMaps = Array.from(new Set([...remote.ownedMaps, ...localMaps]));
+        const mergedWallet = Math.max(remote.wallet, localWallet);
+        setWallet(mergedWallet);
+        setOwnedSkins(mergedSkins);
+        setOwnedMaps(mergedMaps);
+        setSkinId(remote.selectedSkin);
+        setMapId(remote.selectedMap);
+        saveJSON(LS.wallet, mergedWallet);
+        saveJSON(LS.ownedSkins, mergedSkins);
+        saveJSON(LS.ownedMaps, mergedMaps);
+        saveJSON(LS.skin, remote.selectedSkin);
+        saveJSON(LS.map, remote.selectedMap);
+        // Push merged state back so other devices catch up
+        await saveShopToDB(user.id, {
+          wallet: mergedWallet,
+          ownedSkins: mergedSkins,
+          ownedMaps: mergedMaps,
+        }).catch((e) => console.warn("save shop failed", e));
+      }
+      shopHydrated.current = true;
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   // Rank progress is tracked locally per device — not synced from DB
 
   // Keep render refs in sync with current selection
   useEffect(() => {
     skinRef.current = SKINS.find((s) => s.id === skinId) ?? SKINS[0];
     saveJSON(LS.skin, skinId);
-  }, [skinId]);
+    if (user && shopHydrated.current) {
+      saveShopToDB(user.id, { selectedSkin: skinId }).catch((e) => console.warn("save skin failed", e));
+    }
+  }, [skinId, user]);
   useEffect(() => {
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     saveJSON(LS.map, mapId);
-  }, [mapId]);
+    if (user && shopHydrated.current) {
+      saveShopToDB(user.id, { selectedMap: mapId }).catch((e) => console.warn("save map failed", e));
+    }
+  }, [mapId, user]);
 
 
   const keys = useRef({ up: false, down: false });
@@ -661,7 +747,12 @@ function Game() {
         const newGames = (existing?.games_played ?? 0) + 1;
         await supabase
           .from("profiles")
-          .update({ high_score: newHigh, total_distance: newTotal, games_played: newGames })
+          .update({
+            high_score: newHigh,
+            total_distance: newTotal,
+            games_played: newGames,
+            wallet: walletRef.current,
+          })
           .eq("user_id", user.id);
       })().catch((e) => console.warn("save stats failed", e));
     }
@@ -704,6 +795,7 @@ function Game() {
       setWallet((w) => {
         const nw = w + q.def.reward;
         saveJSON(LS.wallet, nw);
+        if (user) saveShopToDB(user.id, { wallet: nw }).catch((e) => console.warn("save wallet failed", e));
         return nw;
       });
       return next;
@@ -725,8 +817,15 @@ function Game() {
       setSkinId(s.id);
       saveJSON(LS.wallet, nextWallet);
       saveJSON(LS.ownedSkins, nextOwned);
+      if (user) {
+        saveShopToDB(user.id, {
+          wallet: nextWallet,
+          ownedSkins: nextOwned,
+          selectedSkin: s.id,
+        }).catch((e) => console.warn("save skin purchase failed", e));
+      }
     },
-    [ownedSkins, wallet],
+    [ownedSkins, wallet, user],
   );
 
   const buyMap = useCallback(
@@ -743,8 +842,15 @@ function Game() {
       setMapId(m.id);
       saveJSON(LS.wallet, nextWallet);
       saveJSON(LS.ownedMaps, nextOwned);
+      if (user) {
+        saveShopToDB(user.id, {
+          wallet: nextWallet,
+          ownedMaps: nextOwned,
+          selectedMap: m.id,
+        }).catch((e) => console.warn("save map purchase failed", e));
+      }
     },
-    [ownedMaps, wallet],
+    [ownedMaps, wallet, user],
   );
 
 
@@ -795,6 +901,7 @@ function Game() {
     const next = walletRef.current - REVIVE_COST;
     setWallet(next);
     saveJSON(LS.wallet, next);
+    if (user) saveShopToDB(user.id, { wallet: next }).catch((e) => console.warn("save wallet failed", e));
     usedRevive.current = true;
     // clear nearby threats
     missiles.current = [];
@@ -811,7 +918,7 @@ function Game() {
     startEngine();
     setHud((h) => ({ ...h, shield: true }));
     setState("playing");
-  }, [ensureAudio, startEngine]);
+  }, [ensureAudio, startEngine, user]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

@@ -49,10 +49,15 @@ export type Database = {
           games_played: number
           high_score: number
           id: string
+          owned_maps: string[]
+          owned_skins: string[]
           portals_entered: number
+          selected_map: string
+          selected_skin: string
           total_distance: number
           updated_at: string
           user_id: string
+          wallet: number
         }
         Insert: {
           avatar_url?: string | null
@@ -61,10 +66,15 @@ export type Database = {
           games_played?: number
           high_score?: number
           id?: string
+          owned_maps?: string[]
+          owned_skins?: string[]
           portals_entered?: number
+          selected_map?: string
+          selected_skin?: string
           total_distance?: number
           updated_at?: string
           user_id: string
+          wallet?: number
         }
         Update: {
           avatar_url?: string | null
@@ -73,10 +83,15 @@ export type Database = {
           games_played?: number
           high_score?: number
           id?: string
+          owned_maps?: string[]
+          owned_skins?: string[]
           portals_entered?: number
+          selected_map?: string
+          selected_skin?: string
           total_distance?: number
           updated_at?: string
           user_id?: string
+          wallet?: number
         }
         Relationships: []
       }
