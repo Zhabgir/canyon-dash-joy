@@ -218,6 +218,7 @@ interface Coin {
 }
 
 function Game() {
+  const { user } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [state, setState] = useState<GameState>("menu");
   const [score, setScore] = useState(0);
