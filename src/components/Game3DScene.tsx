@@ -91,6 +91,7 @@ export interface GameRefs {
   skin: React.MutableRefObject<Skin>;
   map: React.MutableRefObject<MapTheme>;
   alive: React.MutableRefObject<boolean>;
+  rareEvent: React.MutableRefObject<{ kind: "star" | "asteroids" | "wreck" | "chase"; t: number; duration: number; seed: number } | null>;
 }
 
 interface Props {
