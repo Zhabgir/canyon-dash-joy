@@ -106,7 +106,42 @@ const LS = {
   skin: "jr_skin",
   map: "jr_map",
   quests: "jr_quests_v2",
+  totalDistance: "jr_total_distance",
 };
+
+// ===== Rank system =====
+interface RankDef {
+  name: string;
+  emoji: string;
+  threshold: number;
+  color: string;
+}
+const RANKS: RankDef[] = [
+  { name: "Курсант", emoji: "🎖️", threshold: 0, color: "#a0a0a0" },
+  { name: "Новичок", emoji: "🌱", threshold: 1000, color: "#7ec850" },
+  { name: "Пилот", emoji: "✈️", threshold: 5000, color: "#4aa8ff" },
+  { name: "Капитан", emoji: "⭐", threshold: 15000, color: "#ffd700" },
+  { name: "Ас", emoji: "🏆", threshold: 40000, color: "#ff7b2e" },
+  { name: "Элита", emoji: "💎", threshold: 100000, color: "#b76eff" },
+  { name: "Легенда", emoji: "👑", threshold: 250000, color: "#ff3a3a" },
+  { name: "Мифический", emoji: "🔥", threshold: 500000, color: "#ff1493" },
+];
+function getRank(totalDistance: number): { current: RankDef; next: RankDef | null; progress: number } {
+  let current = RANKS[0];
+  let next: RankDef | null = RANKS[1] ?? null;
+  for (let i = RANKS.length - 1; i >= 0; i--) {
+    if (totalDistance >= RANKS[i].threshold) {
+      current = RANKS[i];
+      next = RANKS[i + 1] ?? null;
+      break;
+    }
+  }
+  if (!next) return { current, next: null, progress: 100 };
+  const range = next.threshold - current.threshold;
+  const earned = totalDistance - current.threshold;
+  const progress = Math.min(100, Math.floor((earned / range) * 100));
+  return { current, next, progress };
+}
 
 // ===== Daily quests =====
 type QuestMetric = "runCoins" | "runScore" | "games" | "totalCoins";
@@ -285,6 +320,7 @@ function Game() {
   const [shopTab, setShopTab] = useState<null | "skins" | "maps">(null);
   const [questsOpen, setQuestsOpen] = useState(false);
   const [questState, setQuestState] = useState<QuestState>({ date: todayStr(), quests: [] });
+  const [totalDistance, setTotalDistance] = useState(0);
   const totalCoinsRef = useRef(0);
   const skinRef = useRef<Skin>(SKINS[0]);
   const mapRef = useRef<MapTheme>(MAPS[0]);
@@ -303,6 +339,7 @@ function Game() {
     setSkinId(loadJSON<string>(LS.skin, "classic"));
     setMapId(loadJSON<string>(LS.map, "space"));
     setQuestState(loadQuests());
+    setTotalDistance(loadJSON<number>(LS.totalDistance, 0));
   }, []);
 
   // Sync quests with database when user is signed in
@@ -321,6 +358,25 @@ function Game() {
         setQuestState(local);
         saveJSON(LS.quests, local);
         await saveQuestsToDB(user.id, local).catch((e) => console.warn("save quests failed", e));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  // Sync total distance from profile when user is signed in
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("total_distance")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!error && data && typeof data.total_distance === "number") {
+        setTotalDistance(data.total_distance);
+        saveJSON(LS.totalDistance, data.total_distance);
       }
     })();
     return () => { cancelled = true; };
@@ -580,6 +636,12 @@ function Game() {
     const runCoins = coinCount.current;
     totalCoinsRef.current += runCoins;
     const runDistance = Math.floor(distance.current);
+    // Update total distance locally
+    setTotalDistance((td) => {
+      const newTotal = td + runDistance;
+      saveJSON(LS.totalDistance, newTotal);
+      return newTotal;
+    });
     // Save run stats to the user's profile if signed in
     if (user) {
       (async () => {
@@ -1459,6 +1521,7 @@ function Game() {
               <span>●</span>
               <span>{wallet.toLocaleString()}</span>
             </div>
+            <RankDisplay totalDistance={totalDistance} />
             {best > 0 && (
               <p className="text-xs text-white/50">
                 Лучший: <span className="font-mono text-white/80">{best.toLocaleString()}</span> · ● {bestCoins}
@@ -1544,6 +1607,7 @@ function Game() {
               </div>
               <div className="font-mono text-base text-yellow-300">● {coins}</div>
             </div>
+            <RankDisplay totalDistance={totalDistance} />
             {(best > 0 || bestCoins > 0) && (
               <p className="text-xs text-white/60">
                 Best: <span className="font-mono text-white/85">{best.toLocaleString()}</span> · ● {bestCoins}
@@ -1582,6 +1646,7 @@ function Game() {
               </div>
               <div className="font-mono text-base text-yellow-300">● {coins}</div>
             </div>
+            <RankDisplay totalDistance={totalDistance} />
             {(best > 0 || bestCoins > 0) && (
               <p className="text-xs text-white/60">
                 Best: <span className="font-mono text-white/85">{best.toLocaleString()}</span> · ● {bestCoins}
@@ -1612,6 +1677,34 @@ function Overlay({ children }: { children: React.ReactNode }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden rounded-lg bg-black/60 px-3 backdrop-blur-sm">
       {children}
+    </div>
+  );
+}
+
+function RankDisplay({ totalDistance }: { totalDistance: number }) {
+  const { current, next, progress } = getRank(totalDistance);
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div
+        className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider backdrop-blur-sm"
+        style={{ borderColor: `${current.color}60`, color: current.color, backgroundColor: `${current.color}15` }}
+      >
+        <span className="text-base leading-none">{current.emoji}</span>
+        <span>{current.name}</span>
+      </div>
+      {next && (
+        <div className="flex flex-col items-center gap-0.5">
+          <div className="h-1.5 w-32 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${progress}%`, backgroundColor: current.color }}
+            />
+          </div>
+          <span className="text-[10px] text-white/40">
+            {totalDistance.toLocaleString()} / {next.threshold.toLocaleString()} → {next.name}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
