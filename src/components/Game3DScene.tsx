@@ -91,6 +91,7 @@ export interface GameRefs {
   skin: React.MutableRefObject<Skin>;
   map: React.MutableRefObject<MapTheme>;
   alive: React.MutableRefObject<boolean>;
+  rareEvent: React.MutableRefObject<{ kind: "star" | "asteroids" | "wreck" | "chase"; t: number; duration: number; seed: number } | null>;
 }
 
 interface Props {
@@ -381,6 +382,9 @@ function Scene({ refs }: { refs: GameRefs }) {
           </mesh>
         </group>
       ))}
+
+      {/* Rare event visuals */}
+      <RareEventLayer eventRef={refs.rareEvent} />
     </group>
   );
 }
@@ -496,4 +500,185 @@ function EmojiSprite({ emoji, size }: { emoji: string; size: number }) {
       <spriteMaterial map={texture} transparent depthWrite={false} />
     </sprite>
   );
+}
+
+// ===================== RARE EVENTS =====================
+type RareRef = React.MutableRefObject<{ kind: "star" | "asteroids" | "wreck" | "chase"; t: number; duration: number; seed: number } | null>;
+
+function RareEventLayer({ eventRef }: { eventRef: RareRef }) {
+  const [kind, setKind] = useState<null | "star" | "asteroids" | "wreck" | "chase">(null);
+  const [seed, setSeed] = useState(0);
+  useFrame(() => {
+    const e = eventRef.current;
+    const k = e?.kind ?? null;
+    if (k !== kind) {
+      setKind(k);
+      setSeed(e?.seed ?? 0);
+    }
+  });
+  if (!kind) return null;
+  if (kind === "star") return <StarEvent eventRef={eventRef} />;
+  if (kind === "asteroids") return <AsteroidField eventRef={eventRef} seed={seed} />;
+  if (kind === "wreck") return <WreckEvent eventRef={eventRef} />;
+  if (kind === "chase") return <ChaseShip eventRef={eventRef} />;
+  return null;
+}
+
+function StarEvent({ eventRef }: { eventRef: RareRef }) {
+  const ref = useRef<THREE.Group>(null);
+  const lightRef = useRef<THREE.PointLight>(null);
+  useFrame((_, dt) => {
+    const e = eventRef.current; if (!e || !ref.current) return;
+    const p = e.t / e.duration; // 0..1, moves from far behind to behind us
+    // approach from -40 to +20 along Z, side offset
+    const z = -55 + p * 80;
+    ref.current.position.set(7, 2.5, z);
+    ref.current.rotation.y += dt * 0.1;
+    if (lightRef.current) lightRef.current.intensity = 2.5 * (1 - Math.abs(0.5 - p) * 2);
+  });
+  return (
+    <group ref={ref}>
+      <mesh>
+        <sphereGeometry args={[4.5, 32, 32]} />
+        <meshBasicMaterial color="#ffd070" />
+      </mesh>
+      <mesh>
+        <sphereGeometry args={[5.4, 32, 32]} />
+        <meshBasicMaterial color="#ff8040" transparent opacity={0.35} />
+      </mesh>
+      <mesh>
+        <sphereGeometry args={[6.6, 24, 24]} />
+        <meshBasicMaterial color="#ff5020" transparent opacity={0.15} />
+      </mesh>
+      <pointLight ref={lightRef} color="#ffb060" intensity={2.2} distance={50} />
+    </group>
+  );
+}
+
+function AsteroidField({ eventRef, seed }: { eventRef: RareRef; seed: number }) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const COUNT = 40;
+  const data = useMemo(() => {
+    const rng = mulberry(seed * 9301 + 1);
+    return Array.from({ length: COUNT }, () => ({
+      x: (rng() - 0.5) * 14,
+      y: (rng() - 0.5) * 7,
+      zStart: -50 - rng() * 30,
+      scale: 0.3 + rng() * 0.9,
+      rotSpd: (rng() - 0.5) * 1.2,
+      phase: rng() * Math.PI * 2,
+    }));
+  }, [seed]);
+  const tmp = useMemo(() => new THREE.Object3D(), []);
+  useFrame((_, dt) => {
+    const e = eventRef.current; if (!e || !meshRef.current) return;
+    const p = e.t / e.duration;
+    for (let i = 0; i < COUNT; i++) {
+      const d = data[i];
+      const z = d.zStart + p * 110;
+      tmp.position.set(d.x + Math.sin(e.t * 0.01 + d.phase) * 0.3, d.y, z);
+      tmp.rotation.set(e.t * 0.01 * d.rotSpd, e.t * 0.013 * d.rotSpd, 0);
+      tmp.scale.setScalar(d.scale);
+      tmp.updateMatrix();
+      meshRef.current.setMatrixAt(i, tmp.matrix);
+    }
+    meshRef.current.instanceMatrix.needsUpdate = true;
+    void dt;
+  });
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, COUNT]}>
+      <dodecahedronGeometry args={[0.6, 0]} />
+      <meshStandardMaterial color="#7a6a5a" roughness={1} flatShading />
+    </instancedMesh>
+  );
+}
+
+function WreckEvent({ eventRef }: { eventRef: RareRef }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((_, dt) => {
+    const e = eventRef.current; if (!e || !ref.current) return;
+    const p = e.t / e.duration;
+    const z = -50 + p * 75;
+    ref.current.position.set(-3, -1.2, z);
+    ref.current.rotation.z = Math.sin(e.t * 0.02) * 0.08 - 0.3;
+    ref.current.rotation.y += dt * 0.05;
+  });
+  return (
+    <group ref={ref}>
+      {/* hull */}
+      <mesh>
+        <cylinderGeometry args={[1.1, 1.4, 8, 12]} />
+        <meshStandardMaterial color="#3a3a44" metalness={0.7} roughness={0.6} />
+      </mesh>
+      {/* broken nose */}
+      <mesh position={[0, 4.2, 0.3]} rotation={[0.4, 0, 0]}>
+        <coneGeometry args={[1.0, 2.2, 10]} />
+        <meshStandardMaterial color="#2c2c32" metalness={0.8} roughness={0.5} />
+      </mesh>
+      {/* exposed wing */}
+      <mesh position={[2.4, -1, 0]} rotation={[0, 0, 0.6]}>
+        <boxGeometry args={[3.2, 0.2, 1.2]} />
+        <meshStandardMaterial color="#444450" metalness={0.6} roughness={0.7} />
+      </mesh>
+      {/* glowing reactor leak */}
+      <pointLight color="#60ffd0" intensity={1.4} distance={14} position={[0, -3, 0]} />
+      <mesh position={[0, -3.5, 0]}>
+        <sphereGeometry args={[0.6, 16, 16]} />
+        <meshBasicMaterial color="#a0ffe0" />
+      </mesh>
+      {/* sparks */}
+      <mesh position={[1.2, 0.8, 0.5]}>
+        <sphereGeometry args={[0.18, 8, 8]} />
+        <meshBasicMaterial color="#ffaa30" />
+      </mesh>
+    </group>
+  );
+}
+
+function ChaseShip({ eventRef }: { eventRef: RareRef }) {
+  const ref = useRef<THREE.Group>(null);
+  const blinkRef = useRef<THREE.MeshBasicMaterial>(null);
+  useFrame((_, dt) => {
+    const e = eventRef.current; if (!e || !ref.current) return;
+    const p = e.t / e.duration;
+    // Stays ahead, drifting up/down, occasionally darts left/right
+    const z = -28 + Math.sin(p * Math.PI * 2) * 6;
+    const x = Math.sin(e.t * 0.02) * 2.5;
+    const y = 1 + Math.sin(e.t * 0.015) * 1.5;
+    ref.current.position.set(x, y, z);
+    ref.current.rotation.y = Math.PI + Math.sin(e.t * 0.03) * 0.4;
+    if (blinkRef.current) blinkRef.current.opacity = 0.5 + 0.5 * Math.sin(e.t * 0.3);
+    void dt;
+  });
+  return (
+    <group ref={ref}>
+      <mesh>
+        <coneGeometry args={[0.5, 2.0, 8]} />
+        <meshStandardMaterial color="#202028" metalness={0.9} roughness={0.2} />
+      </mesh>
+      <mesh position={[0, -0.1, 0.3]}>
+        <boxGeometry args={[2.2, 0.1, 0.6]} />
+        <meshStandardMaterial color="#2a2a36" metalness={0.8} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0, 0.9]}>
+        <sphereGeometry args={[0.22, 12, 8]} />
+        <meshBasicMaterial color="#ff3050" />
+      </mesh>
+      <mesh position={[0, 0, 1.1]}>
+        <sphereGeometry args={[0.45, 12, 8]} />
+        <meshBasicMaterial ref={blinkRef} color="#ff3050" transparent opacity={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
+function mulberry(seed: number) {
+  let s = seed >>> 0;
+  return function () {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }

@@ -528,6 +528,12 @@ function Game() {
   type PortalEntity = { worldX: number; anchor: "top" | "bottom"; kind: PortalKind; entered: boolean };
   const portals = useRef<PortalEntity[]>([]);
   const nextPortalScore = useRef(800);
+  // ===== Rare events (visual flair, non-colliding) =====
+  type RareEventKind = "star" | "asteroids" | "wreck" | "chase";
+  type RareEvent = { kind: RareEventKind; t: number; duration: number; seed: number };
+  const rareEvent = useRef<RareEvent | null>(null);
+  const rareCooldown = useRef(900); // frames until first possible event
+  const [rareBanner, setRareBanner] = useState<{ kind: RareEventKind; title: string; sub: string } | null>(null);
   const portalY = (p: PortalEntity) => {
     const px = p.worldX - distance.current;
     const i = Math.floor((px + offset.current) / SEG_W);
@@ -664,6 +670,8 @@ function Game() {
     flash.current = 0;
     portals.current = [];
     nextPortalScore.current = 800;
+    rareEvent.current = null;
+    rareCooldown.current = 900;
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     usedRevive.current = false;
     const count = Math.ceil(W / SEG_W) + 2;
@@ -1178,6 +1186,34 @@ function Game() {
           }
         }
 
+        // ===== Rare events =====
+        if (rareEvent.current) {
+          rareEvent.current.t += 1;
+          if (rareEvent.current.t >= rareEvent.current.duration) {
+            rareEvent.current = null;
+            rareCooldown.current = 1400 + Math.floor(Math.random() * 1600);
+            setRareBanner(null);
+          }
+        } else if (mapRef.current.id === "space") {
+          rareCooldown.current -= 1;
+          if (rareCooldown.current <= 0) {
+            const kinds: RareEventKind[] = ["star", "asteroids", "wreck", "chase"];
+            const kind = kinds[Math.floor(Math.random() * kinds.length)];
+            rareEvent.current = { kind, t: 0, duration: 600, seed: Math.random() };
+            const meta: Record<RareEventKind, { title: string; sub: string }> = {
+              star: { title: "★ Звезда", sub: "Полёт рядом со светилом" },
+              asteroids: { title: "☄ Поле астероидов", sub: "Держись курса" },
+              wreck: { title: "⚠ Разрушенный крейсер", sub: "Сигнал бедствия..." },
+              chase: { title: "👁 Неизвестный корабль", sub: "Кто-то впереди" },
+            };
+            setRareBanner({ kind, ...meta[kind] });
+            flash.current = 14;
+          }
+        } else {
+          // not in space map — slowly recharge
+          rareCooldown.current = Math.max(600, rareCooldown.current - 1);
+        }
+
         if (slowmo.current > 0) slowmo.current--;
         if (boost.current > 0) boost.current--;
 
@@ -1403,8 +1439,19 @@ function Game() {
             skin: skinRef,
             map: mapRef,
             alive: aliveRef,
+            rareEvent,
           }}
         />
+
+        {/* Rare event banner */}
+        {rareBanner && (
+          <div className="pointer-events-none absolute left-1/2 top-16 -translate-x-1/2 animate-fade-in">
+            <div className="rounded-2xl border border-white/30 bg-black/60 px-5 py-2.5 text-center font-mono text-white shadow-[0_0_40px_rgba(160,120,255,0.5)] backdrop-blur-md">
+              <div className="text-lg font-extrabold tracking-wide">{rareBanner.title}</div>
+              <div className="text-[10px] uppercase tracking-[0.25em] text-white/70">{rareBanner.sub}</div>
+            </div>
+          </div>
+        )}
 
         {/* HUD: score & best */}
         <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-0.5 font-mono text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
