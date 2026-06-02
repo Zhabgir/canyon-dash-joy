@@ -1521,6 +1521,7 @@ function Game() {
               <span>●</span>
               <span>{wallet.toLocaleString()}</span>
             </div>
+            <RankDisplay totalDistance={totalDistance} />
             {best > 0 && (
               <p className="text-xs text-white/50">
                 Лучший: <span className="font-mono text-white/80">{best.toLocaleString()}</span> · ● {bestCoins}
