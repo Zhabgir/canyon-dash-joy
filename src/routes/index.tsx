@@ -291,7 +291,7 @@ function Game() {
   type PortalKind = "other" | "normal" | "chernobyl";
   type PortalEntity = { worldX: number; y: number; kind: PortalKind; entered: boolean };
   const portals = useRef<PortalEntity[]>([]);
-  const portalPhase = useRef<0 | 1 | 2>(0);
+  const nextPortalScore = useRef(800);
 
   // ===== Sound engine (WebAudio) =====
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -418,7 +418,7 @@ function Game() {
     shake.current = 0;
     flash.current = 0;
     portals.current = [];
-    portalPhase.current = 0;
+    nextPortalScore.current = 800;
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     usedRevive.current = false;
     const count = Math.ceil(W / SEG_W) + 2;
@@ -926,37 +926,28 @@ function Game() {
         if (planeY.current < 0 || planeY.current > H) die();
         setScore(Math.floor(distance.current / 10));
 
-        // ===== Portal spawning =====
+        // ===== Portal spawning (every 1000 score, recurring) =====
         const curScore = Math.floor(distance.current / 10);
-        if (portalPhase.current === 0 && curScore >= 800) {
-          portalPhase.current = 1;
-          portals.current.push({
-            worldX: distance.current + W * 1.2,
-            y: H * 0.7,
-            kind: "other",
-            entered: false,
-          });
+        // mark portals that scrolled past as gone (so we can spawn new ones)
+        for (const p of portals.current) {
+          if (!p.entered && p.worldX - distance.current < -120) p.entered = true;
         }
-        if (
-          portalPhase.current === 1 &&
-          curScore >= 1500 &&
-          mapRef.current.id === "otherworld" &&
-          portals.current.every((p) => p.entered)
-        ) {
-          portalPhase.current = 2;
-          // two portals: top = back to normal world, bottom = chernobyl
-          portals.current.push({
-            worldX: distance.current + W * 1.2,
-            y: H * 0.3,
-            kind: "normal",
-            entered: false,
-          });
-          portals.current.push({
-            worldX: distance.current + W * 1.2,
-            y: H * 0.72,
-            kind: "chernobyl",
-            entered: false,
-          });
+        const anyActive = portals.current.some((p) => !p.entered);
+        if (curScore >= nextPortalScore.current && !anyActive) {
+          const curMap = mapRef.current.id;
+          const spawnX = distance.current + W * 1.2;
+          if (curMap === "otherworld") {
+            // dual choice: back to normal OR chernobyl
+            portals.current.push({ worldX: spawnX, y: H * 0.3, kind: "normal", entered: false });
+            portals.current.push({ worldX: spawnX, y: H * 0.72, kind: "chernobyl", entered: false });
+          } else if (curMap === "chernobyl") {
+            // escape back to normal
+            portals.current.push({ worldX: spawnX, y: H * 0.5, kind: "normal", entered: false });
+          } else {
+            // normal world → other world
+            portals.current.push({ worldX: spawnX, y: H * 0.7, kind: "other", entered: false });
+          }
+          nextPortalScore.current += 1000;
         }
 
         // ===== Portal entering =====
