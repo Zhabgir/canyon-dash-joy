@@ -876,7 +876,7 @@ function Game() {
             vy: (dy / dist) * sp,
             trail: [],
           });
-          missileTimer.current = Math.max(56, 210 - difficultyFor() * 120 - Math.random() * 50);
+          missileTimer.current = Math.max(95, 340 - difficultyFor() * 150 - Math.random() * 80);
         }
 
         // ===== Missile update + collision =====
