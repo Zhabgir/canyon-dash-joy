@@ -1640,6 +1640,12 @@ function Game() {
                 🗺 Карты
               </button>
               <button
+                onClick={() => setShopTab("vehicles")}
+                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
+              >
+                🚁 Транспорт
+              </button>
+              <button
                 onClick={() => setQuestsOpen(true)}
                 className="relative rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
               >
