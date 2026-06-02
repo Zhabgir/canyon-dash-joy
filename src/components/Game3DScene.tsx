@@ -412,15 +412,11 @@ function PlaneModel({ skinRef }: { skinRef: React.MutableRefObject<Skin> }) {
 
   const skin = skinRef.current;
 
-  // Vehicles: render as big emoji billboard
+  // Vehicles: render as big emoji sprite
   if (skin.vehicle) {
     return (
       <group ref={groupRef}>
-        <Billboard>
-          <Text fontSize={1.6} anchorX="center" anchorY="middle" outlineWidth={0.04} outlineColor="#000">
-            {skin.emoji}
-          </Text>
-        </Billboard>
+        <EmojiSprite emoji={skin.emoji} size={1.8} />
         {skin.vehicle === "helicopter" && (
           <mesh ref={rotorRef} position={[0, 0.9, 0]}>
             <boxGeometry args={[2.6, 0.04, 0.12]} />
