@@ -289,9 +289,17 @@ function Game() {
   const tick = useRef(0);
   const speedLines = useRef<{ x: number; y: number; len: number; spd: number }[]>([]);
   type PortalKind = "other" | "normal" | "chernobyl";
-  type PortalEntity = { worldX: number; y: number; kind: PortalKind; entered: boolean };
+  type PortalEntity = { worldX: number; anchor: "top" | "bottom"; kind: PortalKind; entered: boolean };
   const portals = useRef<PortalEntity[]>([]);
   const nextPortalScore = useRef(800);
+  const portalY = (p: PortalEntity) => {
+    const px = p.worldX - distance.current;
+    const i = Math.floor((px + offset.current) / SEG_W);
+    const seg = segments.current[i] ?? segments.current[Math.max(0, Math.min(segments.current.length - 1, i))];
+    if (!seg) return H / 2;
+    // place opening just outside the canyon wall
+    return p.anchor === "top" ? seg.topH + 6 : H - seg.botH - 6;
+  };
 
   // ===== Sound engine (WebAudio) =====
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -937,15 +945,13 @@ function Game() {
           const curMap = mapRef.current.id;
           const spawnX = distance.current + W * 1.2;
           if (curMap === "otherworld") {
-            // dual choice: back to normal OR chernobyl
-            portals.current.push({ worldX: spawnX, y: H * 0.3, kind: "normal", entered: false });
-            portals.current.push({ worldX: spawnX, y: H * 0.72, kind: "chernobyl", entered: false });
+            // dual choice: back to normal (out of ceiling) OR chernobyl (out of floor)
+            portals.current.push({ worldX: spawnX, anchor: "top", kind: "normal", entered: false });
+            portals.current.push({ worldX: spawnX, anchor: "bottom", kind: "chernobyl", entered: false });
           } else if (curMap === "chernobyl") {
-            // escape back to normal
-            portals.current.push({ worldX: spawnX, y: H * 0.5, kind: "normal", entered: false });
+            portals.current.push({ worldX: spawnX, anchor: "bottom", kind: "normal", entered: false });
           } else {
-            // normal world → other world
-            portals.current.push({ worldX: spawnX, y: H * 0.7, kind: "other", entered: false });
+            portals.current.push({ worldX: spawnX, anchor: "bottom", kind: "other", entered: false });
           }
           nextPortalScore.current += 1000;
         }
@@ -955,7 +961,7 @@ function Game() {
           if (p.entered) continue;
           const px = p.worldX - distance.current;
           const dx = px - PLANE_X;
-          const dy = p.y - planeY.current;
+          const dy = portalY(p) - planeY.current;
           if (Math.hypot(dx, dy) < 60) {
             p.entered = true;
             if (p.kind === "other") mapRef.current = OTHER_WORLD;
@@ -1140,7 +1146,7 @@ function Game() {
         if (p.entered) continue;
         const px = p.worldX - distance.current;
         if (px > -80 && px < W + 80) {
-          drawPortal(ctx, px, p.y, tick.current, p.kind);
+          drawPortal(ctx, px, portalY(p), tick.current, p.kind, p.anchor);
         }
       }
 
@@ -2232,13 +2238,15 @@ function drawPortal(
   y: number,
   tick: number,
   kind: "other" | "normal" | "chernobyl" = "other",
+  anchor: "top" | "bottom" = "bottom",
 ) {
-  // Mario-style green warp pipe. (x, y) = center of the opening.
+  // Mario-style green warp pipe emerging from the canyon wall.
+  // (x, y) = center of the pipe's opening (mouth).
   ctx.save();
   ctx.translate(x, y);
-  // rotate -90° so the pipe lies horizontally with its opening facing left
-  // (toward the incoming plane). Local +Y in the design now points to +X (right).
-  ctx.rotate(-Math.PI / 2);
+  // For a bottom-anchored portal the body extends down into the floor (default).
+  // For a top-anchored portal we flip vertically so body extends up into the ceiling.
+  if (anchor === "top") ctx.scale(1, -1);
 
 
   const rimW = 80;   // wider rim on top
