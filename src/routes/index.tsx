@@ -32,6 +32,9 @@ interface Skin {
   wing: [string, string, string];
   accent: string;
   emoji: string;
+  // Optional: render as a giant emoji vehicle instead of the jet geometry.
+  vehicle?: "helicopter" | "ufo" | "military" | "bomber" | "spaceship" | "biplane" | "balloon" | "dragon";
+  category?: "skin" | "vehicle";
 }
 interface MapTheme {
   id: string;
@@ -50,16 +53,26 @@ const SKINS: Skin[] = [
   { id: "gold", name: "Gold", price: 500, fuse: ["#fff1a8", "#d4a526", "#6a5010"], wing: ["#ffd860", "#a07a18", "#ffd860"], accent: "#ffffff", emoji: "👑" },
   { id: "neon", name: "Neon", price: 800, fuse: ["#a8fff0", "#22c2c8", "#0a3a4a"], wing: ["#7af0ff", "#1a8a9a", "#7af0ff"], accent: "#ff40d0", emoji: "⚡" },
   { id: "shark", name: "Акула", price: 600, fuse: ["#cfe6f0", "#5b8aa3", "#1f3a4a"], wing: ["#9cc4d6", "#3a6680", "#9cc4d6"], accent: "#ff5050", emoji: "🦈" },
-  { id: "dragon", name: "Дракон", price: 1200, fuse: ["#ffd060", "#c8401a", "#5a0a05"], wing: ["#ff8a30", "#a01a10", "#ff8a30"], accent: "#00ffaa", emoji: "🐉" },
+  { id: "dragon-skin", name: "Дракон", price: 1200, fuse: ["#ffd060", "#c8401a", "#5a0a05"], wing: ["#ff8a30", "#a01a10", "#ff8a30"], accent: "#00ffaa", emoji: "🐉" },
   { id: "unicorn", name: "Единорог", price: 1000, fuse: ["#ffe8ff", "#f098f8", "#8030a0"], wing: ["#ffc0f8", "#a850c8", "#ffc0f8"], accent: "#fff060", emoji: "🦄" },
   { id: "ghost", name: "Призрак", price: 700, fuse: ["#ffffff", "#d8d8e8", "#7080a0"], wing: ["#e8e8f8", "#9098b0", "#e8e8f8"], accent: "#80c0ff", emoji: "👻" },
   { id: "alien", name: "Пришелец", price: 900, fuse: ["#c0ff80", "#4aa830", "#0a3010"], wing: ["#a0e060", "#308020", "#a0e060"], accent: "#ff20ff", emoji: "👽" },
-  { id: "rocket", name: "Ракета", price: 1500, fuse: ["#ff80a0", "#e02040", "#600810"], wing: ["#ffb0c0", "#a01830", "#ffb0c0"], accent: "#ffff00", emoji: "🚀" },
+  { id: "rocket-skin", name: "Ракета", price: 1500, fuse: ["#ff80a0", "#e02040", "#600810"], wing: ["#ffb0c0", "#a01830", "#ffb0c0"], accent: "#ffff00", emoji: "🚀" },
   { id: "panda", name: "Панда", price: 850, fuse: ["#ffffff", "#e0e0e0", "#202020"], wing: ["#f0f0f0", "#303030", "#f0f0f0"], accent: "#ff80a0", emoji: "🐼" },
   { id: "tiger", name: "Тигр", price: 1100, fuse: ["#ffc060", "#e07820", "#3a1808"], wing: ["#ffa040", "#a05010", "#ffa040"], accent: "#000000", emoji: "🐯" },
   { id: "robot", name: "Робот", price: 1300, fuse: ["#d0d8e8", "#7080a0", "#202838"], wing: ["#a0b0c8", "#404858", "#a0b0c8"], accent: "#00ffff", emoji: "🤖" },
   { id: "pizza", name: "Пицца", price: 750, fuse: ["#ffd890", "#c08040", "#603010"], wing: ["#ffc070", "#a06020", "#ffc070"], accent: "#e02020", emoji: "🍕" },
   { id: "rainbow", name: "Радуга", price: 2000, fuse: ["#ff4040", "#40ff40", "#4040ff"], wing: ["#ffff40", "#ff40ff", "#40ffff"], accent: "#ffffff", emoji: "🌈" },
+
+  // === VEHICLES ===
+  { id: "v-heli", name: "Вертолёт", price: 1200, fuse: ["#3a4a30", "#1a2818", "#0a1408"], wing: ["#3a4a30", "#1a2818", "#3a4a30"], accent: "#ffcc00", emoji: "🚁", vehicle: "helicopter", category: "vehicle" },
+  { id: "v-ufo", name: "НЛО", price: 2500, fuse: ["#c0c8d0", "#7080a0", "#202838"], wing: ["#a0b0c8", "#404858", "#a0b0c8"], accent: "#00ffff", emoji: "🛸", vehicle: "ufo", category: "vehicle" },
+  { id: "v-military", name: "Военный истребитель", price: 1800, fuse: ["#5a6a4a", "#2a3a1c", "#0a1408"], wing: ["#4a5a3a", "#1a2818", "#4a5a3a"], accent: "#c0c000", emoji: "🛩️", vehicle: "military", category: "vehicle" },
+  { id: "v-bomber", name: "Стелс-бомбардировщик", price: 3000, fuse: ["#1a1a20", "#08080c", "#000000"], wing: ["#15151a", "#050508", "#15151a"], accent: "#80a0ff", emoji: "🛫", vehicle: "bomber", category: "vehicle" },
+  { id: "v-spaceship", name: "Космолёт", price: 3500, fuse: ["#a0d0ff", "#3060c0", "#101848"], wing: ["#80b0ff", "#2040a0", "#80b0ff"], accent: "#ffff80", emoji: "🚀", vehicle: "spaceship", category: "vehicle" },
+  { id: "v-biplane", name: "Биплан", price: 900, fuse: ["#ffd060", "#c08020", "#603810"], wing: ["#e0a040", "#805010", "#e0a040"], accent: "#a02020", emoji: "🛩", vehicle: "biplane", category: "vehicle" },
+  { id: "v-balloon", name: "Воздушный шар", price: 700, fuse: ["#ff6080", "#c02040", "#600810"], wing: ["#ff8090", "#a02030", "#ff8090"], accent: "#ffcc00", emoji: "🎈", vehicle: "balloon", category: "vehicle" },
+  { id: "v-dragon", name: "Огнедышащий дракон", price: 4000, fuse: ["#c02010", "#600808", "#200000"], wing: ["#e04020", "#801010", "#e04020"], accent: "#ffd000", emoji: "🐲", vehicle: "dragon", category: "vehicle" },
 ];
 
 const MAPS: MapTheme[] = [
