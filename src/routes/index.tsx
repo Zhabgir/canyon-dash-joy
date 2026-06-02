@@ -1443,6 +1443,16 @@ function Game() {
           }}
         />
 
+        {/* Rare event banner */}
+        {rareBanner && (
+          <div className="pointer-events-none absolute left-1/2 top-16 -translate-x-1/2 animate-fade-in">
+            <div className="rounded-2xl border border-white/30 bg-black/60 px-5 py-2.5 text-center font-mono text-white shadow-[0_0_40px_rgba(160,120,255,0.5)] backdrop-blur-md">
+              <div className="text-lg font-extrabold tracking-wide">{rareBanner.title}</div>
+              <div className="text-[10px] uppercase tracking-[0.25em] text-white/70">{rareBanner.sub}</div>
+            </div>
+          </div>
+        )}
+
         {/* HUD: score & best */}
         <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-0.5 font-mono text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
           <div className="text-2xl font-extrabold tracking-tight">
