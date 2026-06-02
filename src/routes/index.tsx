@@ -575,24 +575,25 @@ function Game() {
     }
     setQuestState((qs) => {
       const today = todayStr();
+      let next: QuestState;
       if (qs.date !== today) {
-        const fresh = { date: today, quests: pickDailyQuests(today) };
-        saveJSON(LS.quests, fresh);
-        return fresh;
+        next = { date: today, quests: pickDailyQuests(today) };
+      } else {
+        next = {
+          ...qs,
+          quests: qs.quests.map((q) => {
+            if (q.claimed) return q;
+            let inc = 0;
+            if (q.def.metric === "runCoins") inc = Math.max(q.progress, runCoins);
+            else if (q.def.metric === "runScore") inc = Math.max(q.progress, d);
+            else if (q.def.metric === "games") inc = q.progress + 1;
+            else if (q.def.metric === "totalCoins") inc = q.progress + runCoins;
+            return { ...q, progress: Math.min(q.def.target, inc) };
+          }),
+        };
       }
-      const next = {
-        ...qs,
-        quests: qs.quests.map((q) => {
-          if (q.claimed) return q;
-          let inc = 0;
-          if (q.def.metric === "runCoins") inc = Math.max(q.progress, runCoins);
-          else if (q.def.metric === "runScore") inc = Math.max(q.progress, d);
-          else if (q.def.metric === "games") inc = q.progress + 1;
-          else if (q.def.metric === "totalCoins") inc = q.progress + runCoins;
-          return { ...q, progress: Math.min(q.def.target, inc) };
-        }),
-      };
       saveJSON(LS.quests, next);
+      if (user) saveQuestsToDB(user.id, next).catch((e) => console.warn("save quests failed", e));
       return next;
     });
     setState(nextState);
