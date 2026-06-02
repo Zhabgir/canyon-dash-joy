@@ -269,7 +269,30 @@ interface Missile {
   vx: number;
   vy: number;
   trail: { x: number; y: number }[];
+  emoji?: string;
+  trailColor?: string;
+  spin?: number;
 }
+
+// Projectile per world. If emoji is set, missile renders as that emoji.
+const PROJECTILE_BY_MAP: Record<string, { emoji?: string; trailColor?: string }> = {
+  space: {}, // default rocket
+  nebula: { emoji: "🔮", trailColor: "255,160,240" },
+  mars: { emoji: "🪨", trailColor: "200,120,80" },
+  ice: { emoji: "❄️", trailColor: "180,230,255" },
+  blackhole: { emoji: "🕳️", trailColor: "180,80,255" },
+  sunset: { emoji: "🍊", trailColor: "255,180,80" },
+  ocean: { emoji: "🐟", trailColor: "120,220,255" },
+  jungle: { emoji: "🍌", trailColor: "240,230,80" },
+  candy: { emoji: "🍬", trailColor: "255,180,220" },
+  lava: { emoji: "🔥", trailColor: "255,120,40" },
+  aurora: { emoji: "⭐", trailColor: "180,255,220" },
+  galaxy: { emoji: "☄️", trailColor: "255,200,255" },
+  matrix: { emoji: "🟢", trailColor: "80,255,120" },
+  cherry: { emoji: "🌸", trailColor: "255,200,230" },
+  otherworld: { emoji: "💩", trailColor: "160,100,60" },
+  chernobyl: { emoji: "☢️", trailColor: "200,255,80" },
+};
 interface PowerUp {
   x: number;
   y: number;
