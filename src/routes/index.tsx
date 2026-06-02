@@ -896,6 +896,7 @@ function Game() {
     const next = walletRef.current - REVIVE_COST;
     setWallet(next);
     saveJSON(LS.wallet, next);
+    if (user) saveShopToDB(user.id, { wallet: next }).catch((e) => console.warn("save wallet failed", e));
     usedRevive.current = true;
     // clear nearby threats
     missiles.current = [];
