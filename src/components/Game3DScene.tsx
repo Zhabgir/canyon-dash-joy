@@ -487,3 +487,13 @@ function MissileModel({ index, missilesRef }: { index: number; missilesRef: Reac
     </group>
   );
 }
+
+function EmojiSprite({ emoji, size }: { emoji: string; size: number }) {
+  const texture = useMemo(() => makeEmojiTexture(emoji, 128), [emoji]);
+  useEffect(() => () => texture.dispose(), [texture]);
+  return (
+    <sprite scale={[size, size, size]}>
+      <spriteMaterial map={texture} transparent depthWrite={false} />
+    </sprite>
+  );
+}
