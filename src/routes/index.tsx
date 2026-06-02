@@ -1186,6 +1186,34 @@ function Game() {
           }
         }
 
+        // ===== Rare events =====
+        if (rareEvent.current) {
+          rareEvent.current.t += 1;
+          if (rareEvent.current.t >= rareEvent.current.duration) {
+            rareEvent.current = null;
+            rareCooldown.current = 1400 + Math.floor(Math.random() * 1600);
+            setRareBanner(null);
+          }
+        } else if (mapRef.current.id === "space") {
+          rareCooldown.current -= 1;
+          if (rareCooldown.current <= 0) {
+            const kinds: RareEventKind[] = ["star", "asteroids", "wreck", "chase"];
+            const kind = kinds[Math.floor(Math.random() * kinds.length)];
+            rareEvent.current = { kind, t: 0, duration: 600, seed: Math.random() };
+            const meta: Record<RareEventKind, { title: string; sub: string }> = {
+              star: { title: "★ Звезда", sub: "Полёт рядом со светилом" },
+              asteroids: { title: "☄ Поле астероидов", sub: "Держись курса" },
+              wreck: { title: "⚠ Разрушенный крейсер", sub: "Сигнал бедствия..." },
+              chase: { title: "👁 Неизвестный корабль", sub: "Кто-то впереди" },
+            };
+            setRareBanner({ kind, ...meta[kind] });
+            flash.current = 14;
+          }
+        } else {
+          // not in space map — slowly recharge
+          rareCooldown.current = Math.max(600, rareCooldown.current - 1);
+        }
+
         if (slowmo.current > 0) slowmo.current--;
         if (boost.current > 0) boost.current--;
 
