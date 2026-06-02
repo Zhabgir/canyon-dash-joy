@@ -888,10 +888,14 @@ function Game() {
           });
         }
 
-        // canyon collision
+        // canyon collision (skip while plane is near the open portal)
         const idx = Math.floor((PLANE_X + offset.current) / SEG_W);
         const seg = segments.current[idx];
-        if (seg) {
+        const nearPortal =
+          portal.current.spawned &&
+          !portal.current.entered &&
+          Math.abs(portal.current.worldX - distance.current - PLANE_X) < 90;
+        if (seg && !nearPortal) {
           const planeTop = planeY.current - PLANE_SIZE / 2;
           const planeBot = planeY.current + PLANE_SIZE / 2;
           if (planeTop < seg.topH || planeBot > H - seg.botH) {
