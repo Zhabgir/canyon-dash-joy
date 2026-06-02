@@ -106,7 +106,42 @@ const LS = {
   skin: "jr_skin",
   map: "jr_map",
   quests: "jr_quests_v2",
+  totalDistance: "jr_total_distance",
 };
+
+// ===== Rank system =====
+interface RankDef {
+  name: string;
+  emoji: string;
+  threshold: number;
+  color: string;
+}
+const RANKS: RankDef[] = [
+  { name: "Курсант", emoji: "🎖️", threshold: 0, color: "#a0a0a0" },
+  { name: "Новичок", emoji: "🌱", threshold: 1000, color: "#7ec850" },
+  { name: "Пилот", emoji: "✈️", threshold: 5000, color: "#4aa8ff" },
+  { name: "Капитан", emoji: "⭐", threshold: 15000, color: "#ffd700" },
+  { name: "Ас", emoji: "🏆", threshold: 40000, color: "#ff7b2e" },
+  { name: "Элита", emoji: "💎", threshold: 100000, color: "#b76eff" },
+  { name: "Легенда", emoji: "👑", threshold: 250000, color: "#ff3a3a" },
+  { name: "Мифический", emoji: "🔥", threshold: 500000, color: "#ff1493" },
+];
+function getRank(totalDistance: number): { current: RankDef; next: RankDef | null; progress: number } {
+  let current = RANKS[0];
+  let next: RankDef | null = RANKS[1] ?? null;
+  for (let i = RANKS.length - 1; i >= 0; i--) {
+    if (totalDistance >= RANKS[i].threshold) {
+      current = RANKS[i];
+      next = RANKS[i + 1] ?? null;
+      break;
+    }
+  }
+  if (!next) return { current, next: null, progress: 100 };
+  const range = next.threshold - current.threshold;
+  const earned = totalDistance - current.threshold;
+  const progress = Math.min(100, Math.floor((earned / range) * 100));
+  return { current, next, progress };
+}
 
 // ===== Daily quests =====
 type QuestMetric = "runCoins" | "runScore" | "games" | "totalCoins";
