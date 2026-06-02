@@ -1678,11 +1678,14 @@ function ShopOverlay({
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="h-10 w-14 rounded-md border border-white/20"
+                      className="flex h-12 w-16 items-center justify-center rounded-md border border-white/20 text-2xl"
                       style={{
                         background: `linear-gradient(180deg, ${s.fuse[0]}, ${s.fuse[1]} 55%, ${s.fuse[2]})`,
+                        textShadow: "0 1px 2px rgba(0,0,0,0.6)",
                       }}
-                    />
+                    >
+                      {s.emoji}
+                    </div>
                     <div>
                       <div className="text-sm font-bold text-white">{s.name}</div>
                       <div className="text-[10px] uppercase tracking-wider text-white/50">
