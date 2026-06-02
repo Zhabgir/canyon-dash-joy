@@ -297,8 +297,9 @@ function Game() {
     const i = Math.floor((px + offset.current) / SEG_W);
     const seg = segments.current[i] ?? segments.current[Math.max(0, Math.min(segments.current.length - 1, i))];
     if (!seg) return H / 2;
-    // place opening just outside the canyon wall
-    return p.anchor === "top" ? seg.topH + 6 : H - seg.botH - 6;
+    // place the horizontal tunnel so its outer edge touches the canyon wall
+    const tunnelRadius = 36;
+    return p.anchor === "top" ? seg.topH + tunnelRadius : H - seg.botH - tunnelRadius;
   };
 
   // ===== Sound engine (WebAudio) =====
@@ -2240,19 +2241,16 @@ function drawPortal(
   kind: "other" | "normal" | "chernobyl" = "other",
   anchor: "top" | "bottom" = "bottom",
 ) {
-  // Mario-style green warp pipe emerging from the canyon wall.
-  // (x, y) = center of the pipe's opening (mouth).
+  // Horizontal tunnel embedded in the canyon wall/mountain.
+  // (x, y) = center of the round tunnel mouth.
   ctx.save();
   ctx.translate(x, y);
-  // For a bottom-anchored portal the body extends down into the floor (default).
-  // For a top-anchored portal we flip vertically so body extends up into the ceiling.
-  if (anchor === "top") ctx.scale(1, -1);
+  const dir = anchor === "top" ? -1 : 1;
 
-
-  const rimW = 80;   // wider rim on top
-  const rimH = 22;
-  const bodyW = 64;  // narrower pipe body
-  const bodyH = 260; // long pipe going down off-screen
+  const mouthR = 34;
+  const innerR = 24;
+  const bodyW = 86;
+  const bodyH = mouthR * 2;
 
   // Color palettes per portal kind
   const palette =
@@ -2274,8 +2272,8 @@ function drawPortal(
             hi: "rgba(200,255,160,0.7)", out: "#062808",
           };
 
-  // ---- pipe body (below the rim) ----
-  const bodyGrad = ctx.createLinearGradient(-bodyW / 2, 0, bodyW / 2, 0);
+  // tunnel body goes horizontally backward into the mountain wall
+  const bodyGrad = ctx.createLinearGradient(-bodyW, -mouthR, 10, mouthR);
   bodyGrad.addColorStop(0, palette.c0);
   bodyGrad.addColorStop(0.15, palette.c1);
   bodyGrad.addColorStop(0.35, palette.c2);
@@ -2283,73 +2281,72 @@ function drawPortal(
   bodyGrad.addColorStop(0.85, palette.c4);
   bodyGrad.addColorStop(1, palette.c5);
   ctx.fillStyle = bodyGrad;
-  ctx.fillRect(-bodyW / 2, rimH / 2, bodyW, bodyH);
+  ctx.fillRect(-bodyW, -mouthR, bodyW, bodyH);
 
-  // body highlight stripe
-  ctx.fillStyle = palette.hi;
-  ctx.fillRect(-bodyW / 2 + 8, rimH / 2, 6, bodyH);
-  // body shadow stripe
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
-  ctx.fillRect(bodyW / 2 - 12, rimH / 2, 8, bodyH);
+  // rock shadows where the tunnel disappears into the canyon
+  ctx.fillStyle = "rgba(0,0,0,0.42)";
+  ctx.fillRect(-bodyW, -mouthR, bodyW, 8);
+  ctx.fillRect(-bodyW, mouthR - 8, bodyW, 8);
 
-  // ---- rim (the wider top lip) ----
-  const rimGrad = ctx.createLinearGradient(-rimW / 2, 0, rimW / 2, 0);
-  rimGrad.addColorStop(0, palette.c0);
-  rimGrad.addColorStop(0.15, palette.c1);
-  rimGrad.addColorStop(0.35, palette.c2);
-  rimGrad.addColorStop(0.55, palette.c3);
-  rimGrad.addColorStop(0.85, palette.c4);
-  rimGrad.addColorStop(1, palette.c5);
+  // round front rim facing the player horizontally
+  const rimGrad = ctx.createRadialGradient(-8, -10, innerR * 0.35, 0, 0, mouthR);
+  rimGrad.addColorStop(0, palette.c2);
+  rimGrad.addColorStop(0.45, palette.c3);
+  rimGrad.addColorStop(0.75, palette.c1);
+  rimGrad.addColorStop(1, palette.c0);
   ctx.fillStyle = rimGrad;
-  ctx.fillRect(-rimW / 2, -rimH / 2 - 6, rimW, rimH + 6);
-
-  // rim highlight
-  ctx.fillStyle = palette.hi;
-  ctx.fillRect(-rimW / 2 + 6, -rimH / 2 - 4, 7, 5);
-  ctx.fillRect(-rimW / 2 + 6, -rimH / 2 - 4, rimW - 24, 3);
-
-  // rim bottom shadow line
-  ctx.fillStyle = "rgba(0,0,0,0.45)";
-  ctx.fillRect(-rimW / 2, rimH / 2 - 2, rimW, 3);
-
-  // outer rim outline
-  ctx.strokeStyle = palette.out;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(-rimW / 2, -rimH / 2 - 6, rimW, rimH + 6);
-  ctx.strokeRect(-bodyW / 2, rimH / 2, bodyW, bodyH);
-
-  // ---- dark opening on top (the tunnel mouth) ----
-  ctx.fillStyle = "#020a02";
   ctx.beginPath();
-  ctx.ellipse(0, -rimH / 2 - 6, rimW / 2 - 6, 7, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, mouthR, mouthR * 0.92, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "#041204";
-  ctx.lineWidth = 1.5;
+
+  // the canyon wall overlaps the rear half, so it reads as mounted in the mountain
+  ctx.fillStyle = "rgba(35,14,8,0.45)";
+  ctx.beginPath();
+  ctx.ellipse(-bodyW + 10, dir * mouthR, bodyW * 0.9, 18, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // front rim highlight and outline
+  ctx.strokeStyle = palette.out;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, mouthR, mouthR * 0.92, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = palette.hi;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(-8, -8, mouthR * 0.55, Math.PI * 1.05, Math.PI * 1.72);
   ctx.stroke();
 
-  // ---- swirling colored vortex inside the opening (so it reads as a portal) ----
+  // dark horizontal tunnel mouth
+  ctx.fillStyle = kind === "chernobyl" ? "#000000" : "#020a02";
+  ctx.beginPath();
+  ctx.ellipse(0, 0, innerR, innerR * 0.86, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // swirling colored vortex inside the opening (you fly into it horizontally)
   ctx.save();
   ctx.beginPath();
-  ctx.ellipse(0, -rimH / 2 - 6, rimW / 2 - 8, 6, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, innerR - 2, innerR * 0.78, 0, 0, Math.PI * 2);
   ctx.clip();
   const t = tick * 0.08;
   for (let i = 0; i < 5; i++) {
     const hue = (t * 60 + i * 50) % 360;
     ctx.fillStyle = `hsla(${hue}, 100%, 60%, 0.55)`;
-    const ox = Math.cos(t + i) * 6;
+    const ox = Math.cos(t + i) * 5;
+    const oy = Math.sin(t * 1.2 + i) * 4;
     ctx.beginPath();
-    ctx.ellipse(ox, -rimH / 2 - 6, (rimW / 2 - 8) * (1 - i * 0.18), 5 * (1 - i * 0.15), 0, 0, Math.PI * 2);
+    ctx.ellipse(ox, oy, (innerR - 2) * (1 - i * 0.16), innerR * 0.72 * (1 - i * 0.14), t + i, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
 
-  // sparkles popping out of the pipe
+  // sparkles spilling from the horizontal opening
   for (let i = 0; i < 4; i++) {
     const a = t * 1.4 + (i * Math.PI * 2) / 4;
-    const r = 14 + Math.sin(t * 2 + i) * 4;
+    const r = 26 + Math.sin(t * 2 + i) * 4;
     ctx.fillStyle = `hsla(${(t * 120 + i * 80) % 360}, 100%, 75%, 0.9)`;
     ctx.beginPath();
-    ctx.arc(Math.cos(a) * r, -rimH / 2 - 10 + Math.sin(a) * 3, 1.8, 0, Math.PI * 2);
+    ctx.arc(Math.cos(a) * r * 0.75, Math.sin(a) * r * 0.55, 1.8, 0, Math.PI * 2);
     ctx.fill();
   }
 
