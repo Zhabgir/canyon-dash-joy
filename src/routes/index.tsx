@@ -1285,6 +1285,30 @@ function Game() {
           </div>
         </div>
 
+        {/* auth badge */}
+        <div className="pointer-events-auto absolute left-3 bottom-3 z-20 flex items-center gap-2 font-mono text-[11px]">
+          {user ? (
+            <>
+              <span className="rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-white/80 backdrop-blur-sm">
+                {user.user_metadata?.display_name || user.email}
+              </span>
+              <button
+                onClick={() => supabase.auth.signOut()}
+                className="rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-white/60 backdrop-blur-sm hover:text-white"
+              >
+                Выйти
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/auth"
+              className="rounded-full border border-white/20 bg-black/60 px-3 py-1 text-white/85 backdrop-blur-sm hover:bg-black/80"
+            >
+              Войти / Регистрация
+            </Link>
+          )}
+        </div>
+
         {/* mute toggle */}
         <button
           onClick={() => setMuted((m) => !m)}
