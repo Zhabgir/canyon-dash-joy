@@ -913,7 +913,7 @@ function Game() {
     startEngine();
     setHud((h) => ({ ...h, shield: true }));
     setState("playing");
-  }, [ensureAudio, startEngine]);
+  }, [ensureAudio, startEngine, user]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
