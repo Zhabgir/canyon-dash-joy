@@ -25,9 +25,28 @@ function AuthPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  // OTP step (after signup)
+  const [needOtp, setNeedOtp] = useState(false);
+  const [otp, setOtp] = useState("");
+
   useEffect(() => {
     if (user) navigate({ to: "/", replace: true });
   }, [user, navigate]);
+
+  function translateError(raw: string): string {
+    const lower = raw.toLowerCase();
+    if (lower.includes("invalid login credentials")) return "Неверный email или пароль";
+    if (lower.includes("invalid") && lower.includes("email")) return "Неверный формат email";
+    if (lower.includes("already registered")) return "Такой email уже зарегистрирован — войдите";
+    if (lower.includes("password") && (lower.includes("short") || lower.includes("6"))) return "Пароль слишком короткий (мин. 6 символов)";
+    if (lower.includes("weak") || lower.includes("pwned") || lower.includes("compromised")) return "Этот пароль слишком простой или утёк в сеть. Придумайте другой.";
+    if (lower.includes("email not confirmed")) return "Подтвердите email кодом, который пришёл на почту";
+    if (lower.includes("rate limit")) return "Слишком много попыток, подождите немного";
+    if (lower.includes("token") && lower.includes("expired")) return "Код истёк — запросите новый";
+    if (lower.includes("invalid") && lower.includes("token")) return "Неверный код";
+    if (lower.includes("otp")) return "Неверный или просроченный код";
+    return raw || "Что-то пошло не так";
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,24 +64,50 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        setMsg("Готово! Проверьте email для подтверждения, затем войдите.");
+        setNeedOtp(true);
+        setMsg("Мы отправили 6-значный код на " + email + ". Введите его ниже.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         navigate({ to: "/", replace: true });
       }
     } catch (e) {
-      const raw = e instanceof Error ? e.message : "";
-      const lower = raw.toLowerCase();
-      let msg = raw || "Что-то пошло не так";
-      if (lower.includes("invalid login credentials")) msg = "Неверный email или пароль";
-      else if (lower.includes("invalid") && lower.includes("email")) msg = "Неверный формат email";
-      else if (lower.includes("user already registered") || lower.includes("already registered")) msg = "Такой email уже зарегистрирован — войдите";
-      else if (lower.includes("password") && (lower.includes("short") || lower.includes("6"))) msg = "Пароль слишком короткий (мин. 6 символов)";
-      else if (lower.includes("weak") || lower.includes("pwned") || lower.includes("compromised")) msg = "Этот пароль слишком простой или утёк в сеть. Придумайте другой.";
-      else if (lower.includes("email not confirmed")) msg = "Подтвердите email — мы прислали письмо";
-      else if (lower.includes("rate limit")) msg = "Слишком много попыток, подождите немного";
-      setErr(msg);
+      setErr(translateError(e instanceof Error ? e.message : ""));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    setMsg(null);
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: otp.trim(),
+        type: "signup",
+      });
+      if (error) throw error;
+      navigate({ to: "/", replace: true });
+    } catch (e) {
+      setErr(translateError(e instanceof Error ? e.message : ""));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    setErr(null);
+    setMsg(null);
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({ type: "signup", email });
+      if (error) throw error;
+      setMsg("Новый код отправлен на " + email);
+    } catch (e) {
+      setErr(translateError(e instanceof Error ? e.message : ""));
     } finally {
       setLoading(false);
     }
@@ -72,68 +117,112 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-black px-4 py-10">
       <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
         <h1 className="text-2xl font-bold tracking-wider text-white">
-          {mode === "signin" ? "Вход" : "Регистрация"}
+          {needOtp ? "Подтверждение email" : mode === "signin" ? "Вход" : "Регистрация"}
         </h1>
         <p className="mt-1 text-sm text-white/60">
-          Сохраняй рекорды, дистанцию и прогресс
+          {needOtp ? "Введите код из письма" : "Сохраняй рекорды, дистанцию и прогресс"}
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-3">
-          {mode === "signup" && (
+        {needOtp ? (
+          <form onSubmit={handleVerifyOtp} className="mt-5 flex flex-col gap-3">
             <input
               type="text"
-              placeholder="Никнейм"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40"
-            />
-          )}
-          <input
-            type="email"
-            required
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40"
-          />
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
+              inputMode="numeric"
+              autoComplete="one-time-code"
               required
-              minLength={6}
-              placeholder="Пароль (мин. 6 символов)"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-white/15 bg-black/40 px-3 py-2 pr-16 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40"
+              maxLength={6}
+              placeholder="6-значный код"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+              className="rounded-md border border-white/15 bg-black/40 px-3 py-2 text-center text-lg tracking-[0.5em] text-white placeholder:text-white/40 outline-none focus:border-white/40"
             />
+
+            {err && <div className="rounded-md bg-red-500/20 px-3 py-2 text-xs text-red-200">{err}</div>}
+            {msg && <div className="rounded-md bg-emerald-500/20 px-3 py-2 text-xs text-emerald-200">{msg}</div>}
+
+            <button
+              type="submit"
+              disabled={loading || otp.length < 6}
+              className="mt-1 rounded-md bg-white px-4 py-2 text-sm font-bold text-black transition hover:bg-white/90 disabled:opacity-50"
+            >
+              {loading ? "..." : "Подтвердить"}
+            </button>
             <button
               type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/60 hover:bg-white/10 hover:text-white"
-              aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+              onClick={handleResend}
+              disabled={loading}
+              className="text-xs text-white/60 hover:text-white"
             >
-              {showPassword ? "Скрыть" : "Показ."}
+              Отправить код ещё раз
             </button>
-          </div>
+            <button
+              type="button"
+              onClick={() => { setNeedOtp(false); setOtp(""); setErr(null); setMsg(null); }}
+              className="text-xs text-white/40 hover:text-white/70"
+            >
+              ← Назад
+            </button>
+          </form>
+        ) : (
+          <>
+            <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-3">
+              {mode === "signup" && (
+                <input
+                  type="text"
+                  placeholder="Никнейм"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40"
+                />
+              )}
+              <input
+                type="email"
+                required
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40"
+              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  placeholder="Пароль (мин. 6 символов)"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-md border border-white/15 bg-black/40 px-3 py-2 pr-16 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/60 hover:bg-white/10 hover:text-white"
+                  aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+                >
+                  {showPassword ? "Скрыть" : "Показ."}
+                </button>
+              </div>
 
-          {err && <div className="rounded-md bg-red-500/20 px-3 py-2 text-xs text-red-200">{err}</div>}
-          {msg && <div className="rounded-md bg-emerald-500/20 px-3 py-2 text-xs text-emerald-200">{msg}</div>}
+              {err && <div className="rounded-md bg-red-500/20 px-3 py-2 text-xs text-red-200">{err}</div>}
+              {msg && <div className="rounded-md bg-emerald-500/20 px-3 py-2 text-xs text-emerald-200">{msg}</div>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-1 rounded-md bg-white px-4 py-2 text-sm font-bold text-black transition hover:bg-white/90 disabled:opacity-50"
-          >
-            {loading ? "..." : mode === "signin" ? "Войти" : "Создать аккаунт"}
-          </button>
-        </form>
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-1 rounded-md bg-white px-4 py-2 text-sm font-bold text-black transition hover:bg-white/90 disabled:opacity-50"
+              >
+                {loading ? "..." : mode === "signin" ? "Войти" : "Создать аккаунт"}
+              </button>
+            </form>
 
-        <button
-          onClick={() => { setErr(null); setMsg(null); setMode(mode === "signin" ? "signup" : "signin"); }}
-          className="mt-4 w-full text-center text-xs text-white/60 hover:text-white"
-        >
-          {mode === "signin" ? "Нет аккаунта? Зарегистрироваться" : "Уже есть аккаунт? Войти"}
-        </button>
+            <button
+              onClick={() => { setErr(null); setMsg(null); setMode(mode === "signin" ? "signup" : "signin"); }}
+              className="mt-4 w-full text-center text-xs text-white/60 hover:text-white"
+            >
+              {mode === "signin" ? "Нет аккаунта? Зарегистрироваться" : "Уже есть аккаунт? Войти"}
+            </button>
+          </>
+        )}
 
         <div className="mt-4 text-center">
           <Link to="/" className="text-xs text-white/40 hover:text-white/70">← В игру</Link>
