@@ -255,7 +255,13 @@ async function fetchShopFromDB(userId: string): Promise<ShopProgress | null> {
 }
 
 async function saveShopToDB(userId: string, p: Partial<ShopProgress>): Promise<void> {
-  const payload: Record<string, unknown> = {};
+  const payload: {
+    wallet?: number;
+    owned_skins?: string[];
+    owned_maps?: string[];
+    selected_skin?: string;
+    selected_map?: string;
+  } = {};
   if (p.wallet !== undefined) payload.wallet = p.wallet;
   if (p.ownedSkins !== undefined) payload.owned_skins = p.ownedSkins;
   if (p.ownedMaps !== undefined) payload.owned_maps = p.ownedMaps;
