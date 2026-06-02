@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import gameIcon from "../assets/game-icon.png";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -216,6 +218,7 @@ interface Coin {
 }
 
 function Game() {
+  const { user } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [state, setState] = useState<GameState>("menu");
   const [score, setScore] = useState(0);
@@ -508,6 +511,24 @@ function Game() {
     setBestCoins((b) => Math.max(b, coinCount.current));
     const runCoins = coinCount.current;
     totalCoinsRef.current += runCoins;
+    const runDistance = Math.floor(distance.current);
+    // Save run stats to the user's profile if signed in
+    if (user) {
+      (async () => {
+        const { data: existing } = await supabase
+          .from("profiles")
+          .select("high_score, total_distance, games_played")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const newHigh = Math.max(existing?.high_score ?? 0, d);
+        const newTotal = (existing?.total_distance ?? 0) + runDistance;
+        const newGames = (existing?.games_played ?? 0) + 1;
+        await supabase
+          .from("profiles")
+          .update({ high_score: newHigh, total_distance: newTotal, games_played: newGames })
+          .eq("user_id", user.id);
+      })().catch((e) => console.warn("save stats failed", e));
+    }
     setQuestState((qs) => {
       const today = todayStr();
       if (qs.date !== today) {
@@ -531,7 +552,7 @@ function Game() {
       return next;
     });
     setState(nextState);
-  }, []);
+  }, [user]);
 
   const claimQuest = useCallback((id: string) => {
     setQuestState((qs) => {
@@ -1262,6 +1283,30 @@ function Game() {
             {hud.slowmo > 0 && <Badge color="#b48bff">⧖ {Math.ceil(hud.slowmo / 60)}</Badge>}
             {hud.boost > 0 && <Badge color="#ffce4a">⚡ {Math.ceil(hud.boost / 60)}</Badge>}
           </div>
+        </div>
+
+        {/* auth badge */}
+        <div className="pointer-events-auto absolute left-3 bottom-3 z-20 flex items-center gap-2 font-mono text-[11px]">
+          {user ? (
+            <>
+              <span className="rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-white/80 backdrop-blur-sm">
+                {user.user_metadata?.display_name || user.email}
+              </span>
+              <button
+                onClick={() => supabase.auth.signOut()}
+                className="rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-white/60 backdrop-blur-sm hover:text-white"
+              >
+                Выйти
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/auth"
+              className="rounded-full border border-white/20 bg-black/60 px-3 py-1 text-white/85 backdrop-blur-sm hover:bg-black/80"
+            >
+              Войти / Регистрация
+            </Link>
+          )}
         </div>
 
         {/* mute toggle */}
