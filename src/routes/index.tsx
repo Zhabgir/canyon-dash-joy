@@ -1842,7 +1842,7 @@ function RankDisplay({ totalDistance }: { totalDistance: number }) {
 }
 
 interface ShopOverlayProps {
-  tab: "skins" | "maps";
+  tab: "skins" | "maps" | "vehicles";
   wallet: number;
   skinId: string;
   mapId: string;
