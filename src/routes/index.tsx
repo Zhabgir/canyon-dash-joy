@@ -2299,53 +2299,54 @@ function drawPortal(
   ctx.ellipse(0, 0, mouthR, mouthR * 0.92, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // rim highlight
-  ctx.fillStyle = palette.hi;
-  ctx.fillRect(-rimW / 2 + 6, -rimH / 2 - 4, 7, 5);
-  ctx.fillRect(-rimW / 2 + 6, -rimH / 2 - 4, rimW - 24, 3);
-
-  // rim bottom shadow line
-  ctx.fillStyle = "rgba(0,0,0,0.45)";
-  ctx.fillRect(-rimW / 2, rimH / 2 - 2, rimW, 3);
-
-  // outer rim outline
-  ctx.strokeStyle = palette.out;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(-rimW / 2, -rimH / 2 - 6, rimW, rimH + 6);
-  ctx.strokeRect(-bodyW / 2, rimH / 2, bodyW, bodyH);
-
-  // ---- dark opening on top (the tunnel mouth) ----
-  ctx.fillStyle = "#020a02";
+  // the canyon wall overlaps the rear half, so it reads as mounted in the mountain
+  ctx.fillStyle = "rgba(35,14,8,0.45)";
   ctx.beginPath();
-  ctx.ellipse(0, -rimH / 2 - 6, rimW / 2 - 6, 7, 0, 0, Math.PI * 2);
+  ctx.ellipse(-bodyW + 10, dir * mouthR, bodyW * 0.9, 18, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "#041204";
-  ctx.lineWidth = 1.5;
+
+  // front rim highlight and outline
+  ctx.strokeStyle = palette.out;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, mouthR, mouthR * 0.92, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = palette.hi;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(-8, -8, mouthR * 0.55, Math.PI * 1.05, Math.PI * 1.72);
   ctx.stroke();
 
-  // ---- swirling colored vortex inside the opening (so it reads as a portal) ----
+  // dark horizontal tunnel mouth
+  ctx.fillStyle = kind === "chernobyl" ? "#000000" : "#020a02";
+  ctx.beginPath();
+  ctx.ellipse(0, 0, innerR, innerR * 0.86, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // swirling colored vortex inside the opening (you fly into it horizontally)
   ctx.save();
   ctx.beginPath();
-  ctx.ellipse(0, -rimH / 2 - 6, rimW / 2 - 8, 6, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, innerR - 2, innerR * 0.78, 0, 0, Math.PI * 2);
   ctx.clip();
   const t = tick * 0.08;
   for (let i = 0; i < 5; i++) {
     const hue = (t * 60 + i * 50) % 360;
     ctx.fillStyle = `hsla(${hue}, 100%, 60%, 0.55)`;
-    const ox = Math.cos(t + i) * 6;
+    const ox = Math.cos(t + i) * 5;
+    const oy = Math.sin(t * 1.2 + i) * 4;
     ctx.beginPath();
-    ctx.ellipse(ox, -rimH / 2 - 6, (rimW / 2 - 8) * (1 - i * 0.18), 5 * (1 - i * 0.15), 0, 0, Math.PI * 2);
+    ctx.ellipse(ox, oy, (innerR - 2) * (1 - i * 0.16), innerR * 0.72 * (1 - i * 0.14), t + i, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
 
-  // sparkles popping out of the pipe
+  // sparkles spilling from the horizontal opening
   for (let i = 0; i < 4; i++) {
     const a = t * 1.4 + (i * Math.PI * 2) / 4;
-    const r = 14 + Math.sin(t * 2 + i) * 4;
+    const r = 26 + Math.sin(t * 2 + i) * 4;
     ctx.fillStyle = `hsla(${(t * 120 + i * 80) % 360}, 100%, 75%, 0.9)`;
     ctx.beginPath();
-    ctx.arc(Math.cos(a) * r, -rimH / 2 - 10 + Math.sin(a) * 3, 1.8, 0, Math.PI * 2);
+    ctx.arc(Math.cos(a) * r * 0.75, Math.sin(a) * r * 0.55, 1.8, 0, Math.PI * 2);
     ctx.fill();
   }
 
