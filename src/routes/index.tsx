@@ -1024,11 +1024,20 @@ function Game() {
 
       // sky gradient (from selected map)
       const theme = mapRef.current;
+      const isOther = theme.id === "otherworld";
       const sky = ctx.createLinearGradient(0, 0, 0, H);
-      sky.addColorStop(0, theme.sky[0]);
-      sky.addColorStop(0.35, theme.sky[1]);
-      sky.addColorStop(0.65, theme.sky[2]);
-      sky.addColorStop(1, theme.sky[3]);
+      if (isOther) {
+        const ht = tick.current * 0.8;
+        sky.addColorStop(0, `hsl(${(ht) % 360}, 90%, 12%)`);
+        sky.addColorStop(0.35, `hsl(${(ht + 60) % 360}, 85%, 28%)`);
+        sky.addColorStop(0.65, `hsl(${(ht + 160) % 360}, 90%, 35%)`);
+        sky.addColorStop(1, `hsl(${(ht + 240) % 360}, 85%, 12%)`);
+      } else {
+        sky.addColorStop(0, theme.sky[0]);
+        sky.addColorStop(0.35, theme.sky[1]);
+        sky.addColorStop(0.65, theme.sky[2]);
+        sky.addColorStop(1, theme.sky[3]);
+      }
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, H);
 
@@ -1041,14 +1050,17 @@ function Game() {
       sunGlow.addColorStop(1, `rgba(${theme.sunAlpha},0)`);
       ctx.fillStyle = sunGlow;
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = theme.sun;
+      ctx.fillStyle = isOther ? `hsl(${(tick.current * 2) % 360}, 100%, 75%)` : theme.sun;
       ctx.beginPath();
       ctx.arc(sunX, sunY, 38, 0, Math.PI * 2);
       ctx.fill();
 
       // stars
       for (const s of stars.current) {
-        ctx.fillStyle = `rgba(255,235,210,${0.3 + s.z * 0.7})`;
+        const col = isOther
+          ? `hsla(${(tick.current * 3 + s.x) % 360}, 100%, 75%, ${0.4 + s.z * 0.6})`
+          : `rgba(255,235,210,${0.3 + s.z * 0.7})`;
+        ctx.fillStyle = col;
         ctx.fillRect(s.x, s.y, s.s, s.s);
       }
 
@@ -1056,7 +1068,7 @@ function Game() {
       drawDistantMountains(ctx, offset.current * 0.15);
 
       // canyon walls
-      drawCanyon(ctx, segments.current, offset.current, distance.current);
+      drawCanyon(ctx, segments.current, offset.current, distance.current, tick.current, isOther);
 
       // foreground mist
       const mist = ctx.createLinearGradient(0, H * 0.6, 0, H);
