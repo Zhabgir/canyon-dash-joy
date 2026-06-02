@@ -137,15 +137,38 @@ function pickDailyQuests(date: string): QuestState["quests"] {
     }
     return out;
   };
-  const hard = pick(HARD_QUESTS, 1);
-  const easy = pick(EASY_QUESTS, 2);
+  const hard = pick(HARD_QUESTS, 2);
+  const easy = pick(EASY_QUESTS, 3);
   return [...hard, ...easy].map((def) => ({ def, progress: 0, claimed: false }));
 }
 function loadQuests(): QuestState {
   const today = todayStr();
   const saved = loadJSON<QuestState | null>(LS.quests, null);
-  if (saved && saved.date === today && saved.quests?.length) return saved;
+  if (saved && saved.date === today && saved.quests?.length === 5) return saved;
   return { date: today, quests: pickDailyQuests(today) };
+}
+
+async function fetchQuestsFromDB(userId: string): Promise<QuestState | null> {
+  const today = todayStr();
+  const { data, error } = await supabase
+    .from("daily_quests")
+    .select("quest_date, quests")
+    .eq("user_id", userId)
+    .eq("quest_date", today)
+    .maybeSingle();
+  if (error || !data) return null;
+  const quests = data.quests as unknown as QuestState["quests"];
+  if (!Array.isArray(quests) || quests.length !== 5) return null;
+  return { date: today, quests };
+}
+
+async function saveQuestsToDB(userId: string, qs: QuestState): Promise<void> {
+  await supabase
+    .from("daily_quests")
+    .upsert(
+      { user_id: userId, quest_date: qs.date, quests: qs.quests as never },
+      { onConflict: "user_id,quest_date" },
+    );
 }
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -257,6 +280,27 @@ function Game() {
     setMapId(loadJSON<string>(LS.map, "space"));
     setQuestState(loadQuests());
   }, []);
+
+  // Sync quests with database when user is signed in
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const remote = await fetchQuestsFromDB(user.id);
+      if (cancelled) return;
+      if (remote) {
+        setQuestState(remote);
+        saveJSON(LS.quests, remote);
+      } else {
+        // No DB record for today — push the local/fresh one up
+        const local = loadQuests();
+        setQuestState(local);
+        saveJSON(LS.quests, local);
+        await saveQuestsToDB(user.id, local).catch((e) => console.warn("save quests failed", e));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   // Keep render refs in sync with current selection
   useEffect(() => {
@@ -531,24 +575,25 @@ function Game() {
     }
     setQuestState((qs) => {
       const today = todayStr();
+      let next: QuestState;
       if (qs.date !== today) {
-        const fresh = { date: today, quests: pickDailyQuests(today) };
-        saveJSON(LS.quests, fresh);
-        return fresh;
+        next = { date: today, quests: pickDailyQuests(today) };
+      } else {
+        next = {
+          ...qs,
+          quests: qs.quests.map((q) => {
+            if (q.claimed) return q;
+            let inc = 0;
+            if (q.def.metric === "runCoins") inc = Math.max(q.progress, runCoins);
+            else if (q.def.metric === "runScore") inc = Math.max(q.progress, d);
+            else if (q.def.metric === "games") inc = q.progress + 1;
+            else if (q.def.metric === "totalCoins") inc = q.progress + runCoins;
+            return { ...q, progress: Math.min(q.def.target, inc) };
+          }),
+        };
       }
-      const next = {
-        ...qs,
-        quests: qs.quests.map((q) => {
-          if (q.claimed) return q;
-          let inc = 0;
-          if (q.def.metric === "runCoins") inc = Math.max(q.progress, runCoins);
-          else if (q.def.metric === "runScore") inc = Math.max(q.progress, d);
-          else if (q.def.metric === "games") inc = q.progress + 1;
-          else if (q.def.metric === "totalCoins") inc = q.progress + runCoins;
-          return { ...q, progress: Math.min(q.def.target, inc) };
-        }),
-      };
       saveJSON(LS.quests, next);
+      if (user) saveQuestsToDB(user.id, next).catch((e) => console.warn("save quests failed", e));
       return next;
     });
     setState(nextState);
@@ -563,6 +608,7 @@ function Game() {
         quests: qs.quests.map((x) => (x.def.id === id ? { ...x, claimed: true } : x)),
       };
       saveJSON(LS.quests, next);
+      if (user) saveQuestsToDB(user.id, next).catch((e) => console.warn("save quests failed", e));
       setWallet((w) => {
         const nw = w + q.def.reward;
         saveJSON(LS.wallet, nw);
@@ -570,7 +616,7 @@ function Game() {
       });
       return next;
     });
-  }, []);
+  }, [user]);
 
 
   const buySkin = useCallback(
