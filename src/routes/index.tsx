@@ -281,6 +281,27 @@ function Game() {
     setQuestState(loadQuests());
   }, []);
 
+  // Sync quests with database when user is signed in
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const remote = await fetchQuestsFromDB(user.id);
+      if (cancelled) return;
+      if (remote) {
+        setQuestState(remote);
+        saveJSON(LS.quests, remote);
+      } else {
+        // No DB record for today — push the local/fresh one up
+        const local = loadQuests();
+        setQuestState(local);
+        saveJSON(LS.quests, local);
+        await saveQuestsToDB(user.id, local).catch((e) => console.warn("save quests failed", e));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   // Keep render refs in sync with current selection
   useEffect(() => {
     skinRef.current = SKINS.find((s) => s.id === skinId) ?? SKINS[0];
