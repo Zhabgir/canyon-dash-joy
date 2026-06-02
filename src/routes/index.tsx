@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import gameIcon from "../assets/game-icon.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import Game3DScene from "@/components/Game3DScene";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
