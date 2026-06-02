@@ -1,7 +1,22 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Text, Billboard } from "@react-three/drei";
 import { useMemo, useRef, useEffect, useState } from "react";
 import * as THREE from "three";
+
+// Build a Three.js sprite texture displaying an emoji.
+function makeEmojiTexture(emoji: string, size = 128): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = size; c.height = size;
+  const cx = c.getContext("2d")!;
+  cx.clearRect(0, 0, size, size);
+  cx.font = `${Math.floor(size * 0.78)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  cx.textAlign = "center";
+  cx.textBaseline = "middle";
+  cx.fillText(emoji, size / 2, size / 2 + size * 0.04);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.minFilter = THREE.LinearFilter;
+  return tex;
+}
 
 // ===== Shared shapes (mirrors src/routes/index.tsx) =====
 export interface Skin {
