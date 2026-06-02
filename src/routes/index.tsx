@@ -492,7 +492,7 @@ function Game() {
     setScore(0);
     setCoins(0);
     setHud({ shield: false, slowmo: 0, boost: 0 });
-  }, []);
+  }, [mapId]);
 
   const start = useCallback(() => {
     resetWorld();
