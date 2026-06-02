@@ -790,6 +790,7 @@ function Game() {
       setWallet((w) => {
         const nw = w + q.def.reward;
         saveJSON(LS.wallet, nw);
+        if (user) saveShopToDB(user.id, { wallet: nw }).catch((e) => console.warn("save wallet failed", e));
         return nw;
       });
       return next;
@@ -811,8 +812,15 @@ function Game() {
       setSkinId(s.id);
       saveJSON(LS.wallet, nextWallet);
       saveJSON(LS.ownedSkins, nextOwned);
+      if (user) {
+        saveShopToDB(user.id, {
+          wallet: nextWallet,
+          ownedSkins: nextOwned,
+          selectedSkin: s.id,
+        }).catch((e) => console.warn("save skin purchase failed", e));
+      }
     },
-    [ownedSkins, wallet],
+    [ownedSkins, wallet, user],
   );
 
   const buyMap = useCallback(
@@ -829,8 +837,15 @@ function Game() {
       setMapId(m.id);
       saveJSON(LS.wallet, nextWallet);
       saveJSON(LS.ownedMaps, nextOwned);
+      if (user) {
+        saveShopToDB(user.id, {
+          wallet: nextWallet,
+          ownedMaps: nextOwned,
+          selectedMap: m.id,
+        }).catch((e) => console.warn("save map purchase failed", e));
+      }
     },
-    [ownedMaps, wallet],
+    [ownedMaps, wallet, user],
   );
 
 
