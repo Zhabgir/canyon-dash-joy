@@ -2241,112 +2241,108 @@ function drawPortal(
   kind: "other" | "normal" | "chernobyl" = "other",
   anchor: "top" | "bottom" = "bottom",
 ) {
-  // Horizontal tunnel embedded in the canyon wall/mountain.
-  // (x, y) = center of the round tunnel mouth.
+  // Horizontal tunnel embedded in the canyon wall — open mouth faces the player,
+  // the back recedes into endless darkness (you can't see the end).
   ctx.save();
   ctx.translate(x, y);
-  const dir = anchor === "top" ? -1 : 1;
 
-  const mouthR = 34;
-  const innerR = 24;
-  const bodyW = 86;
-  const bodyH = mouthR * 2;
+  const mouthR = 36;
 
-  // Color palettes per portal kind
+  // Color palettes per portal kind (rim color around the opening)
   const palette =
     kind === "normal"
-      ? {
-          c0: "#0a3060", c1: "#2a78d0", c2: "#6fbfff", c3: "#3a90e0",
-          c4: "#1c5098", c5: "#0a2848",
-          hi: "rgba(200,230,255,0.7)", out: "#062048",
-        }
+      ? { rim: "#2a78d0", rimHi: "#9ed4ff", rimLo: "#062048", glow: "rgba(120,200,255,0.55)" }
       : kind === "chernobyl"
-        ? {
-            c0: "#080808", c1: "#1a1a18", c2: "#2a2a22", c3: "#1c1c18",
-            c4: "#0e0e0c", c5: "#000000",
-            hi: "rgba(120,140,90,0.45)", out: "#000000",
-          }
-        : {
-            c0: "#0a4a10", c1: "#2ea02a", c2: "#6fe04a", c3: "#3ab828",
-            c4: "#1c7818", c5: "#0a3a10",
-            hi: "rgba(200,255,160,0.7)", out: "#062808",
-          };
+        ? { rim: "#3a3a2a", rimHi: "#7a7a55", rimLo: "#050505", glow: "rgba(140,170,90,0.4)" }
+        : { rim: "#2ea02a", rimHi: "#b0ff8a", rimLo: "#062808", glow: "rgba(140,255,120,0.55)" };
 
-  // tunnel body goes horizontally backward into the mountain wall
-  const bodyGrad = ctx.createLinearGradient(-bodyW, -mouthR, 10, mouthR);
-  bodyGrad.addColorStop(0, palette.c0);
-  bodyGrad.addColorStop(0.15, palette.c1);
-  bodyGrad.addColorStop(0.35, palette.c2);
-  bodyGrad.addColorStop(0.55, palette.c3);
-  bodyGrad.addColorStop(0.85, palette.c4);
-  bodyGrad.addColorStop(1, palette.c5);
-  ctx.fillStyle = bodyGrad;
-  ctx.fillRect(-bodyW, -mouthR, bodyW, bodyH);
-
-  // rock shadows where the tunnel disappears into the canyon
-  ctx.fillStyle = "rgba(0,0,0,0.42)";
-  ctx.fillRect(-bodyW, -mouthR, bodyW, 8);
-  ctx.fillRect(-bodyW, mouthR - 8, bodyW, 8);
-
-  // round front rim facing the player horizontally
-  const rimGrad = ctx.createRadialGradient(-8, -10, innerR * 0.35, 0, 0, mouthR);
-  rimGrad.addColorStop(0, palette.c2);
-  rimGrad.addColorStop(0.45, palette.c3);
-  rimGrad.addColorStop(0.75, palette.c1);
-  rimGrad.addColorStop(1, palette.c0);
-  ctx.fillStyle = rimGrad;
+  // outer rocky frame around the mouth — wider so the canyon "swallows" the tunnel
+  const frameR = mouthR + 10;
+  const rockGrad = ctx.createRadialGradient(-6, -6, mouthR * 0.5, 0, 0, frameR);
+  rockGrad.addColorStop(0, "#3a2418");
+  rockGrad.addColorStop(0.6, "#241208");
+  rockGrad.addColorStop(1, "#0c0604");
+  ctx.fillStyle = rockGrad;
   ctx.beginPath();
-  ctx.ellipse(0, 0, mouthR, mouthR * 0.92, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, frameR, frameR * 0.96, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // the canyon wall overlaps the rear half, so it reads as mounted in the mountain
-  ctx.fillStyle = "rgba(35,14,8,0.45)";
+  // colored rim around the opening (the "portal energy ring")
+  ctx.strokeStyle = palette.rim;
+  ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.ellipse(-bodyW + 10, dir * mouthR, bodyW * 0.9, 18, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // front rim highlight and outline
-  ctx.strokeStyle = palette.out;
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, mouthR, mouthR * 0.92, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, mouthR, mouthR * 0.95, 0, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.strokeStyle = palette.hi;
-  ctx.lineWidth = 3;
+  // top-left highlight on the rim
+  ctx.strokeStyle = palette.rimHi;
+  ctx.lineWidth = 2.5;
   ctx.beginPath();
-  ctx.arc(-8, -8, mouthR * 0.55, Math.PI * 1.05, Math.PI * 1.72);
+  ctx.arc(0, 0, mouthR, Math.PI * 1.05, Math.PI * 1.75);
+  ctx.stroke();
+  // bottom shadow on the rim
+  ctx.strokeStyle = palette.rimLo;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, mouthR, Math.PI * 0.1, Math.PI * 0.9);
   ctx.stroke();
 
-  // dark horizontal tunnel mouth
-  ctx.fillStyle = kind === "chernobyl" ? "#000000" : "#020a02";
-  ctx.beginPath();
-  ctx.ellipse(0, 0, innerR, innerR * 0.86, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // swirling colored vortex inside the opening (you fly into it horizontally)
+  // depth: concentric receding rings going darker, slightly offset back-and-up
+  // so the tunnel looks like it bores into the mountain (vanishing point).
   ctx.save();
   ctx.beginPath();
-  ctx.ellipse(0, 0, innerR - 2, innerR * 0.78, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, mouthR - 2, mouthR * 0.93, 0, 0, Math.PI * 2);
   ctx.clip();
-  const t = tick * 0.08;
-  for (let i = 0; i < 5; i++) {
-    const hue = (t * 60 + i * 50) % 360;
-    ctx.fillStyle = `hsla(${hue}, 100%, 60%, 0.55)`;
-    const ox = Math.cos(t + i) * 5;
-    const oy = Math.sin(t * 1.2 + i) * 4;
+
+  const rings = 14;
+  for (let i = 0; i < rings; i++) {
+    const k = i / rings;
+    const rr = (mouthR - 2) * (1 - k);
+    const ox = -k * 10; // vanishing point shifts backward (into the wall, "left")
+    const oy = -k * 2;
+    const shade = Math.round(20 * (1 - k));
+    ctx.fillStyle = `rgb(${shade},${shade},${shade})`;
     ctx.beginPath();
-    ctx.ellipse(ox, oy, (innerR - 2) * (1 - i * 0.16), innerR * 0.72 * (1 - i * 0.14), t + i, 0, Math.PI * 2);
+    ctx.ellipse(ox, oy, rr, rr * 0.92, 0, 0, Math.PI * 2);
     ctx.fill();
   }
+
+  // pitch-black core — the "end" you cannot see
+  ctx.fillStyle = "#000000";
+  ctx.beginPath();
+  ctx.ellipse(-10, -2, mouthR * 0.18, mouthR * 0.16, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // faint swirling energy near the mouth (in front of the dark depth)
+  const t = tick * 0.08;
+  for (let i = 0; i < 3; i++) {
+    const hue = (t * 50 + i * 60) % 360;
+    ctx.fillStyle = `hsla(${hue}, 95%, 60%, 0.18)`;
+    const ang = t + i;
+    const rx = (mouthR - 6) * (0.9 - i * 0.15);
+    const ry = mouthR * 0.85 * (0.9 - i * 0.15);
+    ctx.beginPath();
+    ctx.ellipse(Math.cos(ang) * 3, Math.sin(ang * 1.3) * 2, rx, ry, ang, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   ctx.restore();
 
-  // sparkles spilling from the horizontal opening
-  for (let i = 0; i < 4; i++) {
-    const a = t * 1.4 + (i * Math.PI * 2) / 4;
-    const r = 26 + Math.sin(t * 2 + i) * 4;
-    ctx.fillStyle = `hsla(${(t * 120 + i * 80) % 360}, 100%, 75%, 0.9)`;
+  // outer glow halo around the mouth
+  const halo = ctx.createRadialGradient(0, 0, mouthR * 0.9, 0, 0, mouthR * 1.6);
+  halo.addColorStop(0, palette.glow);
+  halo.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, mouthR * 1.6, mouthR * 1.4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // sparkles spilling forward from the mouth
+  for (let i = 0; i < 5; i++) {
+    const a = t * 1.4 + (i * Math.PI * 2) / 5;
+    const r = mouthR + 4 + Math.sin(t * 2 + i) * 3;
+    ctx.fillStyle = `hsla(${(t * 120 + i * 80) % 360}, 100%, 75%, 0.85)`;
     ctx.beginPath();
-    ctx.arc(Math.cos(a) * r * 0.75, Math.sin(a) * r * 0.55, 1.8, 0, Math.PI * 2);
+    ctx.arc(Math.cos(a) * r * 0.75, Math.sin(a) * r * 0.6, 1.6, 0, Math.PI * 2);
     ctx.fill();
   }
 
