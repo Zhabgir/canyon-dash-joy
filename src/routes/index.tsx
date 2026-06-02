@@ -1721,6 +1721,7 @@ function drawCanyon(
   distance: number,
   tick: number = 0,
   otherWorld: boolean = false,
+  chernobyl: boolean = false,
 ) {
   const drawBand = (isTop: boolean) => {
     ctx.beginPath();
