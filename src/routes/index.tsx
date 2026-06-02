@@ -1027,7 +1027,7 @@ function Game() {
 
       // jet
       if (stateRef.current !== "over") {
-        drawJet(ctx, planeY.current, keys.current, boost.current > 0, shield.current, tick.current, skinRef.current);
+        drawJet(ctx, planeY.current, keys.current, boost.current > 0, shield.current, tick.current, skinRef.current, planeVy.current);
       }
 
       // post-effects
