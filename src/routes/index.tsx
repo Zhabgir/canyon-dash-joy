@@ -1061,6 +1061,14 @@ function Game() {
       // coins
       for (const c of coinsRef.current) drawCoin(ctx, c);
 
+      // portal to other world
+      if (portal.current.spawned && !portal.current.entered) {
+        const px = portal.current.worldX - distance.current;
+        if (px > -80 && px < W + 80) {
+          drawPortal(ctx, px, H - 60, tick.current);
+        }
+      }
+
       // missiles
       for (const m of missiles.current) drawMissile(ctx, m);
 
