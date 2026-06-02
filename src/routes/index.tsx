@@ -144,8 +144,31 @@ function pickDailyQuests(date: string): QuestState["quests"] {
 function loadQuests(): QuestState {
   const today = todayStr();
   const saved = loadJSON<QuestState | null>(LS.quests, null);
-  if (saved && saved.date === today && saved.quests?.length) return saved;
+  if (saved && saved.date === today && saved.quests?.length === 5) return saved;
   return { date: today, quests: pickDailyQuests(today) };
+}
+
+async function fetchQuestsFromDB(userId: string): Promise<QuestState | null> {
+  const today = todayStr();
+  const { data, error } = await supabase
+    .from("daily_quests")
+    .select("quest_date, quests")
+    .eq("user_id", userId)
+    .eq("quest_date", today)
+    .maybeSingle();
+  if (error || !data) return null;
+  const quests = data.quests as QuestState["quests"];
+  if (!Array.isArray(quests) || quests.length !== 5) return null;
+  return { date: today, quests };
+}
+
+async function saveQuestsToDB(userId: string, qs: QuestState): Promise<void> {
+  await supabase
+    .from("daily_quests")
+    .upsert(
+      { user_id: userId, quest_date: qs.date, quests: qs.quests as unknown as object },
+      { onConflict: "user_id,quest_date" },
+    );
 }
 
 function loadJSON<T>(key: string, fallback: T): T {
