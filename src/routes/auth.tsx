@@ -52,7 +52,17 @@ function AuthPage() {
         navigate({ to: "/", replace: true });
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Что-то пошло не так");
+      const raw = e instanceof Error ? e.message : "";
+      const lower = raw.toLowerCase();
+      let msg = raw || "Что-то пошло не так";
+      if (lower.includes("invalid login credentials")) msg = "Неверный email или пароль";
+      else if (lower.includes("invalid") && lower.includes("email")) msg = "Неверный формат email";
+      else if (lower.includes("user already registered") || lower.includes("already registered")) msg = "Такой email уже зарегистрирован — войдите";
+      else if (lower.includes("password") && (lower.includes("short") || lower.includes("6"))) msg = "Пароль слишком короткий (мин. 6 символов)";
+      else if (lower.includes("weak") || lower.includes("pwned") || lower.includes("compromised")) msg = "Этот пароль слишком простой или утёк в сеть. Придумайте другой.";
+      else if (lower.includes("email not confirmed")) msg = "Подтвердите email — мы прислали письмо";
+      else if (lower.includes("rate limit")) msg = "Слишком много попыток, подождите немного";
+      setErr(msg);
     } finally {
       setLoading(false);
     }
