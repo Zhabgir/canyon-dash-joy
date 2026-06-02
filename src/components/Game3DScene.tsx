@@ -382,6 +382,9 @@ function Scene({ refs }: { refs: GameRefs }) {
           </mesh>
         </group>
       ))}
+
+      {/* Rare event visuals */}
+      <RareEventLayer eventRef={refs.rareEvent} />
     </group>
   );
 }
