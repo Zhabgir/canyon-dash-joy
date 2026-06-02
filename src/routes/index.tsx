@@ -888,10 +888,14 @@ function Game() {
           });
         }
 
-        // canyon collision
+        // canyon collision (skip while plane is near the open portal)
         const idx = Math.floor((PLANE_X + offset.current) / SEG_W);
         const seg = segments.current[idx];
-        if (seg) {
+        const nearPortal =
+          portal.current.spawned &&
+          !portal.current.entered &&
+          Math.abs(portal.current.worldX - distance.current - PLANE_X) < 90;
+        if (seg && !nearPortal) {
           const planeTop = planeY.current - PLANE_SIZE / 2;
           const planeBot = planeY.current + PLANE_SIZE / 2;
           if (planeTop < seg.topH || planeBot > H - seg.botH) {
@@ -924,10 +928,16 @@ function Game() {
         }
         if (portal.current.spawned && !portal.current.entered) {
           const px = portal.current.worldX - distance.current;
-          const py = H - 60;
+          const pIdx = Math.max(
+            0,
+            Math.min(segments.current.length - 1, Math.floor((px + offset.current) / SEG_W)),
+          );
+          const pSeg = segments.current[pIdx];
+          const corridorBot = pSeg ? H - pSeg.botH : H - 60;
+          const py = Math.max(H * 0.5, corridorBot - 40);
           const dx = px - PLANE_X;
           const dy = py - planeY.current;
-          if (Math.hypot(dx, dy) < 46) {
+          if (Math.hypot(dx, dy) < 60) {
             portal.current.entered = true;
             mapRef.current = OTHER_WORLD;
             flash.current = 30;
@@ -1065,7 +1075,14 @@ function Game() {
       if (portal.current.spawned && !portal.current.entered) {
         const px = portal.current.worldX - distance.current;
         if (px > -80 && px < W + 80) {
-          drawPortal(ctx, px, H - 60, tick.current);
+          const pIdx = Math.max(
+            0,
+            Math.min(segments.current.length - 1, Math.floor((px + offset.current) / SEG_W)),
+          );
+          const pSeg = segments.current[pIdx];
+          const corridorBot = pSeg ? H - pSeg.botH : H - 60;
+          const py = Math.max(H * 0.5, corridorBot - 40);
+          drawPortal(ctx, px, py, tick.current);
         }
       }
 
