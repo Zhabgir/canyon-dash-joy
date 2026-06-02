@@ -320,6 +320,7 @@ function Game() {
   const [shopTab, setShopTab] = useState<null | "skins" | "maps">(null);
   const [questsOpen, setQuestsOpen] = useState(false);
   const [questState, setQuestState] = useState<QuestState>({ date: todayStr(), quests: [] });
+  const [totalDistance, setTotalDistance] = useState(0);
   const totalCoinsRef = useRef(0);
   const skinRef = useRef<Skin>(SKINS[0]);
   const mapRef = useRef<MapTheme>(MAPS[0]);
