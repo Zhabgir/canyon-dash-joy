@@ -747,7 +747,12 @@ function Game() {
         const newGames = (existing?.games_played ?? 0) + 1;
         await supabase
           .from("profiles")
-          .update({ high_score: newHigh, total_distance: newTotal, games_played: newGames })
+          .update({
+            high_score: newHigh,
+            total_distance: newTotal,
+            games_played: newGames,
+            wallet: walletRef.current,
+          })
           .eq("user_id", user.id);
       })().catch((e) => console.warn("save stats failed", e));
     }
