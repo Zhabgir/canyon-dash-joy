@@ -2070,14 +2070,27 @@ function drawCanyon(
 
 function drawMissile(ctx: CanvasRenderingContext2D, m: Missile) {
   const angle = Math.atan2(m.vy, m.vx);
+  const trailRgb = m.trailColor ?? "220,220,230";
   for (let t = 0; t < m.trail.length; t++) {
     const p = m.trail[t];
     const a = (t / m.trail.length) * 0.55;
     const r = 1.5 + (t / m.trail.length) * 4;
-    ctx.fillStyle = `rgba(220,220,230,${a})`;
+    ctx.fillStyle = `rgba(${trailRgb},${a})`;
     ctx.beginPath();
     ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
     ctx.fill();
+  }
+  if (m.emoji) {
+    ctx.save();
+    ctx.translate(m.x, m.y);
+    const spin = (m.spin ?? 0) + (m.x + m.y) * 0.02;
+    ctx.rotate(spin);
+    ctx.font = "20px system-ui, 'Apple Color Emoji', 'Segoe UI Emoji'";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(m.emoji, 0, 0);
+    ctx.restore();
+    return;
   }
   ctx.save();
   ctx.translate(m.x, m.y);
