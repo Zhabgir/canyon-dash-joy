@@ -427,17 +427,62 @@ function Game() {
     return () => { cancelled = true; };
   }, [user]);
 
+  // Sync shop progress (wallet, owned skins/maps, selection) with DB on sign-in.
+  // Remote is the source of truth; if remote is missing fields, push local up.
+  const shopHydrated = useRef(false);
+  useEffect(() => {
+    if (!user) { shopHydrated.current = false; return; }
+    let cancelled = false;
+    (async () => {
+      const remote = await fetchShopFromDB(user.id);
+      if (cancelled) return;
+      if (remote) {
+        // Merge: union owned lists, take max wallet, prefer remote selection
+        const localWallet = loadJSON<number>(LS.wallet, 0);
+        const localSkins = loadJSON<string[]>(LS.ownedSkins, ["classic"]);
+        const localMaps = loadJSON<string[]>(LS.ownedMaps, ["space"]);
+        const mergedSkins = Array.from(new Set([...remote.ownedSkins, ...localSkins]));
+        const mergedMaps = Array.from(new Set([...remote.ownedMaps, ...localMaps]));
+        const mergedWallet = Math.max(remote.wallet, localWallet);
+        setWallet(mergedWallet);
+        setOwnedSkins(mergedSkins);
+        setOwnedMaps(mergedMaps);
+        setSkinId(remote.selectedSkin);
+        setMapId(remote.selectedMap);
+        saveJSON(LS.wallet, mergedWallet);
+        saveJSON(LS.ownedSkins, mergedSkins);
+        saveJSON(LS.ownedMaps, mergedMaps);
+        saveJSON(LS.skin, remote.selectedSkin);
+        saveJSON(LS.map, remote.selectedMap);
+        // Push merged state back so other devices catch up
+        await saveShopToDB(user.id, {
+          wallet: mergedWallet,
+          ownedSkins: mergedSkins,
+          ownedMaps: mergedMaps,
+        }).catch((e) => console.warn("save shop failed", e));
+      }
+      shopHydrated.current = true;
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   // Rank progress is tracked locally per device — not synced from DB
 
   // Keep render refs in sync with current selection
   useEffect(() => {
     skinRef.current = SKINS.find((s) => s.id === skinId) ?? SKINS[0];
     saveJSON(LS.skin, skinId);
-  }, [skinId]);
+    if (user && shopHydrated.current) {
+      saveShopToDB(user.id, { selectedSkin: skinId }).catch((e) => console.warn("save skin failed", e));
+    }
+  }, [skinId, user]);
   useEffect(() => {
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     saveJSON(LS.map, mapId);
-  }, [mapId]);
+    if (user && shopHydrated.current) {
+      saveShopToDB(user.id, { selectedMap: mapId }).catch((e) => console.warn("save map failed", e));
+    }
+  }, [mapId, user]);
 
 
   const keys = useRef({ up: false, down: false });
