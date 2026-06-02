@@ -81,7 +81,7 @@ const LS = {
   ownedMaps: "jr_owned_maps",
   skin: "jr_skin",
   map: "jr_map",
-  quests: "jr_quests_v1",
+  quests: "jr_quests_v2",
 };
 
 // ===== Daily quests =====
@@ -584,8 +584,8 @@ function Game() {
           quests: qs.quests.map((q) => {
             if (q.claimed) return q;
             let inc = 0;
-            if (q.def.metric === "runCoins") inc = Math.max(q.progress, runCoins);
-            else if (q.def.metric === "runScore") inc = Math.max(q.progress, d);
+            if (q.def.metric === "runCoins") inc = runCoins >= q.def.target ? q.def.target : 0;
+            else if (q.def.metric === "runScore") inc = d >= q.def.target ? q.def.target : 0;
             else if (q.def.metric === "games") inc = q.progress + 1;
             else if (q.def.metric === "totalCoins") inc = q.progress + runCoins;
             return { ...q, progress: Math.min(q.def.target, inc) };
