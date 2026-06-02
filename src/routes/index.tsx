@@ -928,10 +928,16 @@ function Game() {
         }
         if (portal.current.spawned && !portal.current.entered) {
           const px = portal.current.worldX - distance.current;
-          const py = H - 60;
+          const pIdx = Math.max(
+            0,
+            Math.min(segments.current.length - 1, Math.floor((px + offset.current) / SEG_W)),
+          );
+          const pSeg = segments.current[pIdx];
+          const corridorBot = pSeg ? H - pSeg.botH : H - 60;
+          const py = Math.max(H * 0.5, corridorBot - 40);
           const dx = px - PLANE_X;
           const dy = py - planeY.current;
-          if (Math.hypot(dx, dy) < 46) {
+          if (Math.hypot(dx, dy) < 60) {
             portal.current.entered = true;
             mapRef.current = OTHER_WORLD;
             flash.current = 30;
