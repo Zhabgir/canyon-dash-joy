@@ -297,8 +297,9 @@ function Game() {
     const i = Math.floor((px + offset.current) / SEG_W);
     const seg = segments.current[i] ?? segments.current[Math.max(0, Math.min(segments.current.length - 1, i))];
     if (!seg) return H / 2;
-    // place opening just outside the canyon wall
-    return p.anchor === "top" ? seg.topH + 6 : H - seg.botH - 6;
+    // place the horizontal tunnel so its outer edge touches the canyon wall
+    const tunnelRadius = 36;
+    return p.anchor === "top" ? seg.topH + tunnelRadius : H - seg.botH - tunnelRadius;
   };
 
   // ===== Sound engine (WebAudio) =====
