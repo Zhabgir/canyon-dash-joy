@@ -195,9 +195,9 @@ const W = 800;
 const H = 500;
 const PLANE_X = 140;
 const PLANE_SIZE = 22;
-const BASE_SPEED = 2.0;
-const MAX_SPEED = 4.44;
-const PLAYER_SPEED = 3.2;
+const BASE_SPEED = 1.6;
+const MAX_SPEED = 3.55;
+const PLAYER_SPEED = 2.56;
 const SEG_W = 20;
 
 interface Segment {
