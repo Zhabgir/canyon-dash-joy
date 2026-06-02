@@ -1607,6 +1607,7 @@ function Game() {
               </div>
               <div className="font-mono text-base text-yellow-300">● {coins}</div>
             </div>
+            <RankDisplay totalDistance={totalDistance} />
             {(best > 0 || bestCoins > 0) && (
               <p className="text-xs text-white/60">
                 Best: <span className="font-mono text-white/85">{best.toLocaleString()}</span> · ● {bestCoins}
