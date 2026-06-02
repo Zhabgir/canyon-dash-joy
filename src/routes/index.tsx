@@ -418,7 +418,7 @@ function Game() {
     shake.current = 0;
     flash.current = 0;
     portals.current = [];
-    portalPhase.current = 0;
+    nextPortalScore.current = 800;
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     usedRevive.current = false;
     const count = Math.ceil(W / SEG_W) + 2;
