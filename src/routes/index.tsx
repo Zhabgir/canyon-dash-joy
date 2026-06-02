@@ -1294,11 +1294,8 @@ function Game() {
   });
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#05021a] via-[#0a0530] to-[#000004] p-3">
-      <div
-        className="relative w-full overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
-        style={{ maxWidth: W, aspectRatio: `${W}/${H}` }}
-      >
+    <div className="fixed inset-0 bg-black">
+      <div className="relative h-full w-full overflow-hidden">
         <canvas
           ref={canvasRef}
           width={W}
