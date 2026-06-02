@@ -1061,6 +1061,7 @@ function Game() {
       // sky gradient (from selected map)
       const theme = mapRef.current;
       const isOther = theme.id === "otherworld";
+      const isCher = theme.id === "chernobyl";
       const sky = ctx.createLinearGradient(0, 0, 0, H);
       if (isOther) {
         const ht = tick.current * 0.8;
@@ -1068,6 +1069,11 @@ function Game() {
         sky.addColorStop(0.35, `hsl(${(ht + 60) % 360}, 85%, 28%)`);
         sky.addColorStop(0.65, `hsl(${(ht + 160) % 360}, 90%, 35%)`);
         sky.addColorStop(1, `hsl(${(ht + 240) % 360}, 85%, 12%)`);
+      } else if (isCher) {
+        sky.addColorStop(0, "#000000");
+        sky.addColorStop(0.4, "#070806");
+        sky.addColorStop(0.75, "#0a0c08");
+        sky.addColorStop(1, "#000000");
       } else {
         sky.addColorStop(0, theme.sky[0]);
         sky.addColorStop(0.35, theme.sky[1]);
@@ -1086,16 +1092,20 @@ function Game() {
       sunGlow.addColorStop(1, `rgba(${theme.sunAlpha},0)`);
       ctx.fillStyle = sunGlow;
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = isOther ? `hsl(${(tick.current * 2) % 360}, 100%, 75%)` : theme.sun;
-      ctx.beginPath();
-      ctx.arc(sunX, sunY, 38, 0, Math.PI * 2);
-      ctx.fill();
+      if (!isCher) {
+        ctx.fillStyle = isOther ? `hsl(${(tick.current * 2) % 360}, 100%, 75%)` : theme.sun;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, 38, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // stars
       for (const s of stars.current) {
         const col = isOther
           ? `hsla(${(tick.current * 3 + s.x) % 360}, 100%, 75%, ${0.4 + s.z * 0.6})`
-          : `rgba(255,235,210,${0.3 + s.z * 0.7})`;
+          : isCher
+            ? `rgba(80,90,70,${0.15 + s.z * 0.25})`
+            : `rgba(255,235,210,${0.3 + s.z * 0.7})`;
         ctx.fillStyle = col;
         ctx.fillRect(s.x, s.y, s.s, s.s);
       }
@@ -1104,7 +1114,22 @@ function Game() {
       drawDistantMountains(ctx, offset.current * 0.15);
 
       // canyon walls
-      drawCanyon(ctx, segments.current, offset.current, distance.current, tick.current, isOther);
+      drawCanyon(ctx, segments.current, offset.current, distance.current, tick.current, isOther, isCher);
+
+      // chernobyl ash overlay (drifting particles + green haze)
+      if (isCher) {
+        const haze = ctx.createLinearGradient(0, 0, 0, H);
+        haze.addColorStop(0, "rgba(40,55,30,0)");
+        haze.addColorStop(1, "rgba(40,55,30,0.35)");
+        ctx.fillStyle = haze;
+        ctx.fillRect(0, 0, W, H);
+        for (let i = 0; i < 30; i++) {
+          const ax = (i * 137 + (tick.current * 0.6) % W) % W;
+          const ay = (i * 53 + (tick.current * 0.9) % H) % H;
+          ctx.fillStyle = "rgba(180,180,170,0.25)";
+          ctx.fillRect(ax, ay, 1.5, 1.5);
+        }
+      }
 
       // foreground mist
       const mist = ctx.createLinearGradient(0, H * 0.6, 0, H);
