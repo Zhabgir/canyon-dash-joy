@@ -1819,9 +1819,12 @@ function drawJet(
   hasShield: boolean,
   tick: number,
   skin: Skin,
+  vy: number = 0,
 ) {
   ctx.save();
   ctx.translate(PLANE_X, y);
+  const pitch = Math.max(-0.5, Math.min(0.5, vy * 0.18));
+  ctx.rotate(pitch);
   const bank = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
   ctx.scale(1, 1 + bank * 0.05);
 
