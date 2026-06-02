@@ -270,6 +270,11 @@ function Game() {
   const flash = useRef(0);
   const tick = useRef(0);
   const speedLines = useRef<{ x: number; y: number; len: number; spd: number }[]>([]);
+  const portal = useRef<{ spawned: boolean; entered: boolean; worldX: number }>({
+    spawned: false,
+    entered: false,
+    worldX: 0,
+  });
 
   // ===== Sound engine (WebAudio) =====
   const audioCtxRef = useRef<AudioContext | null>(null);
