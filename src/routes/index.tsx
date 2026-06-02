@@ -55,6 +55,15 @@ const MAPS: MapTheme[] = [
   { id: "blackhole", name: "Чёрная Дыра", price: 900, sky: ["#000000", "#0a0218", "#3a0848", "#000000"], sun: "#c060ff", sunAlpha: "180,80,255" },
 ];
 
+const OTHER_WORLD: MapTheme = {
+  id: "otherworld",
+  name: "Иной Мир",
+  price: 0,
+  sky: ["#001a0a", "#0a3a28", "#3a0a55", "#1a0030"],
+  sun: "#60ffd0",
+  sunAlpha: "120,255,200",
+};
+
 const LS = {
   wallet: "jr_wallet",
   ownedSkins: "jr_owned_skins",
