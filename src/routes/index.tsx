@@ -892,12 +892,16 @@ function Game() {
           const dx = -W;
           const dy = targetY - spawnY;
           const dist = Math.hypot(dx, dy);
+          const proj = PROJECTILE_BY_MAP[mapRef.current.id] ?? {};
           missiles.current.push({
             x: spawnX,
             y: spawnY,
             vx: (dx / dist) * sp,
             vy: (dy / dist) * sp,
             trail: [],
+            emoji: proj.emoji,
+            trailColor: proj.trailColor,
+            spin: Math.random() * Math.PI * 2,
           });
           missileTimer.current = Math.max(95, 340 - difficultyFor() * 150 - Math.random() * 80);
         }
