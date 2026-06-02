@@ -2241,19 +2241,16 @@ function drawPortal(
   kind: "other" | "normal" | "chernobyl" = "other",
   anchor: "top" | "bottom" = "bottom",
 ) {
-  // Mario-style green warp pipe emerging from the canyon wall.
-  // (x, y) = center of the pipe's opening (mouth).
+  // Horizontal tunnel embedded in the canyon wall/mountain.
+  // (x, y) = center of the round tunnel mouth.
   ctx.save();
   ctx.translate(x, y);
-  // For a bottom-anchored portal the body extends down into the floor (default).
-  // For a top-anchored portal we flip vertically so body extends up into the ceiling.
-  if (anchor === "top") ctx.scale(1, -1);
+  const dir = anchor === "top" ? -1 : 1;
 
-
-  const rimW = 80;   // wider rim on top
-  const rimH = 22;
-  const bodyW = 64;  // narrower pipe body
-  const bodyH = 260; // long pipe going down off-screen
+  const mouthR = 34;
+  const innerR = 24;
+  const bodyW = 86;
+  const bodyH = mouthR * 2;
 
   // Color palettes per portal kind
   const palette =
@@ -2275,8 +2272,8 @@ function drawPortal(
             hi: "rgba(200,255,160,0.7)", out: "#062808",
           };
 
-  // ---- pipe body (below the rim) ----
-  const bodyGrad = ctx.createLinearGradient(-bodyW / 2, 0, bodyW / 2, 0);
+  // tunnel body goes horizontally backward into the mountain wall
+  const bodyGrad = ctx.createLinearGradient(-bodyW, -mouthR, 10, mouthR);
   bodyGrad.addColorStop(0, palette.c0);
   bodyGrad.addColorStop(0.15, palette.c1);
   bodyGrad.addColorStop(0.35, palette.c2);
@@ -2284,25 +2281,23 @@ function drawPortal(
   bodyGrad.addColorStop(0.85, palette.c4);
   bodyGrad.addColorStop(1, palette.c5);
   ctx.fillStyle = bodyGrad;
-  ctx.fillRect(-bodyW / 2, rimH / 2, bodyW, bodyH);
+  ctx.fillRect(-bodyW, -mouthR, bodyW, bodyH);
 
-  // body highlight stripe
-  ctx.fillStyle = palette.hi;
-  ctx.fillRect(-bodyW / 2 + 8, rimH / 2, 6, bodyH);
-  // body shadow stripe
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
-  ctx.fillRect(bodyW / 2 - 12, rimH / 2, 8, bodyH);
+  // rock shadows where the tunnel disappears into the canyon
+  ctx.fillStyle = "rgba(0,0,0,0.42)";
+  ctx.fillRect(-bodyW, -mouthR, bodyW, 8);
+  ctx.fillRect(-bodyW, mouthR - 8, bodyW, 8);
 
-  // ---- rim (the wider top lip) ----
-  const rimGrad = ctx.createLinearGradient(-rimW / 2, 0, rimW / 2, 0);
-  rimGrad.addColorStop(0, palette.c0);
-  rimGrad.addColorStop(0.15, palette.c1);
-  rimGrad.addColorStop(0.35, palette.c2);
-  rimGrad.addColorStop(0.55, palette.c3);
-  rimGrad.addColorStop(0.85, palette.c4);
-  rimGrad.addColorStop(1, palette.c5);
+  // round front rim facing the player horizontally
+  const rimGrad = ctx.createRadialGradient(-8, -10, innerR * 0.35, 0, 0, mouthR);
+  rimGrad.addColorStop(0, palette.c2);
+  rimGrad.addColorStop(0.45, palette.c3);
+  rimGrad.addColorStop(0.75, palette.c1);
+  rimGrad.addColorStop(1, palette.c0);
   ctx.fillStyle = rimGrad;
-  ctx.fillRect(-rimW / 2, -rimH / 2 - 6, rimW, rimH + 6);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, mouthR, mouthR * 0.92, 0, 0, Math.PI * 2);
+  ctx.fill();
 
   // rim highlight
   ctx.fillStyle = palette.hi;
