@@ -528,6 +528,12 @@ function Game() {
   type PortalEntity = { worldX: number; anchor: "top" | "bottom"; kind: PortalKind; entered: boolean };
   const portals = useRef<PortalEntity[]>([]);
   const nextPortalScore = useRef(800);
+  // ===== Rare events (visual flair, non-colliding) =====
+  type RareEventKind = "star" | "asteroids" | "wreck" | "chase";
+  type RareEvent = { kind: RareEventKind; t: number; duration: number; seed: number };
+  const rareEvent = useRef<RareEvent | null>(null);
+  const rareCooldown = useRef(900); // frames until first possible event
+  const [rareBanner, setRareBanner] = useState<{ kind: RareEventKind; title: string; sub: string } | null>(null);
   const portalY = (p: PortalEntity) => {
     const px = p.worldX - distance.current;
     const i = Math.floor((px + offset.current) / SEG_W);
