@@ -961,7 +961,7 @@ function Game() {
           if (p.entered) continue;
           const px = p.worldX - distance.current;
           const dx = px - PLANE_X;
-          const dy = p.y - planeY.current;
+          const dy = portalY(p) - planeY.current;
           if (Math.hypot(dx, dy) < 60) {
             p.entered = true;
             if (p.kind === "other") mapRef.current = OTHER_WORLD;
