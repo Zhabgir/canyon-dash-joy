@@ -230,6 +230,41 @@ async function saveQuestsToDB(userId: string, qs: QuestState): Promise<void> {
     );
 }
 
+interface ShopProgress {
+  wallet: number;
+  ownedSkins: string[];
+  ownedMaps: string[];
+  selectedSkin: string;
+  selectedMap: string;
+}
+
+async function fetchShopFromDB(userId: string): Promise<ShopProgress | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("wallet, owned_skins, owned_maps, selected_skin, selected_map")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    wallet: data.wallet ?? 0,
+    ownedSkins: (data.owned_skins as string[]) ?? ["classic"],
+    ownedMaps: (data.owned_maps as string[]) ?? ["space"],
+    selectedSkin: data.selected_skin ?? "classic",
+    selectedMap: data.selected_map ?? "space",
+  };
+}
+
+async function saveShopToDB(userId: string, p: Partial<ShopProgress>): Promise<void> {
+  const payload: Record<string, unknown> = {};
+  if (p.wallet !== undefined) payload.wallet = p.wallet;
+  if (p.ownedSkins !== undefined) payload.owned_skins = p.ownedSkins;
+  if (p.ownedMaps !== undefined) payload.owned_maps = p.ownedMaps;
+  if (p.selectedSkin !== undefined) payload.selected_skin = p.selectedSkin;
+  if (p.selectedMap !== undefined) payload.selected_map = p.selectedMap;
+  if (Object.keys(payload).length === 0) return;
+  await supabase.from("profiles").update(payload).eq("user_id", userId);
+}
+
 function loadJSON<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
