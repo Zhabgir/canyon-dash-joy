@@ -81,7 +81,7 @@ const LS = {
   ownedMaps: "jr_owned_maps",
   skin: "jr_skin",
   map: "jr_map",
-  quests: "jr_quests_v1",
+  quests: "jr_quests_v2",
 };
 
 // ===== Daily quests =====
