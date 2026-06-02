@@ -2236,6 +2236,10 @@ function drawPortal(
   // Mario-style green warp pipe. (x, y) = center of the opening.
   ctx.save();
   ctx.translate(x, y);
+  // rotate -90° so the pipe lies horizontally with its opening facing left
+  // (toward the incoming plane). Local +Y in the design now points to +X (right).
+  ctx.rotate(-Math.PI / 2);
+
 
   const rimW = 80;   // wider rim on top
   const rimH = 22;
