@@ -1652,6 +1652,8 @@ function drawCanyon(
   segs: Segment[],
   offset: number,
   distance: number,
+  tick: number = 0,
+  otherWorld: boolean = false,
 ) {
   const drawBand = (isTop: boolean) => {
     ctx.beginPath();
@@ -1679,7 +1681,21 @@ function drawCanyon(
     const grd = isTop
       ? ctx.createLinearGradient(0, 0, 0, H / 2)
       : ctx.createLinearGradient(0, H / 2, 0, H);
-    if (isTop) {
+    if (otherWorld) {
+      // shifting alien rainbow rock
+      const h1 = (tick * 0.6) % 360;
+      const h2 = (tick * 0.6 + 80) % 360;
+      const h3 = (tick * 0.6 + 200) % 360;
+      if (isTop) {
+        grd.addColorStop(0, `hsl(${h1}, 80%, 12%)`);
+        grd.addColorStop(0.6, `hsl(${h2}, 85%, 28%)`);
+        grd.addColorStop(1, `hsl(${h3}, 90%, 50%)`);
+      } else {
+        grd.addColorStop(0, `hsl(${h3}, 90%, 50%)`);
+        grd.addColorStop(0.4, `hsl(${h2}, 85%, 28%)`);
+        grd.addColorStop(1, `hsl(${h1}, 80%, 10%)`);
+      }
+    } else if (isTop) {
       grd.addColorStop(0, "#2a0e08");
       grd.addColorStop(0.6, "#5e2818");
       grd.addColorStop(1, "#9a4528");
