@@ -670,6 +670,8 @@ function Game() {
     flash.current = 0;
     portals.current = [];
     nextPortalScore.current = 800;
+    rareEvent.current = null;
+    rareCooldown.current = 900;
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     usedRevive.current = false;
     const count = Math.ceil(W / SEG_W) + 2;
