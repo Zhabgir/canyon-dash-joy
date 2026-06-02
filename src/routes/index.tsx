@@ -1300,6 +1300,7 @@ function Game() {
           ref={canvasRef}
           width={W}
           height={H}
+          className="block h-full w-full object-contain"
           className="block h-full w-full"
         />
 
