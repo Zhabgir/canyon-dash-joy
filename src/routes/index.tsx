@@ -2373,6 +2373,92 @@ function drawJet(
     ctx.fill();
   }
 
+  // Vehicle skins replace the jet geometry with a giant emoji
+  if (skin.vehicle) {
+    // body glow tinted with accent
+    const glow = ctx.createRadialGradient(0, 0, 4, 0, 0, 30);
+    glow.addColorStop(0, withAlpha(skin.accent, 0.45));
+    glow.addColorStop(1, withAlpha(skin.accent, 0));
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, 30, 0, Math.PI * 2);
+    ctx.fill();
+
+    // helicopter spinning rotor
+    if (skin.vehicle === "helicopter") {
+      const spin = tick * 0.9;
+      ctx.save();
+      ctx.translate(0, -14);
+      ctx.rotate(spin);
+      ctx.strokeStyle = "rgba(30,30,30,0.85)";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(-22, 0);
+      ctx.lineTo(22, 0);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // UFO under-glow
+    if (skin.vehicle === "ufo") {
+      const pulse = 0.5 + Math.sin(tick * 0.25) * 0.3;
+      const beam = ctx.createRadialGradient(0, 14, 2, 0, 14, 20);
+      beam.addColorStop(0, `rgba(120,255,200,${pulse})`);
+      beam.addColorStop(1, "rgba(120,255,200,0)");
+      ctx.fillStyle = beam;
+      ctx.beginPath();
+      ctx.arc(0, 14, 20, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Dragon fire breath
+    if (skin.vehicle === "dragon") {
+      const fl = 14 + Math.random() * 8;
+      const fg = ctx.createLinearGradient(18, 0, 18 + fl, 0);
+      fg.addColorStop(0, "rgba(255,220,80,1)");
+      fg.addColorStop(0.6, "rgba(255,80,20,0.8)");
+      fg.addColorStop(1, "rgba(255,0,0,0)");
+      ctx.fillStyle = fg;
+      ctx.beginPath();
+      ctx.moveTo(18, -4);
+      ctx.lineTo(18 + fl, 0);
+      ctx.lineTo(18, 4);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Giant emoji as the vehicle body
+    ctx.save();
+    // counter-rotate so emoji stays upright relative to screen
+    ctx.rotate(-pitch);
+    const wob = Math.sin(tick * 0.15) * 0.04;
+    ctx.rotate(wob);
+    ctx.font = "36px system-ui, 'Apple Color Emoji', 'Segoe UI Emoji'";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(skin.emoji, 0, 0);
+    ctx.restore();
+
+    // shield bubble (same as jet)
+    if (hasShield) {
+      const pulse = 0.6 + Math.sin(tick * 0.18) * 0.15;
+      ctx.strokeStyle = `rgba(120,210,255,${pulse})`;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(0, 0, 28, 0, Math.PI * 2);
+      ctx.stroke();
+      const g = ctx.createRadialGradient(0, 0, 8, 0, 0, 28);
+      g.addColorStop(0, "rgba(120,210,255,0)");
+      g.addColorStop(1, "rgba(120,210,255,0.22)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(0, 0, 28, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    return;
+  }
+
   // horizontal stabilizers
   ctx.fillStyle = "#39424d";
   ctx.beginPath();
