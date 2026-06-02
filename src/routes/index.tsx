@@ -394,7 +394,7 @@ function Game() {
   const [ownedMaps, setOwnedMaps] = useState<string[]>(["space"]);
   const [skinId, setSkinId] = useState<string>("classic");
   const [mapId, setMapId] = useState<string>("space");
-  const [shopTab, setShopTab] = useState<null | "skins" | "maps">(null);
+  const [shopTab, setShopTab] = useState<null | "skins" | "maps" | "vehicles">(null);
   const [questsOpen, setQuestsOpen] = useState(false);
   const [questState, setQuestState] = useState<QuestState>({ date: todayStr(), quests: [] });
   const [totalDistance, setTotalDistance] = useState(0);
