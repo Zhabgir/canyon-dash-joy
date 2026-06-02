@@ -289,9 +289,17 @@ function Game() {
   const tick = useRef(0);
   const speedLines = useRef<{ x: number; y: number; len: number; spd: number }[]>([]);
   type PortalKind = "other" | "normal" | "chernobyl";
-  type PortalEntity = { worldX: number; y: number; kind: PortalKind; entered: boolean };
+  type PortalEntity = { worldX: number; anchor: "top" | "bottom"; kind: PortalKind; entered: boolean };
   const portals = useRef<PortalEntity[]>([]);
   const nextPortalScore = useRef(800);
+  const portalY = (p: PortalEntity) => {
+    const px = p.worldX - distance.current;
+    const i = Math.floor((px + offset.current) / SEG_W);
+    const seg = segments.current[i] ?? segments.current[Math.max(0, Math.min(segments.current.length - 1, i))];
+    if (!seg) return H / 2;
+    // place opening just outside the canyon wall
+    return p.anchor === "top" ? seg.topH + 6 : H - seg.botH - 6;
+  };
 
   // ===== Sound engine (WebAudio) =====
   const audioCtxRef = useRef<AudioContext | null>(null);
