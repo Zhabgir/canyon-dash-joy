@@ -905,6 +905,38 @@ function Game() {
         }
         if (planeY.current < 0 || planeY.current > H) die();
         setScore(Math.floor(distance.current / 10));
+
+        // Portal to the other world at score 800
+        const curScore = Math.floor(distance.current / 10);
+        if (!portal.current.spawned && curScore >= 800) {
+          portal.current.spawned = true;
+          portal.current.entered = false;
+          portal.current.worldX = distance.current + W * 1.2;
+        }
+        if (portal.current.spawned && !portal.current.entered) {
+          const px = portal.current.worldX - distance.current;
+          const py = H - 60;
+          const dx = px - PLANE_X;
+          const dy = py - planeY.current;
+          if (Math.hypot(dx, dy) < 46) {
+            portal.current.entered = true;
+            mapRef.current = OTHER_WORLD;
+            flash.current = 30;
+            shake.current = 18;
+            for (let i = 0; i < 40; i++) {
+              particles.current.push({
+                x: PLANE_X,
+                y: planeY.current,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6,
+                life: 40,
+                maxLife: 40,
+                color: i % 2 ? "#a060ff" : "#60ffd0",
+                size: 2 + Math.random() * 3,
+              });
+            }
+          }
+        }
         setHud({
           shield: shield.current,
           slowmo: slowmo.current,
