@@ -31,6 +31,7 @@ interface Skin {
   fuse: [string, string, string];
   wing: [string, string, string];
   accent: string;
+  emoji: string;
 }
 interface MapTheme {
   id: string;
@@ -39,22 +40,43 @@ interface MapTheme {
   sky: [string, string, string, string];
   sun: string;
   sunAlpha: string;
+  emoji: string;
 }
 
 const SKINS: Skin[] = [
-  { id: "classic", name: "Classic", price: 0, fuse: ["#e0e6ec", "#a8b1bb", "#6e7780"], wing: ["#aab4c0", "#5e6772", "#aab4c0"], accent: "#c8344a" },
-  { id: "crimson", name: "Crimson", price: 200, fuse: ["#ffd0d0", "#d63a3a", "#5a1010"], wing: ["#ff8c8c", "#a02020", "#ff8c8c"], accent: "#ffe040" },
-  { id: "stealth", name: "Stealth", price: 350, fuse: ["#3a3f48", "#15181c", "#000000"], wing: ["#2c3138", "#0e1014", "#2c3138"], accent: "#9b59ff" },
-  { id: "gold", name: "Gold", price: 500, fuse: ["#fff1a8", "#d4a526", "#6a5010"], wing: ["#ffd860", "#a07a18", "#ffd860"], accent: "#ffffff" },
-  { id: "neon", name: "Neon", price: 800, fuse: ["#a8fff0", "#22c2c8", "#0a3a4a"], wing: ["#7af0ff", "#1a8a9a", "#7af0ff"], accent: "#ff40d0" },
+  { id: "classic", name: "Classic", price: 0, fuse: ["#e0e6ec", "#a8b1bb", "#6e7780"], wing: ["#aab4c0", "#5e6772", "#aab4c0"], accent: "#c8344a", emoji: "✈️" },
+  { id: "crimson", name: "Crimson", price: 200, fuse: ["#ffd0d0", "#d63a3a", "#5a1010"], wing: ["#ff8c8c", "#a02020", "#ff8c8c"], accent: "#ffe040", emoji: "🔥" },
+  { id: "stealth", name: "Stealth", price: 350, fuse: ["#3a3f48", "#15181c", "#000000"], wing: ["#2c3138", "#0e1014", "#2c3138"], accent: "#9b59ff", emoji: "🦇" },
+  { id: "gold", name: "Gold", price: 500, fuse: ["#fff1a8", "#d4a526", "#6a5010"], wing: ["#ffd860", "#a07a18", "#ffd860"], accent: "#ffffff", emoji: "👑" },
+  { id: "neon", name: "Neon", price: 800, fuse: ["#a8fff0", "#22c2c8", "#0a3a4a"], wing: ["#7af0ff", "#1a8a9a", "#7af0ff"], accent: "#ff40d0", emoji: "⚡" },
+  { id: "shark", name: "Акула", price: 600, fuse: ["#cfe6f0", "#5b8aa3", "#1f3a4a"], wing: ["#9cc4d6", "#3a6680", "#9cc4d6"], accent: "#ff5050", emoji: "🦈" },
+  { id: "dragon", name: "Дракон", price: 1200, fuse: ["#ffd060", "#c8401a", "#5a0a05"], wing: ["#ff8a30", "#a01a10", "#ff8a30"], accent: "#00ffaa", emoji: "🐉" },
+  { id: "unicorn", name: "Единорог", price: 1000, fuse: ["#ffe8ff", "#f098f8", "#8030a0"], wing: ["#ffc0f8", "#a850c8", "#ffc0f8"], accent: "#fff060", emoji: "🦄" },
+  { id: "ghost", name: "Призрак", price: 700, fuse: ["#ffffff", "#d8d8e8", "#7080a0"], wing: ["#e8e8f8", "#9098b0", "#e8e8f8"], accent: "#80c0ff", emoji: "👻" },
+  { id: "alien", name: "Пришелец", price: 900, fuse: ["#c0ff80", "#4aa830", "#0a3010"], wing: ["#a0e060", "#308020", "#a0e060"], accent: "#ff20ff", emoji: "👽" },
+  { id: "rocket", name: "Ракета", price: 1500, fuse: ["#ff80a0", "#e02040", "#600810"], wing: ["#ffb0c0", "#a01830", "#ffb0c0"], accent: "#ffff00", emoji: "🚀" },
+  { id: "panda", name: "Панда", price: 850, fuse: ["#ffffff", "#e0e0e0", "#202020"], wing: ["#f0f0f0", "#303030", "#f0f0f0"], accent: "#ff80a0", emoji: "🐼" },
+  { id: "tiger", name: "Тигр", price: 1100, fuse: ["#ffc060", "#e07820", "#3a1808"], wing: ["#ffa040", "#a05010", "#ffa040"], accent: "#000000", emoji: "🐯" },
+  { id: "robot", name: "Робот", price: 1300, fuse: ["#d0d8e8", "#7080a0", "#202838"], wing: ["#a0b0c8", "#404858", "#a0b0c8"], accent: "#00ffff", emoji: "🤖" },
+  { id: "pizza", name: "Пицца", price: 750, fuse: ["#ffd890", "#c08040", "#603010"], wing: ["#ffc070", "#a06020", "#ffc070"], accent: "#e02020", emoji: "🍕" },
+  { id: "rainbow", name: "Радуга", price: 2000, fuse: ["#ff4040", "#40ff40", "#4040ff"], wing: ["#ffff40", "#ff40ff", "#40ffff"], accent: "#ffffff", emoji: "🌈" },
 ];
 
 const MAPS: MapTheme[] = [
-  { id: "space", name: "Глубокий Космос", price: 0, sky: ["#000004", "#06061a", "#101030", "#000000"], sun: "#ffffff", sunAlpha: "200,200,255" },
-  { id: "nebula", name: "Туманность", price: 250, sky: ["#1a0028", "#3a0a55", "#7028a0", "#10001a"], sun: "#ff90f0", sunAlpha: "255,150,240" },
-  { id: "mars", name: "Орбита Марса", price: 300, sky: ["#1a0808", "#3a1410", "#8a3018", "#2a0a08"], sun: "#ffb070", sunAlpha: "255,170,100" },
-  { id: "ice", name: "Ледяной Пояс", price: 400, sky: ["#04101a", "#0a2845", "#2a6a9a", "#06121c"], sun: "#d0f0ff", sunAlpha: "180,220,255" },
-  { id: "blackhole", name: "Чёрная Дыра", price: 900, sky: ["#000000", "#0a0218", "#3a0848", "#000000"], sun: "#c060ff", sunAlpha: "180,80,255" },
+  { id: "space", name: "Глубокий Космос", price: 0, sky: ["#000004", "#06061a", "#101030", "#000000"], sun: "#ffffff", sunAlpha: "200,200,255", emoji: "🌌" },
+  { id: "nebula", name: "Туманность", price: 250, sky: ["#1a0028", "#3a0a55", "#7028a0", "#10001a"], sun: "#ff90f0", sunAlpha: "255,150,240", emoji: "💜" },
+  { id: "mars", name: "Орбита Марса", price: 300, sky: ["#1a0808", "#3a1410", "#8a3018", "#2a0a08"], sun: "#ffb070", sunAlpha: "255,170,100", emoji: "🪐" },
+  { id: "ice", name: "Ледяной Пояс", price: 400, sky: ["#04101a", "#0a2845", "#2a6a9a", "#06121c"], sun: "#d0f0ff", sunAlpha: "180,220,255", emoji: "❄️" },
+  { id: "blackhole", name: "Чёрная Дыра", price: 900, sky: ["#000000", "#0a0218", "#3a0848", "#000000"], sun: "#c060ff", sunAlpha: "180,80,255", emoji: "🕳️" },
+  { id: "sunset", name: "Закат", price: 350, sky: ["#1a0a2a", "#5a1a4a", "#e05040", "#ffa050"], sun: "#fff060", sunAlpha: "255,220,120", emoji: "🌅" },
+  { id: "ocean", name: "Океан", price: 450, sky: ["#001828", "#003858", "#0a7090", "#40a0c0"], sun: "#80f0ff", sunAlpha: "150,230,255", emoji: "🌊" },
+  { id: "jungle", name: "Джунгли", price: 500, sky: ["#021008", "#0a3018", "#1a6028", "#308040"], sun: "#c0ff80", sunAlpha: "180,255,140", emoji: "🌴" },
+  { id: "candy", name: "Конфетный Мир", price: 700, sky: ["#ffd0e8", "#ffa0c8", "#f070b0", "#c050a0"], sun: "#ffffff", sunAlpha: "255,255,255", emoji: "🍭" },
+  { id: "lava", name: "Лава", price: 800, sky: ["#1a0000", "#400000", "#a02000", "#ff5010"], sun: "#ffff00", sunAlpha: "255,200,80", emoji: "🌋" },
+  { id: "aurora", name: "Северное Сияние", price: 1000, sky: ["#020a14", "#0a2840", "#1a8060", "#40ffa0"], sun: "#80ffd0", sunAlpha: "120,255,200", emoji: "🌠" },
+  { id: "galaxy", name: "Галактика", price: 1500, sky: ["#000010", "#200840", "#6020a0", "#a040c0"], sun: "#ffd0ff", sunAlpha: "255,200,255", emoji: "🌟" },
+  { id: "matrix", name: "Матрица", price: 1200, sky: ["#000000", "#001008", "#003020", "#00a040"], sun: "#00ff40", sunAlpha: "80,255,120", emoji: "🟢" },
+  { id: "cherry", name: "Сакура", price: 600, sky: ["#1a0a14", "#3a1a28", "#a04060", "#ffc0d8"], sun: "#fff0f8", sunAlpha: "255,220,235", emoji: "🌸" },
 ];
 
 const OTHER_WORLD: MapTheme = {
@@ -64,6 +86,7 @@ const OTHER_WORLD: MapTheme = {
   sky: ["#001a0a", "#0a3a28", "#3a0a55", "#1a0030"],
   sun: "#60ffd0",
   sunAlpha: "120,255,200",
+  emoji: "🌀",
 };
 
 const CHERNOBYL_WORLD: MapTheme = {
@@ -73,6 +96,7 @@ const CHERNOBYL_WORLD: MapTheme = {
   sky: ["#000000", "#080808", "#0c0c08", "#000000"],
   sun: "#1a1a1a",
   sunAlpha: "30,30,30",
+  emoji: "☢️",
 };
 
 const LS = {
@@ -1654,11 +1678,14 @@ function ShopOverlay({
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="h-10 w-14 rounded-md border border-white/20"
+                      className="flex h-12 w-16 items-center justify-center rounded-md border border-white/20 text-2xl"
                       style={{
                         background: `linear-gradient(180deg, ${s.fuse[0]}, ${s.fuse[1]} 55%, ${s.fuse[2]})`,
+                        textShadow: "0 1px 2px rgba(0,0,0,0.6)",
                       }}
-                    />
+                    >
+                      {s.emoji}
+                    </div>
                     <div>
                       <div className="text-sm font-bold text-white">{s.name}</div>
                       <div className="text-[10px] uppercase tracking-wider text-white/50">
@@ -1700,11 +1727,14 @@ function ShopOverlay({
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="h-10 w-14 rounded-md border border-white/20"
+                      className="flex h-12 w-16 items-center justify-center rounded-md border border-white/20 text-2xl"
                       style={{
                         background: `linear-gradient(180deg, ${m.sky[0]}, ${m.sky[1]} 40%, ${m.sky[2]} 75%, ${m.sky[3]})`,
+                        textShadow: "0 1px 3px rgba(0,0,0,0.7)",
                       }}
-                    />
+                    >
+                      {m.emoji}
+                    </div>
                     <div>
                       <div className="text-sm font-bold text-white">{m.name}</div>
                       <div className="text-[10px] uppercase tracking-wider text-white/50">
@@ -2256,6 +2286,17 @@ function drawJet(
   ctx.beginPath();
   ctx.arc(-2, 0, 0.9, 0, Math.PI * 2);
   ctx.fill();
+
+  // emoji decal on fuselage
+  if (skin.emoji) {
+    ctx.save();
+    ctx.rotate(Math.PI / 2);
+    ctx.font = "9px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(skin.emoji, 0, 2);
+    ctx.restore();
+  }
 
   // shield bubble
   if (hasShield) {
