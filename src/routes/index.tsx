@@ -166,7 +166,7 @@ async function saveQuestsToDB(userId: string, qs: QuestState): Promise<void> {
   await supabase
     .from("daily_quests")
     .upsert(
-      { user_id: userId, quest_date: qs.date, quests: qs.quests as unknown as object },
+      { user_id: userId, quest_date: qs.date, quests: qs.quests as never },
       { onConflict: "user_id,quest_date" },
     );
 }
