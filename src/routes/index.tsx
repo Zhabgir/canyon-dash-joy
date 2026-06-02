@@ -2281,6 +2281,17 @@ function drawJet(
   ctx.arc(-2, 0, 0.9, 0, Math.PI * 2);
   ctx.fill();
 
+  // emoji decal on fuselage
+  if (skin.emoji) {
+    ctx.save();
+    ctx.rotate(Math.PI / 2);
+    ctx.font = "9px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(skin.emoji, 0, 2);
+    ctx.restore();
+  }
+
   // shield bubble
   if (hasShield) {
     const pulse = 0.6 + Math.sin(tick * 0.18) * 0.15;
