@@ -106,7 +106,7 @@ const LS = {
   skin: "jr_skin",
   map: "jr_map",
   quests: "jr_quests_v2",
-  totalDistance: "jr_total_distance",
+  totalDistance: "jr_rank_score_v1",
 };
 
 // ===== Rank system =====
@@ -118,13 +118,13 @@ interface RankDef {
 }
 const RANKS: RankDef[] = [
   { name: "Курсант", emoji: "🎖️", threshold: 0, color: "#a0a0a0" },
-  { name: "Новичок", emoji: "🌱", threshold: 1000, color: "#7ec850" },
-  { name: "Пилот", emoji: "✈️", threshold: 5000, color: "#4aa8ff" },
-  { name: "Капитан", emoji: "⭐", threshold: 15000, color: "#ffd700" },
-  { name: "Ас", emoji: "🏆", threshold: 40000, color: "#ff7b2e" },
-  { name: "Элита", emoji: "💎", threshold: 100000, color: "#b76eff" },
-  { name: "Легенда", emoji: "👑", threshold: 250000, color: "#ff3a3a" },
-  { name: "Мифический", emoji: "🔥", threshold: 500000, color: "#ff1493" },
+  { name: "Новичок", emoji: "🌱", threshold: 200, color: "#7ec850" },
+  { name: "Пилот", emoji: "✈️", threshold: 1000, color: "#4aa8ff" },
+  { name: "Капитан", emoji: "⭐", threshold: 3000, color: "#ffd700" },
+  { name: "Ас", emoji: "🏆", threshold: 8000, color: "#ff7b2e" },
+  { name: "Элита", emoji: "💎", threshold: 20000, color: "#b76eff" },
+  { name: "Легенда", emoji: "👑", threshold: 50000, color: "#ff3a3a" },
+  { name: "Мифический", emoji: "🔥", threshold: 120000, color: "#ff1493" },
 ];
 function getRank(totalDistance: number): { current: RankDef; next: RankDef | null; progress: number } {
   let current = RANKS[0];
@@ -363,24 +363,7 @@ function Game() {
     return () => { cancelled = true; };
   }, [user]);
 
-  // Sync total distance from profile when user is signed in
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    (async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("total_distance")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      if (!error && data && typeof data.total_distance === "number") {
-        setTotalDistance(data.total_distance);
-        saveJSON(LS.totalDistance, data.total_distance);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
+  // Rank progress is tracked locally per device — not synced from DB
 
   // Keep render refs in sync with current selection
   useEffect(() => {
@@ -636,9 +619,9 @@ function Game() {
     const runCoins = coinCount.current;
     totalCoinsRef.current += runCoins;
     const runDistance = Math.floor(distance.current);
-    // Update total distance locally
+    // Update rank progress locally using score units (distance / 10)
     setTotalDistance((td) => {
-      const newTotal = td + runDistance;
+      const newTotal = td + d;
       saveJSON(LS.totalDistance, newTotal);
       return newTotal;
     });
