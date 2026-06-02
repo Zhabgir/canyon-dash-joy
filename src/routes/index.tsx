@@ -363,6 +363,25 @@ function Game() {
     return () => { cancelled = true; };
   }, [user]);
 
+  // Sync total distance from profile when user is signed in
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("total_distance")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!error && data && typeof data.total_distance === "number") {
+        setTotalDistance(data.total_distance);
+        saveJSON(LS.totalDistance, data.total_distance);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   // Keep render refs in sync with current selection
   useEffect(() => {
     skinRef.current = SKINS.find((s) => s.id === skinId) ?? SKINS[0];
