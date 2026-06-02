@@ -1374,12 +1374,36 @@ function Game() {
   return (
     <div className="fixed inset-0 bg-black">
       <div className="relative h-full w-full overflow-hidden">
+        {/* Hidden 2D canvas kept only so simulation context exists */}
         <canvas
           ref={canvasRef}
           width={W}
           height={H}
-          className="block h-full w-full object-contain"
-          
+          style={{ display: "none" }}
+        />
+
+        {/* 3D third-person scene */}
+        <Game3DScene
+          refs={{
+            planeY,
+            planeVy,
+            segments,
+            offset,
+            distance,
+            missiles,
+            coins: coinsRef,
+            powers,
+            portals,
+            shield,
+            boost,
+            slowmo,
+            flash,
+            shake,
+            tick,
+            skin: skinRef,
+            map: mapRef,
+            alive: aliveRef,
+          }}
         />
 
         {/* HUD: score & best */}
