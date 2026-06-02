@@ -157,7 +157,7 @@ async function fetchQuestsFromDB(userId: string): Promise<QuestState | null> {
     .eq("quest_date", today)
     .maybeSingle();
   if (error || !data) return null;
-  const quests = data.quests as QuestState["quests"];
+  const quests = data.quests as unknown as QuestState["quests"];
   if (!Array.isArray(quests) || quests.length !== 5) return null;
   return { date: today, quests };
 }
