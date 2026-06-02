@@ -2144,44 +2144,82 @@ function drawCoin(ctx: CanvasRenderingContext2D, c: Coin) {
 function drawPortal(ctx: CanvasRenderingContext2D, x: number, y: number, tick: number) {
   ctx.save();
   ctx.translate(x, y);
-  const t = tick * 0.06;
-  // outer glow
-  const glow = ctx.createRadialGradient(0, 0, 4, 0, 0, 80);
-  glow.addColorStop(0, "rgba(160,100,255,0.7)");
-  glow.addColorStop(0.5, "rgba(100,255,200,0.35)");
-  glow.addColorStop(1, "rgba(100,255,200,0)");
-  ctx.fillStyle = glow;
+  const t = tick * 0.05;
+
+  // outer halo
+  const halo = ctx.createRadialGradient(0, 0, 10, 0, 0, 95);
+  halo.addColorStop(0, "rgba(180,120,255,0.55)");
+  halo.addColorStop(0.6, "rgba(80,220,255,0.22)");
+  halo.addColorStop(1, "rgba(80,220,255,0)");
+  ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.arc(0, 0, 80, 0, Math.PI * 2);
+  ctx.arc(0, 0, 95, 0, Math.PI * 2);
   ctx.fill();
-  // swirling rings
-  for (let i = 0; i < 5; i++) {
-    const r = 38 - i * 6;
-    const a = t + i * 0.6;
-    ctx.strokeStyle = i % 2 ? `rgba(160,100,255,${0.5 + i * 0.08})` : `rgba(100,255,200,${0.5 + i * 0.08})`;
-    ctx.lineWidth = 2;
+
+  // tunnel mouth — outer oval frame (slightly tilted into screen)
+  ctx.save();
+  ctx.rotate(-0.05);
+  const frame = ctx.createRadialGradient(0, 0, 30, 0, 0, 60);
+  frame.addColorStop(0, "rgba(0,0,0,0)");
+  frame.addColorStop(0.75, "rgba(40,10,80,0.9)");
+  frame.addColorStop(1, "rgba(160,100,255,0.9)");
+  ctx.fillStyle = frame;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 58, 50, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // tunnel depth — concentric rings receding into vanishing point
+  const rings = 9;
+  for (let i = 0; i < rings; i++) {
+    const f = i / rings; // 0 = mouth, 1 = far
+    // scale shrinks and shifts toward vanishing offset (slight up-right for depth)
+    const rx = 50 * (1 - f * 0.92);
+    const ry = 42 * (1 - f * 0.92);
+    const cx = 0 + f * 4;
+    const cy = 0 - f * 2;
+    // hue cycles per ring & over time
+    const hue = (t * 80 + i * 38) % 360;
+    const lum = 60 - f * 35;
+    const alpha = 0.85 - f * 0.55;
+    ctx.strokeStyle = `hsla(${hue}, 95%, ${lum}%, ${alpha})`;
+    ctx.lineWidth = 3 - f * 2;
     ctx.beginPath();
-    ctx.ellipse(Math.cos(a) * 3, Math.sin(a) * 2, r, r * 0.85, a, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
     ctx.stroke();
   }
-  // core
-  const core = ctx.createRadialGradient(0, 0, 1, 0, 0, 20);
-  core.addColorStop(0, "#ffffff");
-  core.addColorStop(0.4, "#b080ff");
-  core.addColorStop(1, "rgba(40,0,80,0.9)");
+
+  // dark vortex center
+  const core = ctx.createRadialGradient(2, -1, 1, 2, -1, 16);
+  core.addColorStop(0, "#000010");
+  core.addColorStop(0.5, "rgba(20,0,40,0.95)");
+  core.addColorStop(1, "rgba(20,0,40,0)");
   ctx.fillStyle = core;
   ctx.beginPath();
-  ctx.arc(0, 0, 20, 0, Math.PI * 2);
+  ctx.arc(2, -1, 16, 0, Math.PI * 2);
   ctx.fill();
-  // sparkles
-  for (let i = 0; i < 6; i++) {
-    const a = t * 2 + (i * Math.PI * 2) / 6;
-    const r = 32 + Math.sin(t * 3 + i) * 4;
-    ctx.fillStyle = "rgba(220,255,240,0.9)";
+
+  // swirl streaks pulled toward center
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2 + t * 1.6;
+    const r0 = 18 + (i % 3) * 3;
+    const r1 = 48;
+    const hue = (t * 120 + i * 25) % 360;
+    ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.55)`;
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.arc(Math.cos(a) * r, Math.sin(a) * r * 0.85, 1.6, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0 * 0.85);
+    ctx.lineTo(Math.cos(a + 0.4) * r1, Math.sin(a + 0.4) * r1 * 0.85);
+    ctx.stroke();
   }
+  ctx.restore();
+
+  // rim highlight
+  ctx.strokeStyle = "rgba(255,255,255,0.6)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 56, 48, 0, Math.PI * 1.05, Math.PI * 1.95);
+  ctx.stroke();
+
   ctx.restore();
 }
 
