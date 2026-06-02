@@ -1439,6 +1439,7 @@ function Game() {
             skin: skinRef,
             map: mapRef,
             alive: aliveRef,
+            rareEvent,
           }}
         />
 
