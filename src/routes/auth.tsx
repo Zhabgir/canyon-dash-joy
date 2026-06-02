@@ -19,6 +19,7 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -85,15 +86,25 @@ function AuthPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40"
           />
-          <input
-            type="password"
-            required
-            minLength={6}
-            placeholder="Пароль (мин. 6 символов)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={6}
+              placeholder="Пароль (мин. 6 символов)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-md border border-white/15 bg-black/40 px-3 py-2 pr-16 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/60 hover:bg-white/10 hover:text-white"
+              aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+            >
+              {showPassword ? "Скрыть" : "Показ."}
+            </button>
+          </div>
 
           {err && <div className="rounded-md bg-red-500/20 px-3 py-2 text-xs text-red-200">{err}</div>}
           {msg && <div className="rounded-md bg-emerald-500/20 px-3 py-2 text-xs text-emerald-200">{msg}</div>}
