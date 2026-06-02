@@ -945,15 +945,13 @@ function Game() {
           const curMap = mapRef.current.id;
           const spawnX = distance.current + W * 1.2;
           if (curMap === "otherworld") {
-            // dual choice: back to normal OR chernobyl
-            portals.current.push({ worldX: spawnX, y: H * 0.3, kind: "normal", entered: false });
-            portals.current.push({ worldX: spawnX, y: H * 0.72, kind: "chernobyl", entered: false });
+            // dual choice: back to normal (out of ceiling) OR chernobyl (out of floor)
+            portals.current.push({ worldX: spawnX, anchor: "top", kind: "normal", entered: false });
+            portals.current.push({ worldX: spawnX, anchor: "bottom", kind: "chernobyl", entered: false });
           } else if (curMap === "chernobyl") {
-            // escape back to normal
-            portals.current.push({ worldX: spawnX, y: H * 0.5, kind: "normal", entered: false });
+            portals.current.push({ worldX: spawnX, anchor: "bottom", kind: "normal", entered: false });
           } else {
-            // normal world → other world
-            portals.current.push({ worldX: spawnX, y: H * 0.7, kind: "other", entered: false });
+            portals.current.push({ worldX: spawnX, anchor: "bottom", kind: "other", entered: false });
           }
           nextPortalScore.current += 1000;
         }
