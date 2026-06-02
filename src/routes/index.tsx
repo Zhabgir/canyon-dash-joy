@@ -1891,8 +1891,8 @@ function ShopOverlay({
       </div>
       <div className="flex-1 overflow-y-auto px-3 pb-4">
         <div className="grid grid-cols-1 gap-2.5">
-          {tab === "skins" &&
-            SKINS.map((s) => {
+          {(tab === "skins" || tab === "vehicles") &&
+            SKINS.filter((s) => (tab === "vehicles" ? s.category === "vehicle" : s.category !== "vehicle")).map((s) => {
               const owned = ownedSkins.includes(s.id);
               const selected = skinId === s.id;
               const canBuy = owned || wallet >= s.price;
