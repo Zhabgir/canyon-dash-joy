@@ -608,6 +608,7 @@ function Game() {
         quests: qs.quests.map((x) => (x.def.id === id ? { ...x, claimed: true } : x)),
       };
       saveJSON(LS.quests, next);
+      if (user) saveQuestsToDB(user.id, next).catch((e) => console.warn("save quests failed", e));
       setWallet((w) => {
         const nw = w + q.def.reward;
         saveJSON(LS.wallet, nw);
@@ -615,7 +616,7 @@ function Game() {
       });
       return next;
     });
-  }, []);
+  }, [user]);
 
 
   const buySkin = useCallback(
