@@ -1146,7 +1146,7 @@ function Game() {
         if (p.entered) continue;
         const px = p.worldX - distance.current;
         if (px > -80 && px < W + 80) {
-          drawPortal(ctx, px, p.y, tick.current, p.kind);
+          drawPortal(ctx, px, portalY(p), tick.current, p.kind, p.anchor);
         }
       }
 
