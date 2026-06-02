@@ -2199,7 +2199,13 @@ function drawCoin(ctx: CanvasRenderingContext2D, c: Coin) {
   ctx.restore();
 }
 
-function drawPortal(ctx: CanvasRenderingContext2D, x: number, y: number, tick: number) {
+function drawPortal(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  tick: number,
+  kind: "other" | "normal" | "chernobyl" = "other",
+) {
   // Mario-style green warp pipe. (x, y) = center of the opening.
   ctx.save();
   ctx.translate(x, y);
