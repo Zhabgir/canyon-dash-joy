@@ -339,6 +339,7 @@ function Game() {
     setSkinId(loadJSON<string>(LS.skin, "classic"));
     setMapId(loadJSON<string>(LS.map, "space"));
     setQuestState(loadQuests());
+    setTotalDistance(loadJSON<number>(LS.totalDistance, 0));
   }, []);
 
   // Sync quests with database when user is signed in
