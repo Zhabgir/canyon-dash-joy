@@ -32,6 +32,9 @@ interface Skin {
   wing: [string, string, string];
   accent: string;
   emoji: string;
+  // Optional: render as a giant emoji vehicle instead of the jet geometry.
+  vehicle?: "helicopter" | "ufo" | "military" | "bomber" | "spaceship" | "biplane" | "balloon" | "dragon";
+  category?: "skin" | "vehicle";
 }
 interface MapTheme {
   id: string;
@@ -60,6 +63,16 @@ const SKINS: Skin[] = [
   { id: "robot", name: "Робот", price: 1300, fuse: ["#d0d8e8", "#7080a0", "#202838"], wing: ["#a0b0c8", "#404858", "#a0b0c8"], accent: "#00ffff", emoji: "🤖" },
   { id: "pizza", name: "Пицца", price: 750, fuse: ["#ffd890", "#c08040", "#603010"], wing: ["#ffc070", "#a06020", "#ffc070"], accent: "#e02020", emoji: "🍕" },
   { id: "rainbow", name: "Радуга", price: 2000, fuse: ["#ff4040", "#40ff40", "#4040ff"], wing: ["#ffff40", "#ff40ff", "#40ffff"], accent: "#ffffff", emoji: "🌈" },
+
+  // === VEHICLES ===
+  { id: "v-heli", name: "Вертолёт", price: 1200, fuse: ["#3a4a30", "#1a2818", "#0a1408"], wing: ["#3a4a30", "#1a2818", "#3a4a30"], accent: "#ffcc00", emoji: "🚁", vehicle: "helicopter", category: "vehicle" },
+  { id: "v-ufo", name: "НЛО", price: 2500, fuse: ["#c0c8d0", "#7080a0", "#202838"], wing: ["#a0b0c8", "#404858", "#a0b0c8"], accent: "#00ffff", emoji: "🛸", vehicle: "ufo", category: "vehicle" },
+  { id: "v-military", name: "Военный истребитель", price: 1800, fuse: ["#5a6a4a", "#2a3a1c", "#0a1408"], wing: ["#4a5a3a", "#1a2818", "#4a5a3a"], accent: "#c0c000", emoji: "🛩️", vehicle: "military", category: "vehicle" },
+  { id: "v-bomber", name: "Стелс-бомбардировщик", price: 3000, fuse: ["#1a1a20", "#08080c", "#000000"], wing: ["#15151a", "#050508", "#15151a"], accent: "#80a0ff", emoji: "🛫", vehicle: "bomber", category: "vehicle" },
+  { id: "v-spaceship", name: "Космолёт", price: 3500, fuse: ["#a0d0ff", "#3060c0", "#101848"], wing: ["#80b0ff", "#2040a0", "#80b0ff"], accent: "#ffff80", emoji: "🚀", vehicle: "spaceship", category: "vehicle" },
+  { id: "v-biplane", name: "Биплан", price: 900, fuse: ["#ffd060", "#c08020", "#603810"], wing: ["#e0a040", "#805010", "#e0a040"], accent: "#a02020", emoji: "🛩", vehicle: "biplane", category: "vehicle" },
+  { id: "v-balloon", name: "Воздушный шар", price: 700, fuse: ["#ff6080", "#c02040", "#600810"], wing: ["#ff8090", "#a02030", "#ff8090"], accent: "#ffcc00", emoji: "🎈", vehicle: "balloon", category: "vehicle" },
+  { id: "v-dragon", name: "Огнедышащий дракон", price: 4000, fuse: ["#c02010", "#600808", "#200000"], wing: ["#e04020", "#801010", "#e04020"], accent: "#ffd000", emoji: "🐲", vehicle: "dragon", category: "vehicle" },
 ];
 
 const MAPS: MapTheme[] = [
@@ -381,7 +394,7 @@ function Game() {
   const [ownedMaps, setOwnedMaps] = useState<string[]>(["space"]);
   const [skinId, setSkinId] = useState<string>("classic");
   const [mapId, setMapId] = useState<string>("space");
-  const [shopTab, setShopTab] = useState<null | "skins" | "maps">(null);
+  const [shopTab, setShopTab] = useState<null | "skins" | "maps" | "vehicles">(null);
   const [questsOpen, setQuestsOpen] = useState(false);
   const [questState, setQuestState] = useState<QuestState>({ date: todayStr(), quests: [] });
   const [totalDistance, setTotalDistance] = useState(0);
@@ -1627,6 +1640,12 @@ function Game() {
                 🗺 Карты
               </button>
               <button
+                onClick={() => setShopTab("vehicles")}
+                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
+              >
+                🚁 Транспорт
+              </button>
+              <button
                 onClick={() => setQuestsOpen(true)}
                 className="relative rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
               >
@@ -1829,7 +1848,7 @@ function RankDisplay({ totalDistance }: { totalDistance: number }) {
 }
 
 interface ShopOverlayProps {
-  tab: "skins" | "maps";
+  tab: "skins" | "maps" | "vehicles";
   wallet: number;
   skinId: string;
   mapId: string;
@@ -1867,13 +1886,13 @@ function ShopOverlay({
       </div>
       <div className="flex justify-center p-3">
         <div className="text-sm font-bold uppercase tracking-wider text-white/90">
-          {tab === "skins" ? "Скины" : "Карты"}
+          {tab === "skins" ? "Скины" : tab === "maps" ? "Карты" : "Транспорт"}
         </div>
       </div>
       <div className="flex-1 overflow-y-auto px-3 pb-4">
         <div className="grid grid-cols-1 gap-2.5">
-          {tab === "skins" &&
-            SKINS.map((s) => {
+          {(tab === "skins" || tab === "vehicles") &&
+            SKINS.filter((s) => (tab === "vehicles" ? s.category === "vehicle" : s.category !== "vehicle")).map((s) => {
               const owned = ownedSkins.includes(s.id);
               const selected = skinId === s.id;
               const canBuy = owned || wallet >= s.price;
@@ -2358,6 +2377,92 @@ function drawJet(
     ctx.lineTo(-20, offY + 2.4);
     ctx.closePath();
     ctx.fill();
+  }
+
+  // Vehicle skins replace the jet geometry with a giant emoji
+  if (skin.vehicle) {
+    // body glow tinted with accent
+    const glow = ctx.createRadialGradient(0, 0, 4, 0, 0, 30);
+    glow.addColorStop(0, withAlpha(skin.accent, 0.45));
+    glow.addColorStop(1, withAlpha(skin.accent, 0));
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, 30, 0, Math.PI * 2);
+    ctx.fill();
+
+    // helicopter spinning rotor
+    if (skin.vehicle === "helicopter") {
+      const spin = tick * 0.9;
+      ctx.save();
+      ctx.translate(0, -14);
+      ctx.rotate(spin);
+      ctx.strokeStyle = "rgba(30,30,30,0.85)";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(-22, 0);
+      ctx.lineTo(22, 0);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // UFO under-glow
+    if (skin.vehicle === "ufo") {
+      const pulse = 0.5 + Math.sin(tick * 0.25) * 0.3;
+      const beam = ctx.createRadialGradient(0, 14, 2, 0, 14, 20);
+      beam.addColorStop(0, `rgba(120,255,200,${pulse})`);
+      beam.addColorStop(1, "rgba(120,255,200,0)");
+      ctx.fillStyle = beam;
+      ctx.beginPath();
+      ctx.arc(0, 14, 20, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Dragon fire breath
+    if (skin.vehicle === "dragon") {
+      const fl = 14 + Math.random() * 8;
+      const fg = ctx.createLinearGradient(18, 0, 18 + fl, 0);
+      fg.addColorStop(0, "rgba(255,220,80,1)");
+      fg.addColorStop(0.6, "rgba(255,80,20,0.8)");
+      fg.addColorStop(1, "rgba(255,0,0,0)");
+      ctx.fillStyle = fg;
+      ctx.beginPath();
+      ctx.moveTo(18, -4);
+      ctx.lineTo(18 + fl, 0);
+      ctx.lineTo(18, 4);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Giant emoji as the vehicle body
+    ctx.save();
+    // counter-rotate so emoji stays upright relative to screen
+    ctx.rotate(-pitch);
+    const wob = Math.sin(tick * 0.15) * 0.04;
+    ctx.rotate(wob);
+    ctx.font = "36px system-ui, 'Apple Color Emoji', 'Segoe UI Emoji'";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(skin.emoji, 0, 0);
+    ctx.restore();
+
+    // shield bubble (same as jet)
+    if (hasShield) {
+      const pulse = 0.6 + Math.sin(tick * 0.18) * 0.15;
+      ctx.strokeStyle = `rgba(120,210,255,${pulse})`;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(0, 0, 28, 0, Math.PI * 2);
+      ctx.stroke();
+      const g = ctx.createRadialGradient(0, 0, 8, 0, 0, 28);
+      g.addColorStop(0, "rgba(120,210,255,0)");
+      g.addColorStop(1, "rgba(120,210,255,0.22)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(0, 0, 28, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    return;
   }
 
   // horizontal stabilizers
