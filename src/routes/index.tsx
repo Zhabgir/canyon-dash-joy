@@ -64,6 +64,15 @@ const OTHER_WORLD: MapTheme = {
   sunAlpha: "120,255,200",
 };
 
+const CHERNOBYL_WORLD: MapTheme = {
+  id: "chernobyl",
+  name: "Чернобыль",
+  price: 0,
+  sky: ["#000000", "#080808", "#0c0c08", "#000000"],
+  sun: "#1a1a1a",
+  sunAlpha: "30,30,30",
+};
+
 const LS = {
   wallet: "jr_wallet",
   ownedSkins: "jr_owned_skins",
