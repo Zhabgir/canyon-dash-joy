@@ -636,6 +636,12 @@ function Game() {
     const runCoins = coinCount.current;
     totalCoinsRef.current += runCoins;
     const runDistance = Math.floor(distance.current);
+    // Update total distance locally
+    setTotalDistance((td) => {
+      const newTotal = td + runDistance;
+      saveJSON(LS.totalDistance, newTotal);
+      return newTotal;
+    });
     // Save run stats to the user's profile if signed in
     if (user) {
       (async () => {
