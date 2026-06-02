@@ -408,6 +408,9 @@ function Game() {
 
   const stateRef = useRef(state);
   stateRef.current = state;
+  const aliveRef = useRef(true);
+  aliveRef.current = state !== "over" && state !== "choice";
+
 
   // Hydrate persistent shop data from localStorage on mount
   useEffect(() => {
