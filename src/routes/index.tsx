@@ -1075,7 +1075,14 @@ function Game() {
       if (portal.current.spawned && !portal.current.entered) {
         const px = portal.current.worldX - distance.current;
         if (px > -80 && px < W + 80) {
-          drawPortal(ctx, px, H - 60, tick.current);
+          const pIdx = Math.max(
+            0,
+            Math.min(segments.current.length - 1, Math.floor((px + offset.current) / SEG_W)),
+          );
+          const pSeg = segments.current[pIdx];
+          const corridorBot = pSeg ? H - pSeg.botH : H - 60;
+          const py = Math.max(H * 0.5, corridorBot - 40);
+          drawPortal(ctx, px, py, tick.current);
         }
       }
 
