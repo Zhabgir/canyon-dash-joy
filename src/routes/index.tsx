@@ -876,7 +876,7 @@ function Game() {
             vy: (dy / dist) * sp,
             trail: [],
           });
-          missileTimer.current = Math.max(56, 210 - difficultyFor() * 120 - Math.random() * 50);
+          missileTimer.current = Math.max(95, 340 - difficultyFor() * 150 - Math.random() * 80);
         }
 
         // ===== Missile update + collision =====
@@ -977,15 +977,17 @@ function Game() {
         // ===== Coin spawn (scattered) =====
         coinTimer.current -= 1 * timeScale;
         if (coinTimer.current <= 0) {
-          const rightIdx = segments.current.length - 3;
-          const segR = segments.current[rightIdx];
-          const topY = (segR ? segR.topH : 30) + 26;
-          const botY = (segR ? H - segR.botH : H - 30) - 26;
           const count = 1 + Math.floor(Math.random() * 5); // 1..5 coins
           const spacing = 32;
           for (let i = 0; i < count; i++) {
+            const sx = W + 20 + i * spacing;
+            const segIdx = Math.floor((sx + offset.current) / SEG_W);
+            const seg = segments.current[segIdx];
+            if (!seg) continue; // skip coins past generated terrain
+            const topY = seg.topH + 26;
+            const botY = H - seg.botH - 26;
             const y = topY + Math.random() * Math.max(20, botY - topY);
-            coinsRef.current.push({ x: W + 20 + i * spacing, y, t: Math.random() * 10 });
+            coinsRef.current.push({ x: sx, y, t: Math.random() * 10 });
           }
           coinTimer.current = 70 + Math.random() * 80;
         }
