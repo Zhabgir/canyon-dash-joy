@@ -897,20 +897,18 @@ function Game() {
           });
         }
 
-        // canyon collision (skip while plane is near the open portal)
+        // canyon collision (skip while plane is near any open portal)
         const idx = Math.floor((PLANE_X + offset.current) / SEG_W);
         const seg = segments.current[idx];
-        const nearPortal =
-          portal.current.spawned &&
-          !portal.current.entered &&
-          Math.abs(portal.current.worldX - distance.current - PLANE_X) < 90;
-        if (seg && !nearPortal) {
+        const nearAnyPortal = portals.current.some(
+          (p) => !p.entered && Math.abs(p.worldX - distance.current - PLANE_X) < 90,
+        );
+        if (seg && !nearAnyPortal) {
           const planeTop = planeY.current - PLANE_SIZE / 2;
           const planeBot = planeY.current + PLANE_SIZE / 2;
           if (planeTop < seg.topH || planeBot > H - seg.botH) {
             if (shield.current) {
               shield.current = false;
-              // bounce away from wall
               if (planeTop < seg.topH) {
                 planeY.current = seg.topH + PLANE_SIZE / 2 + 2;
                 planeVy.current = 3;
@@ -928,29 +926,58 @@ function Game() {
         if (planeY.current < 0 || planeY.current > H) die();
         setScore(Math.floor(distance.current / 10));
 
-        // Portal to the other world at score 800
+        // ===== Portal spawning =====
         const curScore = Math.floor(distance.current / 10);
-        if (!portal.current.spawned && curScore >= 800) {
-          portal.current.spawned = true;
-          portal.current.entered = false;
-          portal.current.worldX = distance.current + W * 1.2;
+        if (portalPhase.current === 0 && curScore >= 800) {
+          portalPhase.current = 1;
+          portals.current.push({
+            worldX: distance.current + W * 1.2,
+            y: H * 0.7,
+            kind: "other",
+            entered: false,
+          });
         }
-        if (portal.current.spawned && !portal.current.entered) {
-          const px = portal.current.worldX - distance.current;
-          const pIdx = Math.max(
-            0,
-            Math.min(segments.current.length - 1, Math.floor((px + offset.current) / SEG_W)),
-          );
-          const pSeg = segments.current[pIdx];
-          const corridorBot = pSeg ? H - pSeg.botH : H - 60;
-          const py = Math.max(H * 0.5, corridorBot - 40);
+        if (
+          portalPhase.current === 1 &&
+          curScore >= 1500 &&
+          mapRef.current.id === "otherworld" &&
+          portals.current.every((p) => p.entered)
+        ) {
+          portalPhase.current = 2;
+          // two portals: top = back to normal world, bottom = chernobyl
+          portals.current.push({
+            worldX: distance.current + W * 1.2,
+            y: H * 0.3,
+            kind: "normal",
+            entered: false,
+          });
+          portals.current.push({
+            worldX: distance.current + W * 1.2,
+            y: H * 0.72,
+            kind: "chernobyl",
+            entered: false,
+          });
+        }
+
+        // ===== Portal entering =====
+        for (const p of portals.current) {
+          if (p.entered) continue;
+          const px = p.worldX - distance.current;
           const dx = px - PLANE_X;
-          const dy = py - planeY.current;
+          const dy = p.y - planeY.current;
           if (Math.hypot(dx, dy) < 60) {
-            portal.current.entered = true;
-            mapRef.current = OTHER_WORLD;
+            p.entered = true;
+            if (p.kind === "other") mapRef.current = OTHER_WORLD;
+            else if (p.kind === "chernobyl") mapRef.current = CHERNOBYL_WORLD;
+            else mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
             flash.current = 30;
             shake.current = 18;
+            const colors =
+              p.kind === "chernobyl"
+                ? ["#3a3a2a", "#1a1a10"]
+                : p.kind === "normal"
+                  ? ["#80c0ff", "#ffffff"]
+                  : ["#a060ff", "#60ffd0"];
             for (let i = 0; i < 40; i++) {
               particles.current.push({
                 x: PLANE_X,
@@ -959,7 +986,7 @@ function Game() {
                 vy: (Math.random() - 0.5) * 6,
                 life: 40,
                 maxLife: 40,
-                color: i % 2 ? "#a060ff" : "#60ffd0",
+                color: colors[i % colors.length],
                 size: 2 + Math.random() * 3,
               });
             }
