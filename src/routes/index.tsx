@@ -2238,13 +2238,15 @@ function drawPortal(
   y: number,
   tick: number,
   kind: "other" | "normal" | "chernobyl" = "other",
+  anchor: "top" | "bottom" = "bottom",
 ) {
-  // Mario-style green warp pipe. (x, y) = center of the opening.
+  // Mario-style green warp pipe emerging from the canyon wall.
+  // (x, y) = center of the pipe's opening (mouth).
   ctx.save();
   ctx.translate(x, y);
-  // rotate -90° so the pipe lies horizontally with its opening facing left
-  // (toward the incoming plane). Local +Y in the design now points to +X (right).
-  ctx.rotate(-Math.PI / 2);
+  // For a bottom-anchored portal the body extends down into the floor (default).
+  // For a top-anchored portal we flip vertically so body extends up into the ceiling.
+  if (anchor === "top") ctx.scale(1, -1);
 
 
   const rimW = 80;   // wider rim on top
