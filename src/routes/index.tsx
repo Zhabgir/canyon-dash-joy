@@ -511,6 +511,24 @@ function Game() {
     setBestCoins((b) => Math.max(b, coinCount.current));
     const runCoins = coinCount.current;
     totalCoinsRef.current += runCoins;
+    const runDistance = Math.floor(distance.current);
+    // Save run stats to the user's profile if signed in
+    if (user) {
+      (async () => {
+        const { data: existing } = await supabase
+          .from("profiles")
+          .select("high_score, total_distance, games_played")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const newHigh = Math.max(existing?.high_score ?? 0, d);
+        const newTotal = (existing?.total_distance ?? 0) + runDistance;
+        const newGames = (existing?.games_played ?? 0) + 1;
+        await supabase
+          .from("profiles")
+          .update({ high_score: newHigh, total_distance: newTotal, games_played: newGames })
+          .eq("user_id", user.id);
+      })().catch((e) => console.warn("save stats failed", e));
+    }
     setQuestState((qs) => {
       const today = todayStr();
       if (qs.date !== today) {
