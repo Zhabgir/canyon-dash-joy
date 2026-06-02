@@ -64,6 +64,15 @@ const OTHER_WORLD: MapTheme = {
   sunAlpha: "120,255,200",
 };
 
+const CHERNOBYL_WORLD: MapTheme = {
+  id: "chernobyl",
+  name: "Чернобыль",
+  price: 0,
+  sky: ["#000000", "#080808", "#0c0c08", "#000000"],
+  sun: "#1a1a1a",
+  sunAlpha: "30,30,30",
+};
+
 const LS = {
   wallet: "jr_wallet",
   ownedSkins: "jr_owned_skins",
@@ -279,11 +288,10 @@ function Game() {
   const flash = useRef(0);
   const tick = useRef(0);
   const speedLines = useRef<{ x: number; y: number; len: number; spd: number }[]>([]);
-  const portal = useRef<{ spawned: boolean; entered: boolean; worldX: number }>({
-    spawned: false,
-    entered: false,
-    worldX: 0,
-  });
+  type PortalKind = "other" | "normal" | "chernobyl";
+  type PortalEntity = { worldX: number; y: number; kind: PortalKind; entered: boolean };
+  const portals = useRef<PortalEntity[]>([]);
+  const portalPhase = useRef<0 | 1 | 2>(0);
 
   // ===== Sound engine (WebAudio) =====
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -409,7 +417,8 @@ function Game() {
     boost.current = 0;
     shake.current = 0;
     flash.current = 0;
-    portal.current = { spawned: false, entered: false, worldX: 0 };
+    portals.current = [];
+    portalPhase.current = 0;
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     usedRevive.current = false;
     const count = Math.ceil(W / SEG_W) + 2;
@@ -888,20 +897,18 @@ function Game() {
           });
         }
 
-        // canyon collision (skip while plane is near the open portal)
+        // canyon collision (skip while plane is near any open portal)
         const idx = Math.floor((PLANE_X + offset.current) / SEG_W);
         const seg = segments.current[idx];
-        const nearPortal =
-          portal.current.spawned &&
-          !portal.current.entered &&
-          Math.abs(portal.current.worldX - distance.current - PLANE_X) < 90;
-        if (seg && !nearPortal) {
+        const nearAnyPortal = portals.current.some(
+          (p) => !p.entered && Math.abs(p.worldX - distance.current - PLANE_X) < 90,
+        );
+        if (seg && !nearAnyPortal) {
           const planeTop = planeY.current - PLANE_SIZE / 2;
           const planeBot = planeY.current + PLANE_SIZE / 2;
           if (planeTop < seg.topH || planeBot > H - seg.botH) {
             if (shield.current) {
               shield.current = false;
-              // bounce away from wall
               if (planeTop < seg.topH) {
                 planeY.current = seg.topH + PLANE_SIZE / 2 + 2;
                 planeVy.current = 3;
@@ -919,29 +926,58 @@ function Game() {
         if (planeY.current < 0 || planeY.current > H) die();
         setScore(Math.floor(distance.current / 10));
 
-        // Portal to the other world at score 800
+        // ===== Portal spawning =====
         const curScore = Math.floor(distance.current / 10);
-        if (!portal.current.spawned && curScore >= 800) {
-          portal.current.spawned = true;
-          portal.current.entered = false;
-          portal.current.worldX = distance.current + W * 1.2;
+        if (portalPhase.current === 0 && curScore >= 800) {
+          portalPhase.current = 1;
+          portals.current.push({
+            worldX: distance.current + W * 1.2,
+            y: H * 0.7,
+            kind: "other",
+            entered: false,
+          });
         }
-        if (portal.current.spawned && !portal.current.entered) {
-          const px = portal.current.worldX - distance.current;
-          const pIdx = Math.max(
-            0,
-            Math.min(segments.current.length - 1, Math.floor((px + offset.current) / SEG_W)),
-          );
-          const pSeg = segments.current[pIdx];
-          const corridorBot = pSeg ? H - pSeg.botH : H - 60;
-          const py = Math.max(H * 0.5, corridorBot - 40);
+        if (
+          portalPhase.current === 1 &&
+          curScore >= 1500 &&
+          mapRef.current.id === "otherworld" &&
+          portals.current.every((p) => p.entered)
+        ) {
+          portalPhase.current = 2;
+          // two portals: top = back to normal world, bottom = chernobyl
+          portals.current.push({
+            worldX: distance.current + W * 1.2,
+            y: H * 0.3,
+            kind: "normal",
+            entered: false,
+          });
+          portals.current.push({
+            worldX: distance.current + W * 1.2,
+            y: H * 0.72,
+            kind: "chernobyl",
+            entered: false,
+          });
+        }
+
+        // ===== Portal entering =====
+        for (const p of portals.current) {
+          if (p.entered) continue;
+          const px = p.worldX - distance.current;
           const dx = px - PLANE_X;
-          const dy = py - planeY.current;
+          const dy = p.y - planeY.current;
           if (Math.hypot(dx, dy) < 60) {
-            portal.current.entered = true;
-            mapRef.current = OTHER_WORLD;
+            p.entered = true;
+            if (p.kind === "other") mapRef.current = OTHER_WORLD;
+            else if (p.kind === "chernobyl") mapRef.current = CHERNOBYL_WORLD;
+            else mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
             flash.current = 30;
             shake.current = 18;
+            const colors =
+              p.kind === "chernobyl"
+                ? ["#3a3a2a", "#1a1a10"]
+                : p.kind === "normal"
+                  ? ["#80c0ff", "#ffffff"]
+                  : ["#a060ff", "#60ffd0"];
             for (let i = 0; i < 40; i++) {
               particles.current.push({
                 x: PLANE_X,
@@ -950,7 +986,7 @@ function Game() {
                 vy: (Math.random() - 0.5) * 6,
                 life: 40,
                 maxLife: 40,
-                color: i % 2 ? "#a060ff" : "#60ffd0",
+                color: colors[i % colors.length],
                 size: 2 + Math.random() * 3,
               });
             }
@@ -1025,6 +1061,7 @@ function Game() {
       // sky gradient (from selected map)
       const theme = mapRef.current;
       const isOther = theme.id === "otherworld";
+      const isCher = theme.id === "chernobyl";
       const sky = ctx.createLinearGradient(0, 0, 0, H);
       if (isOther) {
         const ht = tick.current * 0.8;
@@ -1032,6 +1069,11 @@ function Game() {
         sky.addColorStop(0.35, `hsl(${(ht + 60) % 360}, 85%, 28%)`);
         sky.addColorStop(0.65, `hsl(${(ht + 160) % 360}, 90%, 35%)`);
         sky.addColorStop(1, `hsl(${(ht + 240) % 360}, 85%, 12%)`);
+      } else if (isCher) {
+        sky.addColorStop(0, "#000000");
+        sky.addColorStop(0.4, "#070806");
+        sky.addColorStop(0.75, "#0a0c08");
+        sky.addColorStop(1, "#000000");
       } else {
         sky.addColorStop(0, theme.sky[0]);
         sky.addColorStop(0.35, theme.sky[1]);
@@ -1050,16 +1092,20 @@ function Game() {
       sunGlow.addColorStop(1, `rgba(${theme.sunAlpha},0)`);
       ctx.fillStyle = sunGlow;
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = isOther ? `hsl(${(tick.current * 2) % 360}, 100%, 75%)` : theme.sun;
-      ctx.beginPath();
-      ctx.arc(sunX, sunY, 38, 0, Math.PI * 2);
-      ctx.fill();
+      if (!isCher) {
+        ctx.fillStyle = isOther ? `hsl(${(tick.current * 2) % 360}, 100%, 75%)` : theme.sun;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, 38, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // stars
       for (const s of stars.current) {
         const col = isOther
           ? `hsla(${(tick.current * 3 + s.x) % 360}, 100%, 75%, ${0.4 + s.z * 0.6})`
-          : `rgba(255,235,210,${0.3 + s.z * 0.7})`;
+          : isCher
+            ? `rgba(80,90,70,${0.15 + s.z * 0.25})`
+            : `rgba(255,235,210,${0.3 + s.z * 0.7})`;
         ctx.fillStyle = col;
         ctx.fillRect(s.x, s.y, s.s, s.s);
       }
@@ -1068,7 +1114,22 @@ function Game() {
       drawDistantMountains(ctx, offset.current * 0.15);
 
       // canyon walls
-      drawCanyon(ctx, segments.current, offset.current, distance.current, tick.current, isOther);
+      drawCanyon(ctx, segments.current, offset.current, distance.current, tick.current, isOther, isCher);
+
+      // chernobyl ash overlay (drifting particles + green haze)
+      if (isCher) {
+        const haze = ctx.createLinearGradient(0, 0, 0, H);
+        haze.addColorStop(0, "rgba(40,55,30,0)");
+        haze.addColorStop(1, "rgba(40,55,30,0.35)");
+        ctx.fillStyle = haze;
+        ctx.fillRect(0, 0, W, H);
+        for (let i = 0; i < 30; i++) {
+          const ax = (i * 137 + (tick.current * 0.6) % W) % W;
+          const ay = (i * 53 + (tick.current * 0.9) % H) % H;
+          ctx.fillStyle = "rgba(180,180,170,0.25)";
+          ctx.fillRect(ax, ay, 1.5, 1.5);
+        }
+      }
 
       // foreground mist
       const mist = ctx.createLinearGradient(0, H * 0.6, 0, H);
@@ -1083,18 +1144,12 @@ function Game() {
       // coins
       for (const c of coinsRef.current) drawCoin(ctx, c);
 
-      // portal to other world
-      if (portal.current.spawned && !portal.current.entered) {
-        const px = portal.current.worldX - distance.current;
+      // portals
+      for (const p of portals.current) {
+        if (p.entered) continue;
+        const px = p.worldX - distance.current;
         if (px > -80 && px < W + 80) {
-          const pIdx = Math.max(
-            0,
-            Math.min(segments.current.length - 1, Math.floor((px + offset.current) / SEG_W)),
-          );
-          const pSeg = segments.current[pIdx];
-          const corridorBot = pSeg ? H - pSeg.botH : H - 60;
-          const py = Math.max(H * 0.5, corridorBot - 40);
-          drawPortal(ctx, px, py, tick.current);
+          drawPortal(ctx, px, p.y, tick.current, p.kind);
         }
       }
 
@@ -1666,6 +1721,7 @@ function drawCanyon(
   distance: number,
   tick: number = 0,
   otherWorld: boolean = false,
+  chernobyl: boolean = false,
 ) {
   const drawBand = (isTop: boolean) => {
     ctx.beginPath();
@@ -1706,6 +1762,16 @@ function drawCanyon(
         grd.addColorStop(0, `hsl(${h3}, 90%, 50%)`);
         grd.addColorStop(0.4, `hsl(${h2}, 85%, 28%)`);
         grd.addColorStop(1, `hsl(${h1}, 80%, 10%)`);
+      }
+    } else if (chernobyl) {
+      if (isTop) {
+        grd.addColorStop(0, "#000000");
+        grd.addColorStop(0.6, "#0a0a08");
+        grd.addColorStop(1, "#181814");
+      } else {
+        grd.addColorStop(0, "#181814");
+        grd.addColorStop(0.4, "#0a0a08");
+        grd.addColorStop(1, "#000000");
       }
     } else if (isTop) {
       grd.addColorStop(0, "#2a0e08");
@@ -2169,7 +2235,13 @@ function drawCoin(ctx: CanvasRenderingContext2D, c: Coin) {
   ctx.restore();
 }
 
-function drawPortal(ctx: CanvasRenderingContext2D, x: number, y: number, tick: number) {
+function drawPortal(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  tick: number,
+  kind: "other" | "normal" | "chernobyl" = "other",
+) {
   // Mario-style green warp pipe. (x, y) = center of the opening.
   ctx.save();
   ctx.translate(x, y);
@@ -2179,19 +2251,39 @@ function drawPortal(ctx: CanvasRenderingContext2D, x: number, y: number, tick: n
   const bodyW = 64;  // narrower pipe body
   const bodyH = 260; // long pipe going down off-screen
 
+  // Color palettes per portal kind
+  const palette =
+    kind === "normal"
+      ? {
+          c0: "#0a3060", c1: "#2a78d0", c2: "#6fbfff", c3: "#3a90e0",
+          c4: "#1c5098", c5: "#0a2848",
+          hi: "rgba(200,230,255,0.7)", out: "#062048",
+        }
+      : kind === "chernobyl"
+        ? {
+            c0: "#080808", c1: "#1a1a18", c2: "#2a2a22", c3: "#1c1c18",
+            c4: "#0e0e0c", c5: "#000000",
+            hi: "rgba(120,140,90,0.45)", out: "#000000",
+          }
+        : {
+            c0: "#0a4a10", c1: "#2ea02a", c2: "#6fe04a", c3: "#3ab828",
+            c4: "#1c7818", c5: "#0a3a10",
+            hi: "rgba(200,255,160,0.7)", out: "#062808",
+          };
+
   // ---- pipe body (below the rim) ----
   const bodyGrad = ctx.createLinearGradient(-bodyW / 2, 0, bodyW / 2, 0);
-  bodyGrad.addColorStop(0, "#0a4a10");
-  bodyGrad.addColorStop(0.15, "#2ea02a");
-  bodyGrad.addColorStop(0.35, "#6fe04a");
-  bodyGrad.addColorStop(0.55, "#3ab828");
-  bodyGrad.addColorStop(0.85, "#1c7818");
-  bodyGrad.addColorStop(1, "#0a3a10");
+  bodyGrad.addColorStop(0, palette.c0);
+  bodyGrad.addColorStop(0.15, palette.c1);
+  bodyGrad.addColorStop(0.35, palette.c2);
+  bodyGrad.addColorStop(0.55, palette.c3);
+  bodyGrad.addColorStop(0.85, palette.c4);
+  bodyGrad.addColorStop(1, palette.c5);
   ctx.fillStyle = bodyGrad;
   ctx.fillRect(-bodyW / 2, rimH / 2, bodyW, bodyH);
 
   // body highlight stripe
-  ctx.fillStyle = "rgba(180,255,140,0.55)";
+  ctx.fillStyle = palette.hi;
   ctx.fillRect(-bodyW / 2 + 8, rimH / 2, 6, bodyH);
   // body shadow stripe
   ctx.fillStyle = "rgba(0,0,0,0.35)";
@@ -2199,17 +2291,17 @@ function drawPortal(ctx: CanvasRenderingContext2D, x: number, y: number, tick: n
 
   // ---- rim (the wider top lip) ----
   const rimGrad = ctx.createLinearGradient(-rimW / 2, 0, rimW / 2, 0);
-  rimGrad.addColorStop(0, "#0a4a10");
-  rimGrad.addColorStop(0.15, "#3eb030");
-  rimGrad.addColorStop(0.35, "#7fe858");
-  rimGrad.addColorStop(0.55, "#46c030");
-  rimGrad.addColorStop(0.85, "#1c7818");
-  rimGrad.addColorStop(1, "#0a3a10");
+  rimGrad.addColorStop(0, palette.c0);
+  rimGrad.addColorStop(0.15, palette.c1);
+  rimGrad.addColorStop(0.35, palette.c2);
+  rimGrad.addColorStop(0.55, palette.c3);
+  rimGrad.addColorStop(0.85, palette.c4);
+  rimGrad.addColorStop(1, palette.c5);
   ctx.fillStyle = rimGrad;
   ctx.fillRect(-rimW / 2, -rimH / 2 - 6, rimW, rimH + 6);
 
   // rim highlight
-  ctx.fillStyle = "rgba(200,255,160,0.7)";
+  ctx.fillStyle = palette.hi;
   ctx.fillRect(-rimW / 2 + 6, -rimH / 2 - 4, 7, 5);
   ctx.fillRect(-rimW / 2 + 6, -rimH / 2 - 4, rimW - 24, 3);
 
@@ -2218,7 +2310,7 @@ function drawPortal(ctx: CanvasRenderingContext2D, x: number, y: number, tick: n
   ctx.fillRect(-rimW / 2, rimH / 2 - 2, rimW, 3);
 
   // outer rim outline
-  ctx.strokeStyle = "#062808";
+  ctx.strokeStyle = palette.out;
   ctx.lineWidth = 2;
   ctx.strokeRect(-rimW / 2, -rimH / 2 - 6, rimW, rimH + 6);
   ctx.strokeRect(-bodyW / 2, rimH / 2, bodyW, bodyH);
