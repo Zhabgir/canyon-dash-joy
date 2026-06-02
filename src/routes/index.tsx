@@ -2215,19 +2215,39 @@ function drawPortal(
   const bodyW = 64;  // narrower pipe body
   const bodyH = 260; // long pipe going down off-screen
 
+  // Color palettes per portal kind
+  const palette =
+    kind === "normal"
+      ? {
+          c0: "#0a3060", c1: "#2a78d0", c2: "#6fbfff", c3: "#3a90e0",
+          c4: "#1c5098", c5: "#0a2848",
+          hi: "rgba(200,230,255,0.7)", out: "#062048",
+        }
+      : kind === "chernobyl"
+        ? {
+            c0: "#080808", c1: "#1a1a18", c2: "#2a2a22", c3: "#1c1c18",
+            c4: "#0e0e0c", c5: "#000000",
+            hi: "rgba(120,140,90,0.45)", out: "#000000",
+          }
+        : {
+            c0: "#0a4a10", c1: "#2ea02a", c2: "#6fe04a", c3: "#3ab828",
+            c4: "#1c7818", c5: "#0a3a10",
+            hi: "rgba(200,255,160,0.7)", out: "#062808",
+          };
+
   // ---- pipe body (below the rim) ----
   const bodyGrad = ctx.createLinearGradient(-bodyW / 2, 0, bodyW / 2, 0);
-  bodyGrad.addColorStop(0, "#0a4a10");
-  bodyGrad.addColorStop(0.15, "#2ea02a");
-  bodyGrad.addColorStop(0.35, "#6fe04a");
-  bodyGrad.addColorStop(0.55, "#3ab828");
-  bodyGrad.addColorStop(0.85, "#1c7818");
-  bodyGrad.addColorStop(1, "#0a3a10");
+  bodyGrad.addColorStop(0, palette.c0);
+  bodyGrad.addColorStop(0.15, palette.c1);
+  bodyGrad.addColorStop(0.35, palette.c2);
+  bodyGrad.addColorStop(0.55, palette.c3);
+  bodyGrad.addColorStop(0.85, palette.c4);
+  bodyGrad.addColorStop(1, palette.c5);
   ctx.fillStyle = bodyGrad;
   ctx.fillRect(-bodyW / 2, rimH / 2, bodyW, bodyH);
 
   // body highlight stripe
-  ctx.fillStyle = "rgba(180,255,140,0.55)";
+  ctx.fillStyle = palette.hi;
   ctx.fillRect(-bodyW / 2 + 8, rimH / 2, 6, bodyH);
   // body shadow stripe
   ctx.fillStyle = "rgba(0,0,0,0.35)";
@@ -2235,17 +2255,17 @@ function drawPortal(
 
   // ---- rim (the wider top lip) ----
   const rimGrad = ctx.createLinearGradient(-rimW / 2, 0, rimW / 2, 0);
-  rimGrad.addColorStop(0, "#0a4a10");
-  rimGrad.addColorStop(0.15, "#3eb030");
-  rimGrad.addColorStop(0.35, "#7fe858");
-  rimGrad.addColorStop(0.55, "#46c030");
-  rimGrad.addColorStop(0.85, "#1c7818");
-  rimGrad.addColorStop(1, "#0a3a10");
+  rimGrad.addColorStop(0, palette.c0);
+  rimGrad.addColorStop(0.15, palette.c1);
+  rimGrad.addColorStop(0.35, palette.c2);
+  rimGrad.addColorStop(0.55, palette.c3);
+  rimGrad.addColorStop(0.85, palette.c4);
+  rimGrad.addColorStop(1, palette.c5);
   ctx.fillStyle = rimGrad;
   ctx.fillRect(-rimW / 2, -rimH / 2 - 6, rimW, rimH + 6);
 
   // rim highlight
-  ctx.fillStyle = "rgba(200,255,160,0.7)";
+  ctx.fillStyle = palette.hi;
   ctx.fillRect(-rimW / 2 + 6, -rimH / 2 - 4, 7, 5);
   ctx.fillRect(-rimW / 2 + 6, -rimH / 2 - 4, rimW - 24, 3);
 
@@ -2254,7 +2274,7 @@ function drawPortal(
   ctx.fillRect(-rimW / 2, rimH / 2 - 2, rimW, 3);
 
   // outer rim outline
-  ctx.strokeStyle = "#062808";
+  ctx.strokeStyle = palette.out;
   ctx.lineWidth = 2;
   ctx.strokeRect(-rimW / 2, -rimH / 2 - 6, rimW, rimH + 6);
   ctx.strokeRect(-bodyW / 2, rimH / 2, bodyW, bodyH);
