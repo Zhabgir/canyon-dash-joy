@@ -1547,38 +1547,14 @@ function Game() {
   return (
     <div className="fixed inset-0 bg-black">
       <div className="relative h-full w-full overflow-hidden">
-        {/* Hidden 2D canvas kept only so simulation context exists */}
         <canvas
           ref={canvasRef}
           width={W}
           height={H}
-          style={{ display: "none" }}
+          className="absolute inset-0 h-full w-full"
+          style={{ imageRendering: "pixelated" }}
         />
 
-        {/* 3D third-person scene */}
-        <Game3DScene
-          refs={{
-            planeY,
-            planeVy,
-            segments,
-            offset,
-            distance,
-            missiles,
-            coins: coinsRef,
-            powers,
-            portals,
-            shield,
-            boost,
-            slowmo,
-            flash,
-            shake,
-            tick,
-            skin: skinRef,
-            map: mapRef,
-            alive: aliveRef,
-            rareEvent,
-          }}
-        />
 
         {/* Rare event banner */}
         {rareBanner && (
