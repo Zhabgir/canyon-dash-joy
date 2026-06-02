@@ -1763,6 +1763,16 @@ function drawCanyon(
         grd.addColorStop(0.4, `hsl(${h2}, 85%, 28%)`);
         grd.addColorStop(1, `hsl(${h1}, 80%, 10%)`);
       }
+    } else if (chernobyl) {
+      if (isTop) {
+        grd.addColorStop(0, "#000000");
+        grd.addColorStop(0.6, "#0a0a08");
+        grd.addColorStop(1, "#181814");
+      } else {
+        grd.addColorStop(0, "#181814");
+        grd.addColorStop(0.4, "#0a0a08");
+        grd.addColorStop(1, "#000000");
+      }
     } else if (isTop) {
       grd.addColorStop(0, "#2a0e08");
       grd.addColorStop(0.6, "#5e2818");
