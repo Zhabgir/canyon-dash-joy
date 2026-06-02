@@ -472,13 +472,7 @@ function MissileModel({ index, missilesRef }: { index: number; missilesRef: Reac
     if (e !== emoji) setEmoji(e);
   });
   if (emoji) {
-    return (
-      <Billboard>
-        <Text fontSize={0.7} anchorX="center" anchorY="middle" outlineWidth={0.02} outlineColor="#000">
-          {emoji}
-        </Text>
-      </Billboard>
-    );
+    return <EmojiSprite emoji={emoji} size={0.9} />;
   }
   return (
     <group rotation={[0, Math.PI / 2, 0]}>
