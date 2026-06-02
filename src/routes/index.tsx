@@ -291,7 +291,7 @@ function Game() {
   type PortalKind = "other" | "normal" | "chernobyl";
   type PortalEntity = { worldX: number; y: number; kind: PortalKind; entered: boolean };
   const portals = useRef<PortalEntity[]>([]);
-  const portalPhase = useRef<0 | 1 | 2>(0);
+  const nextPortalScore = useRef(800);
 
   // ===== Sound engine (WebAudio) =====
   const audioCtxRef = useRef<AudioContext | null>(null);
