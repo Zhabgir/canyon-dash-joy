@@ -523,6 +523,7 @@ function Game() {
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(false);
   mutedRef.current = muted;
+  const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
 
   const stateRef = useRef(state);
   stateRef.current = state;
