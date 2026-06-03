@@ -41,6 +41,36 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_rewards: {
+        Row: {
+          claim_date: string
+          created_at: string
+          id: string
+          reward_coins: number
+          streak: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          claim_date: string
+          created_at?: string
+          id?: string
+          reward_coins?: number
+          streak?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          reward_coins?: number
+          streak?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
