@@ -549,6 +549,7 @@ function Game() {
   const nextBossScore = useRef(5000);
   const bossHitCd = useRef(0); // i-frames after ramming boss
   const [bossHud, setBossHud] = useState<{ hp: number; max: number } | null>(null);
+  const warpStartTime = useRef<number>(0);
   
   const portalY = (p: PortalEntity) => {
     const px = p.worldX - distance.current;
@@ -669,7 +670,7 @@ function Game() {
     planeY.current = H / 2;
     planeVy.current = 0;
     offset.current = 0;
-    distance.current = 5000;
+    distance.current = 0;
     segments.current = [];
     missiles.current = [];
     missileTimer.current = 240;
@@ -717,6 +718,7 @@ function Game() {
     ensureAudio();
     if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
     startEngine();
+    warpStartTime.current = Date.now();
     setState("playing");
   }, [resetWorld, ensureAudio, startEngine]);
 
