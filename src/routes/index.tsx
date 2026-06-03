@@ -2039,7 +2039,7 @@ function Game() {
             </div>
 
             {/* Title */}
-            <div className="absolute left-1/2 top-[8%] -translate-x-1/2 text-center">
+            <div className="absolute left-1/2 top-[6%] -translate-x-1/2 text-center">
               <h1 className="bg-gradient-to-b from-cyan-200 via-purple-300 to-pink-400 bg-clip-text text-4xl font-black uppercase tracking-[0.2em] text-transparent drop-shadow-[0_4px_12px_rgba(168,85,247,0.5)] sm:text-5xl md:text-6xl">
                 Space Rush
               </h1>
@@ -2047,6 +2047,40 @@ function Game() {
                 Космический забег
               </div>
             </div>
+
+            {/* Stats strip: Rank · Record · Coins · Leaderboard */}
+            {(() => {
+              const rank =
+                best >= 5000 ? { name: "Легенда", icon: "👑", grad: "from-yellow-300 to-orange-500" } :
+                best >= 2000 ? { name: "Капитан", icon: "🎖️", grad: "from-purple-400 to-pink-500" } :
+                best >= 500  ? { name: "Ас",      icon: "⭐", grad: "from-cyan-300 to-blue-500" } :
+                best >= 100  ? { name: "Пилот",   icon: "🚀", grad: "from-emerald-300 to-teal-500" } :
+                               { name: "Новичок", icon: "🌱", grad: "from-slate-300 to-slate-500" };
+              return (
+                <div className="absolute left-1/2 top-[22%] z-20 flex -translate-x-1/2 flex-wrap items-center justify-center gap-2">
+                  <div className={`flex items-center gap-1.5 rounded-full bg-gradient-to-r ${rank.grad} px-3 py-1.5 text-xs font-black uppercase tracking-wider text-black shadow-lg ring-1 ring-white/40`}>
+                    <span>{rank.icon}</span>
+                    <span>{rank.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-full border border-cyan-300/50 bg-black/60 px-3 py-1.5 font-mono text-xs font-bold text-cyan-200 backdrop-blur-sm">
+                    <span>🏆</span>
+                    <span>{best.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-full border border-pink-300/50 bg-black/60 px-3 py-1.5 font-mono text-xs font-bold text-pink-200 backdrop-blur-sm">
+                    <span>💎</span>
+                    <span>Лучшие ● {bestCoins}</span>
+                  </div>
+                  <button
+                    onClick={() => setStatsOpen(true)}
+                    className="flex items-center gap-1.5 rounded-full border border-white/30 bg-black/60 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm transition-transform hover:scale-105 active:scale-95"
+                  >
+                    <span>🏅</span>
+                    <span>Подробнее</span>
+                  </button>
+                </div>
+              );
+            })()}
+
 
             {/* PLAY button */}
             <button
