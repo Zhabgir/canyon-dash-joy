@@ -700,11 +700,11 @@ function Game() {
     for (let i = 0; i < count; i++) {
       segments.current.push({ topH: center - gap / 2, botH: H - (center + gap / 2) });
     }
-    stars.current = Array.from({ length: 90 }, () => ({
-      x: Math.random() * W,
-      y: Math.random() * H * 0.55,
-      z: 0.2 + Math.random() * 0.8,
-      s: Math.random() * 1.5 + 0.3,
+    stars.current = Array.from({ length: 1 }, () => ({
+      x: W * 0.8,
+      y: H * 0.18,
+      z: 0.35,
+      s: 100,
     }));
     setScore(0);
     setCoins(0);
