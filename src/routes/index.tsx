@@ -2122,9 +2122,11 @@ function Game() {
     a.addEventListener("ended", restartMusic);
     if (state === "playing") {
       a.play().catch(() => {});
-    } else if (state === "menu" || state === "over") {
+    } else if (state === "menu") {
       a.pause();
-      if (state === "over") a.currentTime = 0;
+    } else if (state === "over" || state === "revive") {
+      a.pause();
+      a.currentTime = 0;
     }
     return () => {
       a.removeEventListener("ended", restartMusic);
