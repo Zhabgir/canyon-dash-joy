@@ -687,6 +687,11 @@ function Game() {
     nextPortalScore.current = 800;
     rareEvent.current = null;
     rareCooldown.current = 900;
+    boss.current = null;
+    bigMissiles.current = [];
+    nextBossScore.current = 5000;
+    bossHitCd.current = 0;
+    setBossHud(null);
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     usedRevive.current = false;
     const count = Math.ceil(W / SEG_W) + 2;
