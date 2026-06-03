@@ -1148,7 +1148,7 @@ function Game() {
         const curScoreNow = Math.floor(distance.current / 10);
         const startS = speedBoostStartScore.current;
         const boostScore = startS == null ? 0 : Math.min(4000, Math.max(0, curScoreNow - startS));
-        const speedMult = 1 + Math.floor(boostScore / 100) * 0.02;
+        const speedMult = 1 + Math.floor(boostScore / 50) * 0.02;
         const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + (boostScore * 10) / 6000);
         const speed = baseSpeed * timeScale * speedMult;
 
@@ -1227,7 +1227,7 @@ function Game() {
           const m = missiles.current[i];
           m.trail.push({ x: m.x, y: m.y });
           if (m.trail.length > 12) m.trail.shift();
-          const mSpeedMult = 1 + Math.floor(distance.current / 1000) * 0.02;
+          const mSpeedMult = 1 + Math.floor(distance.current / 500) * 0.02;
           m.x += m.vx * timeScale * mSpeedMult;
           m.y += m.vy * timeScale * mSpeedMult;
           if (m.x < -40 || m.x > W + 80 || m.y < -40 || m.y > H + 40) {
