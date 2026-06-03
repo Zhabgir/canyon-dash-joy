@@ -62,6 +62,24 @@ const SKINS: Skin[] = [
   { id: "cyber", name: "Кибер", price: 500, fuse: ["#c0ffc0", "#30d050", "#082818"], wing: ["#80f0a0", "#188838", "#042010"], accent: "#00ff80", emoji: "" },
   { id: "angel", name: "Ангел", price: 1500, fuse: ["#ffffff", "#e8e8f0", "#a8a8b8"], wing: ["#f8f8ff", "#c0c0d0", "#808090"], accent: "#ffe060", emoji: "" },
 
+  // === EMOJI / PATTERN SKINS ===
+  { id: "bee", name: "Пчёлка 🐝", price: 350, fuse: ["#fff0a0", "#ffd020", "#7a5008"], wing: ["#ffe060", "#c89018", "#5a3808"], accent: "#1a1a1a", emoji: "🐝", pattern: "stripes-v", patternColor: "#1a1a1a" },
+  { id: "tiger", name: "Тигр 🐯", price: 450, fuse: ["#ffb050", "#e87010", "#5a2808"], wing: ["#ffa040", "#c05808", "#502008"], accent: "#1a1a1a", emoji: "🐯", pattern: "stripes-v", patternColor: "#1a0a08" },
+  { id: "zebra", name: "Зебра 🦓", price: 400, fuse: ["#ffffff", "#e8e8e8", "#a0a0a0"], wing: ["#f8f8f8", "#c0c0c0", "#606060"], accent: "#1a1a1a", emoji: "🦓", pattern: "stripes-v", patternColor: "#0a0a0a" },
+  { id: "racer", name: "Гонщик 🏎️", price: 500, fuse: ["#ffff60", "#f0c000", "#704800"], wing: ["#ffe040", "#c89000", "#503600"], accent: "#e02020", emoji: "🏎️", pattern: "stripes-h", patternColor: "#1a1a1a" },
+  { id: "frog", name: "Лягушка 🐸", price: 400, fuse: ["#c0ff80", "#60c020", "#1a4008"], wing: ["#a0e060", "#408018", "#103008"], accent: "#fff060", emoji: "🐸", pattern: "dots", patternColor: "#2a5008" },
+  { id: "ladybug", name: "Божья коровка 🐞", price: 450, fuse: ["#ff4040", "#c01010", "#400000"], wing: ["#e02020", "#800808", "#300000"], accent: "#1a1a1a", emoji: "🐞", pattern: "dots", patternColor: "#0a0a0a" },
+  { id: "panda", name: "Панда 🐼", price: 550, fuse: ["#ffffff", "#e8e8e8", "#a8a8a8"], wing: ["#1a1a1a", "#080808", "#1a1a1a"], accent: "#1a1a1a", emoji: "🐼", pattern: "dots", patternColor: "#1a1a1a" },
+  { id: "checker", name: "Шахматы ♟️", price: 600, fuse: ["#ffffff", "#e8e8e8", "#909090"], wing: ["#1a1a1a", "#080808", "#1a1a1a"], accent: "#c08020", emoji: "♟️", pattern: "checker", patternColor: "#0a0a0a" },
+  { id: "shark", name: "Акула 🦈", price: 700, fuse: ["#a0b0c0", "#506878", "#1a2838"], wing: ["#809098", "#384858", "#101820"], accent: "#ff3040", emoji: "🦈", pattern: "zigzag", patternColor: "#0a1018" },
+  { id: "unicorn", name: "Единорог 🦄", price: 1100, fuse: ["#ffd0f0", "#c080ff", "#5a2080"], wing: ["#80d0ff", "#40a0e0", "#103060"], accent: "#fff060", emoji: "🦄", pattern: "stars", patternColor: "#ffffff" },
+  { id: "phoenix", name: "Феникс 🔥", price: 1300, fuse: ["#ffe060", "#ff6020", "#7a1808"], wing: ["#ffd040", "#e04010", "#5a0808"], accent: "#fff080", emoji: "🔥", pattern: "flames", patternColor: "#ffff80" },
+  { id: "ghost", name: "Призрак 👻", price: 800, fuse: ["#f0f0ff", "#c0c0e8", "#7080a0"], wing: ["#e0e0f0", "#9098c0", "#404868"], accent: "#a0c0ff", emoji: "👻", pattern: "dots", patternColor: "#3040707a" },
+  { id: "cosmic", name: "Космо-кот 🐱‍🚀", price: 1400, fuse: ["#3020a0", "#180848", "#08001a"], wing: ["#5030c0", "#200858", "#100428"], accent: "#80f0ff", emoji: "🐱‍🚀", pattern: "stars", patternColor: "#ffd0ff" },
+  { id: "rainbow", name: "Радуга 🌈", price: 1600, fuse: ["#ff4040", "#40a0ff", "#a040ff"], wing: ["#ffa040", "#40d080", "#ff40a0"], accent: "#ffffff", emoji: "🌈", pattern: "stripes-h", patternColor: "#ffffff" },
+
+
+
   // === VEHICLES ===
   { id: "v-heli", name: "Вертолёт", price: 1200, fuse: ["#3a4a30", "#1a2818", "#0a1408"], wing: ["#3a4a30", "#1a2818", "#3a4a30"], accent: "#ffcc00", emoji: "🚁", vehicle: "helicopter", category: "vehicle" },
   { id: "v-ufo", name: "НЛО", price: 2500, fuse: ["#c0c8d0", "#7080a0", "#202838"], wing: ["#a0b0c8", "#404858", "#a0b0c8"], accent: "#00ffff", emoji: "🛸", vehicle: "ufo", category: "vehicle" },
