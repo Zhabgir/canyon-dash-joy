@@ -2063,6 +2063,160 @@ function withAlpha(c: string, a: number) {
   return c;
 }
 
+type RareEventKindLocal = "star" | "asteroids" | "wreck" | "chase";
+function drawRareEvent(
+  ctx: CanvasRenderingContext2D,
+  e: { kind: RareEventKindLocal; t: number; duration: number; seed: number },
+  tick: number,
+) {
+  const p = e.t / e.duration; // 0..1
+  // smooth fade in/out
+  const fade = Math.min(1, Math.min(e.t, e.duration - e.t) / 60);
+  ctx.save();
+  ctx.globalAlpha = fade;
+
+  if (e.kind === "star") {
+    // Огромная звезда проплывает справа налево на фоне
+    const cx = W + 200 - p * (W + 400);
+    const cy = H * 0.35;
+    const R = 150;
+    // halo
+    const glow = ctx.createRadialGradient(cx, cy, 10, cx, cy, R * 2.2);
+    glow.addColorStop(0, "rgba(255,230,150,0.9)");
+    glow.addColorStop(0.4, "rgba(255,150,80,0.35)");
+    glow.addColorStop(1, "rgba(255,80,40,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+    // core
+    const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+    core.addColorStop(0, "#fff8e0");
+    core.addColorStop(0.5, "#ffd060");
+    core.addColorStop(1, "#ff6020");
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R + Math.sin(tick * 0.1) * 4, 0, Math.PI * 2);
+    ctx.fill();
+    // flares
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + tick * 0.02;
+      const len = R * (1.2 + Math.sin(tick * 0.08 + i) * 0.2);
+      ctx.strokeStyle = "rgba(255,200,120,0.5)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(a) * len, cy + Math.sin(a) * len);
+      ctx.stroke();
+    }
+  } else if (e.kind === "asteroids") {
+    // Поле астероидов — пролетают мимо игрока
+    const seed = e.seed;
+    for (let i = 0; i < 35; i++) {
+      const r = ((seed * 1000 + i * 73) % 1000) / 1000;
+      const speed = 3 + r * 5;
+      const baseX = ((i * 137) % (W + 400)) - 200;
+      const x = ((baseX - e.t * speed) % (W + 400) + (W + 400)) % (W + 400) - 200;
+      const y = 40 + ((i * 53 + Math.floor(seed * 500)) % (H - 80));
+      const size = 8 + ((i * 17) % 24);
+      const rot = tick * 0.02 + i;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      ctx.fillStyle = "#6a5a4a";
+      ctx.beginPath();
+      for (let k = 0; k < 7; k++) {
+        const aa = (k / 7) * Math.PI * 2;
+        const rr = size * (0.75 + ((i * k * 31) % 100) / 400);
+        const px = Math.cos(aa) * rr;
+        const py = Math.sin(aa) * rr;
+        if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.beginPath();
+      ctx.arc(size * 0.3, size * 0.3, size * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  } else if (e.kind === "wreck") {
+    // Разрушенный крейсер плывёт навстречу
+    const cx = W + 250 - p * (W + 500);
+    const cy = H * 0.45 + Math.sin(tick * 0.02) * 8;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-0.15);
+    // hull (broken)
+    ctx.fillStyle = "#3a3a44";
+    ctx.fillRect(-160, -28, 220, 56);
+    ctx.fillStyle = "#2a2a32";
+    ctx.fillRect(-160, 18, 220, 10);
+    // jagged break
+    ctx.fillStyle = "#1a1a22";
+    ctx.beginPath();
+    ctx.moveTo(60, -28);
+    ctx.lineTo(80, -10);
+    ctx.lineTo(55, 5);
+    ctx.lineTo(85, 18);
+    ctx.lineTo(60, 28);
+    ctx.lineTo(60, -28);
+    ctx.fill();
+    // windows
+    for (let i = 0; i < 6; i++) {
+      ctx.fillStyle = (i + Math.floor(tick / 20)) % 4 === 0 ? "#553" : "#221";
+      ctx.fillRect(-140 + i * 30, -10, 10, 8);
+    }
+    // sparks + smoke from break
+    for (let i = 0; i < 4; i++) {
+      const sx = 70 + (Math.sin(tick * 0.3 + i) * 8);
+      const sy = -5 + Math.cos(tick * 0.2 + i * 2) * 15;
+      ctx.fillStyle = "rgba(255,180,60,0.8)";
+      ctx.fillRect(sx, sy, 2, 2);
+    }
+    ctx.fillStyle = "rgba(180,180,200,0.18)";
+    for (let i = 0; i < 8; i++) {
+      const sx = 70 + i * 8 + (tick * 0.5) % 20;
+      const sy = -20 + Math.sin(tick * 0.05 + i) * 30;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 10 + i, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  } else if (e.kind === "chase") {
+    // Неизвестный корабль убегает впереди — игрок гонится
+    const cx = W * 0.65 + Math.sin(tick * 0.04) * 80;
+    const cy = H * 0.4 + Math.cos(tick * 0.03) * 50;
+    ctx.save();
+    ctx.translate(cx, cy);
+    // hull
+    ctx.fillStyle = "#1a1a2a";
+    ctx.beginPath();
+    ctx.moveTo(-30, 0);
+    ctx.lineTo(20, -12);
+    ctx.lineTo(40, 0);
+    ctx.lineTo(20, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#3a3a55";
+    ctx.fillRect(-25, -4, 35, 8);
+    // engine glow
+    const eg = ctx.createRadialGradient(-30, 0, 0, -30, 0, 25);
+    eg.addColorStop(0, "rgba(120,200,255,0.9)");
+    eg.addColorStop(1, "rgba(120,200,255,0)");
+    ctx.fillStyle = eg;
+    ctx.fillRect(-60, -25, 50, 50);
+    // blinking light
+    if (Math.floor(tick / 12) % 2 === 0) {
+      ctx.fillStyle = "#ff4040";
+      ctx.beginPath();
+      ctx.arc(15, -10, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
 function drawDistantMountains(ctx: CanvasRenderingContext2D, off: number) {
   ctx.fillStyle = "rgba(40,20,40,0.55)";
   ctx.beginPath();
