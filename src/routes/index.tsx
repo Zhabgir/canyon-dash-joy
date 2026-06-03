@@ -187,7 +187,52 @@ const LS = {
   map: "jr_map",
   quests: "jr_quests_v2",
   totalDistance: "jr_rank_score_v1",
+  dailyRewards: "jr_daily_rewards_v1",
 };
+
+// ===== 30-day login rewards =====
+type DailyReward =
+  | { type: "coins"; amount: number }
+  | { type: "skin"; id: string; name: string }
+  | { type: "map"; id: string; name: string };
+
+const DAILY_REWARDS: DailyReward[] = [
+  { type: "coins", amount: 50 },
+  { type: "coins", amount: 75 },
+  { type: "coins", amount: 100 },
+  { type: "coins", amount: 150 },
+  { type: "skin", id: "bee", name: "Пчёлка" },
+  { type: "coins", amount: 100 },
+  { type: "map", id: "nebula", name: "Туманность" },
+  { type: "coins", amount: 150 },
+  { type: "coins", amount: 200 },
+  { type: "skin", id: "frog", name: "Лягушка" },
+  { type: "coins", amount: 150 },
+  { type: "coins", amount: 200 },
+  { type: "map", id: "sunset", name: "Закат" },
+  { type: "coins", amount: 250 },
+  { type: "skin", id: "racer", name: "Гонщик" },
+  { type: "coins", amount: 200 },
+  { type: "coins", amount: 250 },
+  { type: "map", id: "ocean", name: "Океан" },
+  { type: "coins", amount: 300 },
+  { type: "skin", id: "shark", name: "Акула" },
+  { type: "coins", amount: 250 },
+  { type: "coins", amount: 300 },
+  { type: "map", id: "aurora", name: "Северное Сияние" },
+  { type: "coins", amount: 350 },
+  { type: "skin", id: "unicorn", name: "Единорог" },
+  { type: "coins", amount: 300 },
+  { type: "coins", amount: 400 },
+  { type: "map", id: "galaxy", name: "Галактика" },
+  { type: "coins", amount: 500 },
+  { type: "skin", id: "rainbow", name: "Радуга" },
+];
+
+interface DailyRewardState {
+  lastClaim: string | null; // "YYYY-MM-DD"
+  day: number; // 1..30, current day to claim next
+}
 
 // ===== Rank system =====
 interface RankDef {
@@ -466,6 +511,9 @@ function Game() {
   const [questsOpen, setQuestsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [rewardsOpen, setRewardsOpen] = useState(false);
+  const [dailyRewards, setDailyRewards] = useState<DailyRewardState>({ lastClaim: null, day: 1 });
+  const [rewardToast, setRewardToast] = useState<string | null>(null);
   const [questState, setQuestState] = useState<QuestState>({ date: todayStr(), quests: [] });
   const [totalDistance, setTotalDistance] = useState(0);
   const totalCoinsRef = useRef(0);
@@ -490,7 +538,46 @@ function Game() {
     setMapId(loadJSON<string>(LS.map, "space"));
     setQuestState(loadQuests());
     setTotalDistance(loadJSON<number>(LS.totalDistance, 0));
+    setDailyRewards(loadJSON<DailyRewardState>(LS.dailyRewards, { lastClaim: null, day: 1 }));
   }, []);
+
+  const canClaimDaily = dailyRewards.lastClaim !== todayStr();
+
+  const claimDailyReward = () => {
+    if (!canClaimDaily) return;
+    const reward = DAILY_REWARDS[(dailyRewards.day - 1) % 30];
+    let msg = "";
+    if (reward.type === "coins") {
+      setWallet((w) => {
+        const nw = w + reward.amount;
+        saveJSON(LS.wallet, nw);
+        return nw;
+      });
+      msg = `+${reward.amount} монет!`;
+    } else if (reward.type === "skin") {
+      setOwnedSkins((prev) => {
+        if (prev.includes(reward.id)) return prev;
+        const next = [...prev, reward.id];
+        saveJSON(LS.ownedSkins, next);
+        return next;
+      });
+      msg = `Новый скин: ${reward.name}!`;
+    } else if (reward.type === "map") {
+      setOwnedMaps((prev) => {
+        if (prev.includes(reward.id)) return prev;
+        const next = [...prev, reward.id];
+        saveJSON(LS.ownedMaps, next);
+        return next;
+      });
+      msg = `Новая карта: ${reward.name}!`;
+    }
+    const nextDay = dailyRewards.day >= 30 ? 1 : dailyRewards.day + 1;
+    const next: DailyRewardState = { lastClaim: todayStr(), day: nextDay };
+    setDailyRewards(next);
+    saveJSON(LS.dailyRewards, next);
+    setRewardToast(msg);
+    setTimeout(() => setRewardToast(null), 2400);
+  };
 
   // Sync quests with database when user is signed in
   useEffect(() => {
@@ -1046,10 +1133,10 @@ function Game() {
       const playing = stateRef.current === "playing";
 
       if (playing) {
-        // smooth vertical control
+        // smooth vertical control (gentler accel + damping = silky movement)
         const target = (keys.current.down ? 1 : 0) - (keys.current.up ? 1 : 0);
-        planeVy.current += target * 0.9;
-        planeVy.current *= 0.82;
+        planeVy.current += target * 0.55;
+        planeVy.current *= 0.9;
         planeY.current += Math.max(-PLAYER_SPEED, Math.min(PLAYER_SPEED, planeVy.current));
 
         // time scale: slowmo halves, boost speeds up
@@ -1626,15 +1713,15 @@ function Game() {
         engineRef.current.osc.frequency.setTargetAtTime(targetFreq, audioCtxRef.current.currentTime, 0.08);
       }
 
-      if (shake.current > 0) shake.current--;
+      if (shake.current > 0) shake.current = Math.max(0, shake.current - 1.6);
       if (flash.current > 0) flash.current--;
 
       // ============ RENDER ============
       ctx.save();
-      if (shake.current > 0) {
+      if (shake.current > 0.4) {
         ctx.translate(
-          (Math.random() - 0.5) * shake.current * 0.8,
-          (Math.random() - 0.5) * shake.current * 0.8,
+          (Math.random() - 0.5) * shake.current * 0.35,
+          (Math.random() - 0.5) * shake.current * 0.35,
         );
       }
 
@@ -2156,12 +2243,13 @@ function Game() {
             </button>
 
             {/* Shop row (4 buttons) */}
-            <div className="absolute inset-x-3 bottom-[15%] z-20 grid grid-cols-4 gap-2 sm:gap-3">
+            <div className="absolute inset-x-3 bottom-[15%] z-20 grid grid-cols-5 gap-2 sm:gap-3">
               {[
-                { label: "Скины", icon: "👤", grad: "from-pink-500 via-fuchsia-500 to-purple-600", ring: "ring-fuchsia-300/60", glow: "shadow-fuchsia-500/40", onClick: () => setShopTab("skins") },
-                { label: "Карты", icon: "🗺️", grad: "from-emerald-400 via-teal-500 to-cyan-600", ring: "ring-emerald-300/60", glow: "shadow-emerald-500/40", onClick: () => setShopTab("maps") },
-                { label: "Транспорт", icon: "🚀", grad: "from-orange-400 via-red-500 to-pink-600", ring: "ring-orange-300/60", glow: "shadow-orange-500/40", onClick: () => setShopTab("vehicles") },
-                { label: "Задания", icon: "📋", grad: "from-amber-300 via-yellow-500 to-orange-500", ring: "ring-yellow-300/60", glow: "shadow-yellow-500/40", onClick: () => setQuestsOpen(true) },
+                { label: "Скины", icon: "👤", grad: "from-pink-500 via-fuchsia-500 to-purple-600", ring: "ring-fuchsia-300/60", glow: "shadow-fuchsia-500/40", onClick: () => setShopTab("skins"), badge: false },
+                { label: "Карты", icon: "🗺️", grad: "from-emerald-400 via-teal-500 to-cyan-600", ring: "ring-emerald-300/60", glow: "shadow-emerald-500/40", onClick: () => setShopTab("maps"), badge: false },
+                { label: "Транспорт", icon: "🚀", grad: "from-orange-400 via-red-500 to-pink-600", ring: "ring-orange-300/60", glow: "shadow-orange-500/40", onClick: () => setShopTab("vehicles"), badge: false },
+                { label: "Задания", icon: "📋", grad: "from-amber-300 via-yellow-500 to-orange-500", ring: "ring-yellow-300/60", glow: "shadow-yellow-500/40", onClick: () => setQuestsOpen(true), badge: false },
+                { label: "Награды", icon: "🎁", grad: "from-rose-400 via-red-500 to-amber-500", ring: "ring-rose-300/60", glow: "shadow-rose-500/40", onClick: () => setRewardsOpen(true), badge: canClaimDaily },
               ].map((b) => (
                 <button
                   key={b.label}
@@ -2174,6 +2262,12 @@ function Game() {
                   <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                   <span className="relative text-2xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] transition-transform group-hover:scale-125 group-hover:rotate-6">{b.icon}</span>
                   <span className="relative text-[10px] font-black uppercase tracking-wider drop-shadow-md sm:text-xs">{b.label}</span>
+                  {b.badge && (
+                    <span className="absolute right-1 top-1 flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white/80" />
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -2299,6 +2393,94 @@ function Game() {
             onClose={() => setQuestsOpen(false)}
           />
         )}
+
+        {/* Daily rewards modal */}
+        {state === "menu" && rewardsOpen && (
+          <div
+            className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={() => setRewardsOpen(false)}
+          >
+            <div
+              className="relative w-full max-w-2xl rounded-2xl border border-rose-400/40 bg-gradient-to-b from-slate-900 to-rose-950 p-5 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-xl font-black uppercase tracking-wider text-rose-200">
+                  🎁 Ежедневные награды
+                </h2>
+                <button
+                  onClick={() => setRewardsOpen(false)}
+                  className="rounded-full bg-white/10 px-3 py-1 text-sm font-bold text-white hover:bg-white/20"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="mb-3 text-center text-xs text-rose-200/80">
+                День {dailyRewards.day} из 30 ·{" "}
+                {canClaimDaily ? (
+                  <span className="font-bold text-emerald-300">награда доступна!</span>
+                ) : (
+                  <span className="text-white/60">приходите завтра</span>
+                )}
+              </p>
+
+              <div className="grid max-h-[55vh] grid-cols-5 gap-2 overflow-y-auto pr-1 sm:grid-cols-6">
+                {DAILY_REWARDS.map((r, i) => {
+                  const day = i + 1;
+                  const claimed = day < dailyRewards.day || (day === dailyRewards.day && !canClaimDaily);
+                  const isToday = day === dailyRewards.day && canClaimDaily;
+                  const icon = r.type === "coins" ? "🪙" : r.type === "skin" ? "👤" : "🗺️";
+                  const label =
+                    r.type === "coins"
+                      ? `+${r.amount}`
+                      : r.type === "skin"
+                        ? r.name
+                        : r.name;
+                  return (
+                    <div
+                      key={day}
+                      className={`relative flex flex-col items-center justify-center gap-0.5 rounded-xl border p-2 text-center transition-all ${
+                        isToday
+                          ? "animate-pulse border-emerald-300 bg-emerald-500/20 ring-2 ring-emerald-300/60"
+                          : claimed
+                            ? "border-white/10 bg-white/5 opacity-50"
+                            : "border-white/15 bg-white/8"
+                      }`}
+                    >
+                      <span className="text-[10px] font-bold text-white/70">День {day}</span>
+                      <span className="text-2xl">{icon}</span>
+                      <span className="line-clamp-1 text-[10px] font-bold text-white">{label}</span>
+                      {claimed && (
+                        <span className="absolute right-1 top-1 text-xs text-emerald-300">✓</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={claimDailyReward}
+                disabled={!canClaimDaily}
+                className={`mt-4 w-full rounded-full px-6 py-3 text-base font-black uppercase tracking-wider text-white shadow-lg transition-all ${
+                  canClaimDaily
+                    ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:scale-105 active:scale-95"
+                    : "cursor-not-allowed bg-white/10 text-white/40"
+                }`}
+              >
+                {canClaimDaily ? `Забрать награду (День ${dailyRewards.day})` : "Уже получено сегодня"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Reward toast */}
+        {rewardToast && (
+          <div className="pointer-events-none absolute left-1/2 top-20 z-40 -translate-x-1/2 rounded-full border border-emerald-300/60 bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-2 text-sm font-black text-white shadow-2xl">
+            🎉 {rewardToast}
+          </div>
+        )}
+
 
         {state === "revive" && (
           <Overlay>
@@ -3299,10 +3481,10 @@ function drawJet(
 ) {
   ctx.save();
   ctx.translate(PLANE_X, y);
-  const pitch = Math.max(-0.5, Math.min(0.5, vy * 0.18));
+  const pitch = Math.max(-0.25, Math.min(0.25, vy * 0.08));
   ctx.rotate(pitch);
   const bank = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
-  ctx.scale(1, 1 + bank * 0.05);
+  ctx.scale(1, 1 + bank * 0.02);
 
   // soft shadow
   ctx.fillStyle = "rgba(0,0,0,0.3)";
