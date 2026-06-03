@@ -701,12 +701,12 @@ function Game() {
     for (let i = 0; i < count; i++) {
       segments.current.push({ topH: center - gap / 2, botH: H - (center + gap / 2) });
     }
-    stars.current = Array.from({ length: 1 }, () => ({
-      x: W * 0.8,
-      y: H * 0.18,
-      z: 0.35,
-      s: 100,
-    }));
+    stars.current = [
+      { x: W * 0.78, y: H * 0.18, z: 0.18, s: 90, kind: 0 },  // ringed gas giant
+      { x: W * 0.35, y: H * 0.12, z: 0.22, s: 55, kind: 1 },  // red/mars planet
+      { x: W * 0.55, y: H * 0.28, z: 0.28, s: 38, kind: 2 },  // blue earth-like
+      { x: W * 0.1,  y: H * 0.22, z: 0.15, s: 28, kind: 3 },  // small moon
+    ];
     setScore(0);
     setCoins(0);
     setHud({ shield: false, slowmo: 0, boost: 0 });
