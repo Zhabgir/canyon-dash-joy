@@ -2105,9 +2105,25 @@ function Game() {
     },
   });
 
+  // Background music (Undertale - Asgore). Loops automatically.
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    const a = musicRef.current;
+    if (!a) return;
+    a.volume = 0.45;
+    a.loop = true;
+    if (state === "playing") {
+      a.play().catch(() => {});
+    } else if (state === "menu" || state === "over") {
+      a.pause();
+      if (state === "over") a.currentTime = 0;
+    }
+  }, [state]);
+
   return (
     <div className="fixed inset-0 bg-black">
       <div className="relative h-full w-full overflow-hidden">
+        <audio ref={musicRef} src="/music/asgore.mp3" preload="auto" loop />
         <canvas
           ref={canvasRef}
           width={W}
@@ -3611,7 +3627,11 @@ function drawJet(
     const w = 78;
     const h = (jet.naturalHeight / jet.naturalWidth) * w;
     const tinted = getTintedJet(jet, skin);
+    // Sprite faces left in source — flip horizontally so nose points in flight direction (+x)
+    ctx.save();
+    ctx.scale(-1, 1);
     ctx.drawImage(tinted, -w / 2, -h / 2, w, h);
+    ctx.restore();
   } else {
     // Fallback while image loads — simple silhouette
     ctx.fillStyle = "#2a6a72";
