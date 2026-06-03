@@ -35,6 +35,9 @@ interface Skin {
   wing: [string, string, string];
   accent: string;
   emoji: string;
+  // Optional decorative overlay on the fuselage.
+  pattern?: "stripes-v" | "stripes-h" | "dots" | "checker" | "zigzag" | "stars" | "flames";
+  patternColor?: string;
   // Optional: render as a giant emoji vehicle instead of the jet geometry.
   vehicle?: "helicopter" | "ufo" | "military" | "bomber" | "spaceship" | "biplane" | "balloon" | "dragon";
   category?: "skin" | "vehicle";
