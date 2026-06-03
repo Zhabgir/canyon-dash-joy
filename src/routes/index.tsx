@@ -2113,7 +2113,7 @@ function Game() {
           width={W}
           height={H}
           className="absolute inset-0 h-full w-full"
-          style={{ imageRendering: "pixelated" }}
+          style={{ imageRendering: "auto" }}
         />
 
 
