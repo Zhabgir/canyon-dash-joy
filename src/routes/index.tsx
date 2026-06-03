@@ -233,10 +233,6 @@ interface DailyRewardState {
   lastClaim: string | null; // "YYYY-MM-DD"
   day: number; // 1..30, current day to claim next
 }
-function todayStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 
 // ===== Rank system =====
 interface RankDef {
