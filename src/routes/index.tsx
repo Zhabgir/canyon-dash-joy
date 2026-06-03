@@ -2,6 +2,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import gameIcon from "../assets/game-icon.png";
 import menuBgAsset from "../assets/space-menu-bg.png.asset.json";
+import playerJetSrc from "../assets/player-jet.png";
+
+// Cached player jet sprite (loaded once)
+let _jetImg: HTMLImageElement | null = null;
+function getJetImg(): HTMLImageElement | null {
+  if (typeof window === "undefined") return null;
+  if (!_jetImg) {
+    const img = new Image();
+    img.src = playerJetSrc;
+    _jetImg = img;
+  }
+  return _jetImg.complete && _jetImg.naturalWidth > 0 ? _jetImg : null;
+}
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
