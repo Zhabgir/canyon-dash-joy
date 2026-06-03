@@ -50,22 +50,14 @@ interface MapTheme {
 }
 
 const SKINS: Skin[] = [
-  { id: "classic", name: "Classic", price: 0, fuse: ["#e0e6ec", "#a8b1bb", "#6e7780"], wing: ["#aab4c0", "#5e6772", "#aab4c0"], accent: "#c8344a", emoji: "✈️" },
-  { id: "crimson", name: "Crimson", price: 200, fuse: ["#ffd0d0", "#d63a3a", "#5a1010"], wing: ["#ff8c8c", "#a02020", "#ff8c8c"], accent: "#ffe040", emoji: "🔥" },
-  { id: "stealth", name: "Stealth", price: 350, fuse: ["#3a3f48", "#15181c", "#000000"], wing: ["#2c3138", "#0e1014", "#2c3138"], accent: "#9b59ff", emoji: "🦇" },
-  { id: "gold", name: "Gold", price: 500, fuse: ["#fff1a8", "#d4a526", "#6a5010"], wing: ["#ffd860", "#a07a18", "#ffd860"], accent: "#ffffff", emoji: "👑" },
-  { id: "neon", name: "Neon", price: 800, fuse: ["#a8fff0", "#22c2c8", "#0a3a4a"], wing: ["#7af0ff", "#1a8a9a", "#7af0ff"], accent: "#ff40d0", emoji: "⚡" },
-  { id: "shark", name: "Акула", price: 600, fuse: ["#cfe6f0", "#5b8aa3", "#1f3a4a"], wing: ["#9cc4d6", "#3a6680", "#9cc4d6"], accent: "#ff5050", emoji: "🦈" },
-  { id: "dragon", name: "Дракон", price: 1200, fuse: ["#ffd060", "#c8401a", "#5a0a05"], wing: ["#ff8a30", "#a01a10", "#ff8a30"], accent: "#00ffaa", emoji: "🐉" },
-  { id: "unicorn", name: "Единорог", price: 1000, fuse: ["#ffe8ff", "#f098f8", "#8030a0"], wing: ["#ffc0f8", "#a850c8", "#ffc0f8"], accent: "#fff060", emoji: "🦄" },
-  { id: "ghost", name: "Призрак", price: 700, fuse: ["#ffffff", "#d8d8e8", "#7080a0"], wing: ["#e8e8f8", "#9098b0", "#e8e8f8"], accent: "#80c0ff", emoji: "👻" },
-  { id: "alien", name: "Пришелец", price: 900, fuse: ["#c0ff80", "#4aa830", "#0a3010"], wing: ["#a0e060", "#308020", "#a0e060"], accent: "#ff20ff", emoji: "👽" },
-  { id: "rocket", name: "Ракета", price: 1500, fuse: ["#ff80a0", "#e02040", "#600810"], wing: ["#ffb0c0", "#a01830", "#ffb0c0"], accent: "#ffff00", emoji: "🚀" },
-  { id: "panda", name: "Панда", price: 850, fuse: ["#ffffff", "#e0e0e0", "#202020"], wing: ["#f0f0f0", "#303030", "#f0f0f0"], accent: "#ff80a0", emoji: "🐼" },
-  { id: "tiger", name: "Тигр", price: 1100, fuse: ["#ffc060", "#e07820", "#3a1808"], wing: ["#ffa040", "#a05010", "#ffa040"], accent: "#000000", emoji: "🐯" },
-  { id: "robot", name: "Робот", price: 1300, fuse: ["#d0d8e8", "#7080a0", "#202838"], wing: ["#a0b0c8", "#404858", "#a0b0c8"], accent: "#00ffff", emoji: "🤖" },
-  { id: "pizza", name: "Пицца", price: 750, fuse: ["#ffd890", "#c08040", "#603010"], wing: ["#ffc070", "#a06020", "#ffc070"], accent: "#e02020", emoji: "🍕" },
-  { id: "rainbow", name: "Радуга", price: 2000, fuse: ["#ff4040", "#40ff40", "#4040ff"], wing: ["#ffff40", "#ff40ff", "#40ffff"], accent: "#ffffff", emoji: "🌈" },
+  { id: "classic", name: "Стандартный", price: 0, fuse: ["#f5f7fa", "#c8ced6", "#7a828c"], wing: ["#dde2e8", "#9aa3ad", "#5a626c"], accent: "#e23a3a", emoji: "" },
+  { id: "flame", name: "Пламя", price: 250, fuse: ["#ffd0a0", "#e84a18", "#5a1408"], wing: ["#ffa050", "#a82010", "#5a0a04"], accent: "#ffe040", emoji: "" },
+  { id: "pulse", name: "Импульс", price: 300, fuse: ["#d0f0ff", "#3a9ad8", "#0a3060"], wing: ["#a8e0ff", "#1a70b8", "#0a2848"], accent: "#80e8ff", emoji: "" },
+  { id: "neon", name: "Неон", price: 600, fuse: ["#ffd0ff", "#c040d8", "#400858"], wing: ["#ff90f8", "#9020c0", "#300648"], accent: "#ff40f0", emoji: "" },
+  { id: "solar", name: "Солнечный шторм", price: 1200, fuse: ["#fff0a0", "#f8a020", "#5a2808"], wing: ["#ffd060", "#c87018", "#503010"], accent: "#ffff60", emoji: "" },
+  { id: "shadow", name: "Тень", price: 800, fuse: ["#5a4050", "#28181c", "#080408"], wing: ["#403040", "#181018", "#000000"], accent: "#ff2040", emoji: "" },
+  { id: "cyber", name: "Кибер", price: 500, fuse: ["#c0ffc0", "#30d050", "#082818"], wing: ["#80f0a0", "#188838", "#042010"], accent: "#00ff80", emoji: "" },
+  { id: "angel", name: "Ангел", price: 1500, fuse: ["#ffffff", "#e8e8f0", "#a8a8b8"], wing: ["#f8f8ff", "#c0c0d0", "#808090"], accent: "#ffe060", emoji: "" },
 
   // === VEHICLES ===
   { id: "v-heli", name: "Вертолёт", price: 1200, fuse: ["#3a4a30", "#1a2818", "#0a1408"], wing: ["#3a4a30", "#1a2818", "#3a4a30"], accent: "#ffcc00", emoji: "🚁", vehicle: "helicopter", category: "vehicle" },
@@ -3349,168 +3341,206 @@ function drawJet(
     return;
   }
 
-  // horizontal stabilizers
-  ctx.fillStyle = "#39424d";
+  // ============ REALISTIC ROCKET (points +x = flight direction) ============
+  // Coordinate system: nose at +x, exhaust at -x, body height ~14
+  const f0 = skin.fuse[0], f1 = skin.fuse[1], f2 = skin.fuse[2];
+  const w0 = skin.wing[0], w1 = skin.wing[1], w2 = skin.wing[2];
+
+  // outer glow halo tinted with accent
+  const halo = ctx.createRadialGradient(0, 0, 6, 0, 0, 34);
+  halo.addColorStop(0, withAlpha(skin.accent, 0.28));
+  halo.addColorStop(1, withAlpha(skin.accent, 0));
+  ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.moveTo(-12, -3);
-  ctx.lineTo(-24, -11);
-  ctx.lineTo(-22, -11);
-  ctx.lineTo(-10, -3);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(-12, 3);
-  ctx.lineTo(-24, 11);
-  ctx.lineTo(-22, 11);
-  ctx.lineTo(-10, 3);
-  ctx.closePath();
+  ctx.arc(0, 0, 34, 0, Math.PI * 2);
   ctx.fill();
 
-  // main swept wings
-  const wing = ctx.createLinearGradient(0, -20, 0, 20);
-  wing.addColorStop(0, skin.wing[0]);
-  wing.addColorStop(0.5, skin.wing[1]);
-  wing.addColorStop(1, skin.wing[2]);
-  ctx.fillStyle = wing;
-  ctx.beginPath();
-  ctx.moveTo(8, -4);
-  ctx.lineTo(-3, -22);
-  ctx.lineTo(-15, -22);
-  ctx.lineTo(-14, -16);
-  ctx.lineTo(-7, -4);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(8, 4);
-  ctx.lineTo(-3, 22);
-  ctx.lineTo(-15, 22);
-  ctx.lineTo(-14, 16);
-  ctx.lineTo(-7, 4);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.strokeStyle = "rgba(0,0,0,0.4)";
-  ctx.lineWidth = 0.7;
-  ctx.beginPath();
-  ctx.moveTo(0, -6);
-  ctx.lineTo(-8, -20);
-  ctx.moveTo(0, 6);
-  ctx.lineTo(-8, 20);
-  ctx.stroke();
-
-  // wing-mounted missiles
-  for (const wy of [-15, 13]) {
-    ctx.fillStyle = "#262b33";
+  // ---- Side boosters (twin) ----
+  for (const by of [-9, 9]) {
+    const bg = ctx.createLinearGradient(0, by - 3, 0, by + 3);
+    bg.addColorStop(0, f0);
+    bg.addColorStop(0.5, w1);
+    bg.addColorStop(1, f2);
+    ctx.fillStyle = bg;
     ctx.beginPath();
-    ctx.moveTo(9, wy);
-    ctx.lineTo(-10, wy);
-    ctx.lineTo(-12, wy + 1);
-    ctx.lineTo(-10, wy + 2);
-    ctx.lineTo(9, wy + 2);
+    ctx.moveTo(14, by);                  // booster nose tip
+    ctx.lineTo(10, by - 3);
+    ctx.lineTo(-16, by - 3);
+    ctx.lineTo(-19, by - 1);             // exhaust mouth top
+    ctx.lineTo(-19, by + 1);
+    ctx.lineTo(-16, by + 3);
+    ctx.lineTo(10, by + 3);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = "#e34a3a";
+    // dark exhaust ring
+    ctx.fillStyle = "#0a0a0e";
     ctx.beginPath();
-    ctx.moveTo(12, wy + 1);
-    ctx.lineTo(9, wy);
-    ctx.lineTo(9, wy + 2);
-    ctx.closePath();
+    ctx.ellipse(-19, by, 1.4, 2, 0, 0, Math.PI * 2);
     ctx.fill();
+    // accent stripe
+    ctx.strokeStyle = withAlpha(skin.accent, 0.85);
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(8, by - 2);
+    ctx.lineTo(-14, by - 2);
+    ctx.stroke();
   }
 
-  // fuselage
-  const fuse = ctx.createLinearGradient(0, -6, 0, 6);
-  fuse.addColorStop(0, skin.fuse[0]);
-  fuse.addColorStop(0.5, skin.fuse[1]);
-  fuse.addColorStop(1, skin.fuse[2]);
-  ctx.fillStyle = fuse;
+  // ---- Tail fins ----
+  const finGrad = ctx.createLinearGradient(0, -16, 0, 16);
+  finGrad.addColorStop(0, w0);
+  finGrad.addColorStop(0.5, w1);
+  finGrad.addColorStop(1, w2);
+  ctx.fillStyle = finGrad;
+  // upper fin
   ctx.beginPath();
-  ctx.moveTo(28, 0);
-  ctx.lineTo(22, -3);
-  ctx.lineTo(7, -6);
-  ctx.lineTo(-18, -5);
-  ctx.lineTo(-20, -3);
-  ctx.lineTo(-20, 3);
-  ctx.lineTo(-18, 5);
-  ctx.lineTo(7, 6);
+  ctx.moveTo(-8, -4);
+  ctx.lineTo(-22, -16);
+  ctx.lineTo(-20, -16);
+  ctx.lineTo(-12, -4);
+  ctx.closePath();
+  ctx.fill();
+  // lower fin
+  ctx.beginPath();
+  ctx.moveTo(-8, 4);
+  ctx.lineTo(-22, 16);
+  ctx.lineTo(-20, 16);
+  ctx.lineTo(-12, 4);
+  ctx.closePath();
+  ctx.fill();
+  // fin tip accent
+  ctx.fillStyle = skin.accent;
+  ctx.beginPath();
+  ctx.moveTo(-22, -16);
+  ctx.lineTo(-20, -16);
+  ctx.lineTo(-19, -13);
+  ctx.lineTo(-21, -13);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-22, 16);
+  ctx.lineTo(-20, 16);
+  ctx.lineTo(-19, 13);
+  ctx.lineTo(-21, 13);
+  ctx.closePath();
+  ctx.fill();
+
+  // ---- Main fuselage ----
+  const fuseG = ctx.createLinearGradient(0, -7, 0, 7);
+  fuseG.addColorStop(0, f0);
+  fuseG.addColorStop(0.45, f1);
+  fuseG.addColorStop(1, f2);
+  ctx.fillStyle = fuseG;
+  ctx.beginPath();
+  ctx.moveTo(22, -3);                    // shoulder before nose
+  ctx.lineTo(8, -7);
+  ctx.lineTo(-18, -7);
+  ctx.lineTo(-20, -5);
+  ctx.lineTo(-20, 5);
+  ctx.lineTo(-18, 7);
+  ctx.lineTo(8, 7);
   ctx.lineTo(22, 3);
   ctx.closePath();
   ctx.fill();
 
-  // panel lines along fuselage
-  ctx.strokeStyle = "rgba(0,0,0,0.25)";
-  ctx.lineWidth = 0.6;
+  // top-light specular highlight
+  const spec = ctx.createLinearGradient(0, -7, 0, -2);
+  spec.addColorStop(0, "rgba(255,255,255,0.55)");
+  spec.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = spec;
   ctx.beginPath();
-  ctx.moveTo(20, -2);
-  ctx.lineTo(-16, -2);
-  ctx.moveTo(20, 2);
-  ctx.lineTo(-16, 2);
-  ctx.stroke();
-
-  // intakes
-  ctx.fillStyle = "#13171c";
-  ctx.beginPath();
-  ctx.ellipse(-3, -5, 5, 1.6, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(-3, 5, 5, 1.6, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // tail fin
-  ctx.fillStyle = "#525c67";
-  ctx.beginPath();
-  ctx.moveTo(-8, 0);
-  ctx.lineTo(-19, -1);
-  ctx.lineTo(-14, 1);
+  ctx.moveTo(20, -3);
+  ctx.lineTo(8, -6);
+  ctx.lineTo(-18, -6);
+  ctx.lineTo(-18, -3);
+  ctx.lineTo(8, -3);
   ctx.closePath();
   ctx.fill();
 
-  // nose cone
-  ctx.fillStyle = "#6b7480";
+  // bottom shading
+  ctx.fillStyle = "rgba(0,0,0,0.22)";
   ctx.beginPath();
-  ctx.moveTo(28, 0);
-  ctx.lineTo(20, -2);
-  ctx.lineTo(20, 2);
+  ctx.moveTo(20, 3);
+  ctx.lineTo(8, 6);
+  ctx.lineTo(-18, 6);
+  ctx.lineTo(-18, 7);
+  ctx.lineTo(8, 7);
+  ctx.lineTo(20, 3);
   ctx.closePath();
   ctx.fill();
 
-  // canopy
-  const canopy = ctx.createLinearGradient(4, -3, 14, 3);
-  canopy.addColorStop(0, "#163460");
-  canopy.addColorStop(0.6, "#5b8fc9");
-  canopy.addColorStop(1, "#0c1c36");
-  ctx.fillStyle = canopy;
+  // panel/rivet lines
+  ctx.strokeStyle = "rgba(0,0,0,0.32)";
+  ctx.lineWidth = 0.5;
   ctx.beginPath();
-  ctx.ellipse(9, 0, 6.5, 3.2, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(0,0,0,0.6)";
-  ctx.lineWidth = 0.7;
+  ctx.moveTo(20, 0); ctx.lineTo(-18, 0);
+  ctx.moveTo(2, -7); ctx.lineTo(2, 7);
+  ctx.moveTo(-8, -7); ctx.lineTo(-8, 7);
   ctx.stroke();
+
+  // accent body stripe
+  ctx.fillStyle = skin.accent;
+  ctx.fillRect(-15, -1.2, 30, 2.4);
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.fillRect(-15, 0.6, 30, 0.4);
+
+  // ---- Nose cone ----
+  const noseG = ctx.createLinearGradient(15, -3, 15, 3);
+  noseG.addColorStop(0, "#ffffff");
+  noseG.addColorStop(0.4, skin.accent);
+  noseG.addColorStop(1, f2);
+  ctx.fillStyle = noseG;
+  ctx.beginPath();
+  ctx.moveTo(30, 0);                     // nose tip
+  ctx.lineTo(22, -3);
+  ctx.quadraticCurveTo(26, 0, 22, 3);
+  ctx.closePath();
+  ctx.fill();
+  // nose tip highlight
   ctx.fillStyle = "rgba(255,255,255,0.7)";
   ctx.beginPath();
-  ctx.ellipse(10, -1.3, 2.8, 0.9, -0.2, 0, Math.PI * 2);
+  ctx.arc(27, -1, 1.2, 0, Math.PI * 2);
   ctx.fill();
 
-  // roundel
-  ctx.fillStyle = "#d0d8e0";
+  // ---- Cockpit / viewport ----
+  const cock = ctx.createRadialGradient(10, -1, 0.5, 10, 0, 4);
+  cock.addColorStop(0, "#bfe8ff");
+  cock.addColorStop(0.55, "#2a78c8");
+  cock.addColorStop(1, "#0a1a3a");
+  ctx.fillStyle = cock;
   ctx.beginPath();
-  ctx.arc(-2, 0, 1.7, 0, Math.PI * 2);
+  ctx.ellipse(10, 0, 4, 3.2, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = skin.accent;
+  ctx.strokeStyle = "rgba(0,0,0,0.6)";
+  ctx.lineWidth = 0.6;
+  ctx.stroke();
+  // glint
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
   ctx.beginPath();
-  ctx.arc(-2, 0, 0.9, 0, Math.PI * 2);
+  ctx.ellipse(11, -1.4, 1.4, 0.7, -0.2, 0, Math.PI * 2);
   ctx.fill();
 
-  // emoji decal on fuselage
-  if (skin.emoji) {
-    ctx.save();
-    ctx.rotate(Math.PI / 2);
-    ctx.font = "9px serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(skin.emoji, 0, 2);
-    ctx.restore();
-  }
+  // ---- Main engine bell ----
+  ctx.fillStyle = "#1a1a1f";
+  ctx.beginPath();
+  ctx.moveTo(-18, -5);
+  ctx.lineTo(-23, -6);
+  ctx.lineTo(-23, 6);
+  ctx.lineTo(-18, 5);
+  ctx.closePath();
+  ctx.fill();
+  // bell rim
+  ctx.fillStyle = "#3a3a45";
+  ctx.fillRect(-23.5, -6, 1, 12);
+  // hot core
+  const core = ctx.createRadialGradient(-22, 0, 0.5, -22, 0, 4);
+  core.addColorStop(0, "rgba(255,240,180,0.95)");
+  core.addColorStop(1, "rgba(255,80,20,0)");
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.ellipse(-22, 0, 3.5, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
 
   // shield bubble
   if (hasShield) {
