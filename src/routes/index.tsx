@@ -1663,6 +1663,109 @@ function Game() {
       }
       for (const m of missiles.current) drawMissile(ctx, m);
 
+      // Boss + big missiles
+      if (boss.current) {
+        const b = boss.current;
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.rot);
+        const flicker = b.phase === "die" ? 0.6 + Math.random() * 0.4 : 1;
+        // hull main body
+        const grad = ctx.createLinearGradient(0, -55, 0, 55);
+        grad.addColorStop(0, "#5a6a85");
+        grad.addColorStop(0.5, "#2d3548");
+        grad.addColorStop(1, "#15192a");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(-110, -30);
+        ctx.lineTo(80, -55);
+        ctx.lineTo(108, -10);
+        ctx.lineTo(108, 18);
+        ctx.lineTo(70, 50);
+        ctx.lineTo(-100, 38);
+        ctx.lineTo(-115, 0);
+        ctx.closePath();
+        ctx.fill();
+        // upper bridge
+        ctx.fillStyle = "#3a4660";
+        ctx.fillRect(-30, -68, 70, 18);
+        // windows
+        for (let i = 0; i < 7; i++) {
+          ctx.fillStyle = `rgba(120,210,255,${0.5 + 0.5 * Math.sin(tick.current * 0.1 + i)})`;
+          ctx.fillRect(-80 + i * 22, -18, 10, 6);
+        }
+        // gun turret (front-left)
+        ctx.fillStyle = "#1a1f30";
+        ctx.fillRect(-130, -8, 30, 18);
+        ctx.fillStyle = b.phase === "shoot" ? `rgba(255,${120 - 80 * Math.sin(tick.current * 0.3)},60,${flicker})` : "#3a2030";
+        ctx.beginPath();
+        ctx.arc(-130, 1, 9, 0, Math.PI * 2);
+        ctx.fill();
+        // engines
+        for (let i = 0; i < 3; i++) {
+          const ey = -20 + i * 22;
+          ctx.fillStyle = "#0a0e18";
+          ctx.fillRect(100, ey - 4, 14, 8);
+          ctx.fillStyle = `rgba(120,180,255,${0.6 + 0.4 * Math.sin(tick.current * 0.4 + i)})`;
+          ctx.fillRect(112, ey - 2, 10 + Math.random() * 6, 4);
+        }
+        ctx.restore();
+
+        // HP bar above boss
+        if (b.phase !== "die") {
+          const bx = b.x - 90, by = b.y - 90;
+          ctx.fillStyle = "rgba(0,0,0,0.6)";
+          ctx.fillRect(bx, by, 180, 10);
+          ctx.fillStyle = "#ff3a4a";
+          ctx.fillRect(bx + 2, by + 2, (176 * b.hp) / b.maxHp, 6);
+          ctx.strokeStyle = "rgba(255,255,255,0.5)";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(bx, by, 180, 10);
+        }
+
+        // phase hint
+        if (b.phase === "rest") {
+          ctx.fillStyle = `rgba(120,255,160,${0.4 + 0.3 * Math.sin(tick.current * 0.2)})`;
+          ctx.font = "bold 11px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("ТАРАНЬ!", b.x, b.y - 100);
+        }
+      }
+      // big missiles from boss
+      for (const m of bigMissiles.current) {
+        ctx.save();
+        ctx.translate(m.x, m.y);
+        const ang = Math.atan2(m.vy, m.vx);
+        ctx.rotate(ang);
+        // glow
+        const g = ctx.createRadialGradient(0, 0, 2, 0, 0, m.r + 14);
+        g.addColorStop(0, "rgba(255,220,120,0.9)");
+        g.addColorStop(0.4, "rgba(255,120,40,0.6)");
+        g.addColorStop(1, "rgba(255,80,40,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, m.r + 14, 0, Math.PI * 2);
+        ctx.fill();
+        // body
+        ctx.fillStyle = "#2a2230";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, m.r, m.r * 0.7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ff5a3a";
+        ctx.beginPath();
+        ctx.moveTo(m.r, 0);
+        ctx.lineTo(m.r - 6, -m.r * 0.5);
+        ctx.lineTo(m.r - 6, m.r * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        // fins
+        ctx.fillStyle = "#1a1a24";
+        ctx.fillRect(-m.r, -m.r * 0.8, 6, m.r * 0.6);
+        ctx.fillRect(-m.r, m.r * 0.2, 6, m.r * 0.6);
+        ctx.restore();
+      }
+
+
       // particles
       for (const p of particles.current) {
         const a = p.life / p.maxLife;
