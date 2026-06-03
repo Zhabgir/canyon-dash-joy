@@ -187,7 +187,56 @@ const LS = {
   map: "jr_map",
   quests: "jr_quests_v2",
   totalDistance: "jr_rank_score_v1",
+  dailyRewards: "jr_daily_rewards_v1",
 };
+
+// ===== 30-day login rewards =====
+type DailyReward =
+  | { type: "coins"; amount: number }
+  | { type: "skin"; id: string; name: string }
+  | { type: "map"; id: string; name: string };
+
+const DAILY_REWARDS: DailyReward[] = [
+  { type: "coins", amount: 50 },
+  { type: "coins", amount: 75 },
+  { type: "coins", amount: 100 },
+  { type: "coins", amount: 150 },
+  { type: "skin", id: "bee", name: "Пчёлка" },
+  { type: "coins", amount: 100 },
+  { type: "map", id: "nebula", name: "Туманность" },
+  { type: "coins", amount: 150 },
+  { type: "coins", amount: 200 },
+  { type: "skin", id: "frog", name: "Лягушка" },
+  { type: "coins", amount: 150 },
+  { type: "coins", amount: 200 },
+  { type: "map", id: "sunset", name: "Закат" },
+  { type: "coins", amount: 250 },
+  { type: "skin", id: "racer", name: "Гонщик" },
+  { type: "coins", amount: 200 },
+  { type: "coins", amount: 250 },
+  { type: "map", id: "ocean", name: "Океан" },
+  { type: "coins", amount: 300 },
+  { type: "skin", id: "shark", name: "Акула" },
+  { type: "coins", amount: 250 },
+  { type: "coins", amount: 300 },
+  { type: "map", id: "aurora", name: "Северное Сияние" },
+  { type: "coins", amount: 350 },
+  { type: "skin", id: "unicorn", name: "Единорог" },
+  { type: "coins", amount: 300 },
+  { type: "coins", amount: 400 },
+  { type: "map", id: "galaxy", name: "Галактика" },
+  { type: "coins", amount: 500 },
+  { type: "skin", id: "rainbow", name: "Радуга" },
+];
+
+interface DailyRewardState {
+  lastClaim: string | null; // "YYYY-MM-DD"
+  day: number; // 1..30, current day to claim next
+}
+function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 // ===== Rank system =====
 interface RankDef {
