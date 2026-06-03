@@ -533,6 +533,21 @@ function Game() {
   type RareEvent = { kind: RareEventKind; t: number; duration: number; seed: number };
   const rareEvent = useRef<RareEvent | null>(null);
   const rareCooldown = useRef(900); // frames until first possible event
+
+  // ===== Boss =====
+  type BossPhase = "enter" | "shoot" | "rest" | "die";
+  type Boss = {
+    x: number; y: number; vy: number;
+    hp: number; maxHp: number;
+    phase: BossPhase; t: number; shotTimer: number; phaseTimer: number;
+    fallVy: number; rot: number;
+  };
+  type BigMissile = { x: number; y: number; vx: number; vy: number; r: number; t: number };
+  const boss = useRef<Boss | null>(null);
+  const bigMissiles = useRef<BigMissile[]>([]);
+  const nextBossScore = useRef(5000);
+  const bossHitCd = useRef(0); // i-frames after ramming boss
+  const [bossHud, setBossHud] = useState<{ hp: number; max: number } | null>(null);
   
   const portalY = (p: PortalEntity) => {
     const px = p.worldX - distance.current;
