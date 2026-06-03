@@ -1612,16 +1612,115 @@ function Game() {
 
       // stars
       for (const s of stars.current) {
-        if (s.s > 5) {
-          // Big beautiful star / sun
-          const glow = ctx.createRadialGradient(s.x, s.y, s.s * 0.15, s.x, s.y, s.s);
-          glow.addColorStop(0, "rgba(255,255,240,1)");
-          glow.addColorStop(0.2, "rgba(255,245,180,0.95)");
-          glow.addColorStop(0.4, "rgba(255,200,80,0.7)");
-          glow.addColorStop(0.7, "rgba(255,100,40,0.25)");
-          glow.addColorStop(1, "rgba(255,60,20,0)");
-          ctx.fillStyle = glow;
-          ctx.fillRect(s.x - s.s, s.y - s.s, s.s * 2, s.s * 2);
+        if (s.kind !== undefined) {
+          // Planet
+          const r = s.s;
+          // Palette per kind
+          const palettes: Array<{ a: string; b: string; c: string; glow: string; ring?: boolean; ringColor?: string }> = [
+            { a: "#f4d4a0", b: "#c98a4b", c: "#5a3a1a", glow: "255,200,130", ring: true, ringColor: "rgba(230,200,150,0.65)" }, // gas giant
+            { a: "#ff8a5b", b: "#c0432a", c: "#3a0d08", glow: "255,110,70" },  // mars
+            { a: "#7fd0ff", b: "#2a6fb8", c: "#0a2040", glow: "120,180,255" }, // earth-like
+            { a: "#e0e0e0", b: "#888", c: "#222", glow: "200,200,210" },       // moon
+          ];
+          const p = palettes[s.kind % palettes.length];
+
+          // Outer atmospheric glow
+          const aura = ctx.createRadialGradient(s.x, s.y, r * 0.9, s.x, s.y, r * 1.8);
+          aura.addColorStop(0, `rgba(${p.glow},0.35)`);
+          aura.addColorStop(1, `rgba(${p.glow},0)`);
+          ctx.fillStyle = aura;
+          ctx.fillRect(s.x - r * 2, s.y - r * 2, r * 4, r * 4);
+
+          // Rings (behind planet) — back half
+          if (p.ring) {
+            ctx.save();
+            ctx.translate(s.x, s.y);
+            ctx.rotate(-0.35);
+            ctx.strokeStyle = p.ringColor!;
+            ctx.lineWidth = Math.max(2, r * 0.08);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, r * 1.55, r * 0.38, 0, Math.PI, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          // Planet sphere with lit gradient (light from upper-left)
+          const lx = s.x - r * 0.4;
+          const ly = s.y - r * 0.4;
+          const grad = ctx.createRadialGradient(lx, ly, r * 0.1, s.x, s.y, r);
+          grad.addColorStop(0, p.a);
+          grad.addColorStop(0.55, p.b);
+          grad.addColorStop(1, p.c);
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Surface bands / detail
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.globalAlpha = 0.25;
+          ctx.fillStyle = p.c;
+          if (s.kind === 0) {
+            // gas giant bands
+            for (let i = -3; i <= 3; i++) {
+              ctx.fillRect(s.x - r, s.y + i * r * 0.22 - r * 0.05, r * 2, r * 0.1);
+            }
+          } else if (s.kind === 1) {
+            // mars craters
+            for (let i = 0; i < 6; i++) {
+              const ang = i * 1.7;
+              ctx.beginPath();
+              ctx.arc(s.x + Math.cos(ang) * r * 0.5, s.y + Math.sin(ang) * r * 0.5, r * 0.12, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          } else if (s.kind === 2) {
+            // earth continents
+            ctx.fillStyle = "#3a7a3a";
+            ctx.globalAlpha = 0.7;
+            ctx.beginPath();
+            ctx.ellipse(s.x - r * 0.2, s.y, r * 0.5, r * 0.3, 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(s.x + r * 0.35, s.y + r * 0.2, r * 0.3, r * 0.18, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            // moon craters
+            for (let i = 0; i < 5; i++) {
+              const ang = i * 1.3;
+              ctx.beginPath();
+              ctx.arc(s.x + Math.cos(ang) * r * 0.45, s.y + Math.sin(ang) * r * 0.45, r * 0.14, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          ctx.restore();
+
+          // Shadow crescent
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+          ctx.clip();
+          const shade = ctx.createRadialGradient(s.x + r * 0.5, s.y + r * 0.5, r * 0.2, s.x + r * 0.6, s.y + r * 0.6, r * 1.4);
+          shade.addColorStop(0, "rgba(0,0,0,0)");
+          shade.addColorStop(1, "rgba(0,0,0,0.65)");
+          ctx.fillStyle = shade;
+          ctx.fillRect(s.x - r, s.y - r, r * 2, r * 2);
+          ctx.restore();
+
+          // Rings front half
+          if (p.ring) {
+            ctx.save();
+            ctx.translate(s.x, s.y);
+            ctx.rotate(-0.35);
+            ctx.strokeStyle = p.ringColor!;
+            ctx.lineWidth = Math.max(2, r * 0.08);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, r * 1.55, r * 0.38, 0, 0, Math.PI);
+            ctx.stroke();
+            ctx.restore();
+          }
         } else {
           const col = isOther
             ? `hsla(${(tick.current * 3 + s.x) % 360}, 100%, 75%, ${0.4 + s.z * 0.6})`
