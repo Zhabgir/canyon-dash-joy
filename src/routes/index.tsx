@@ -1862,6 +1862,21 @@ function Game() {
           )}
         </div>
 
+        {/* Boss HP bar */}
+        {bossHud && (
+          <div className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 flex flex-col items-center gap-1 font-mono">
+            <div className="text-[10px] uppercase tracking-widest text-red-300 drop-shadow">
+              ★ BOSS ★
+            </div>
+            <div className="flex h-3 w-64 overflow-hidden rounded-full border border-red-400/70 bg-black/70">
+              <div
+                className="h-full bg-gradient-to-r from-red-500 to-orange-400 transition-[width] duration-200"
+                style={{ width: `${(bossHud.hp / bossHud.max) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* coins + active buffs */}
         <div className="pointer-events-none absolute right-3 top-3 flex flex-col items-end gap-1.5 font-mono drop-shadow">
           <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/70 bg-black/60 px-3 py-1 text-sm font-bold text-yellow-300 backdrop-blur-sm">
