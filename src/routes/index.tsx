@@ -704,6 +704,7 @@ function Game() {
   const bigMissiles = useRef<BigMissile[]>([]);
   const nextBossScore = useRef(5000);
   const bossHitCd = useRef(0); // i-frames after ramming boss
+  const speedBoostStartScore = useRef<number | null>(null);
   const [bossHud, setBossHud] = useState<{ hp: number; max: number } | null>(null);
   
   
