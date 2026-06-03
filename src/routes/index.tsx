@@ -50,22 +50,14 @@ interface MapTheme {
 }
 
 const SKINS: Skin[] = [
-  { id: "classic", name: "Classic", price: 0, fuse: ["#e0e6ec", "#a8b1bb", "#6e7780"], wing: ["#aab4c0", "#5e6772", "#aab4c0"], accent: "#c8344a", emoji: "✈️" },
-  { id: "crimson", name: "Crimson", price: 200, fuse: ["#ffd0d0", "#d63a3a", "#5a1010"], wing: ["#ff8c8c", "#a02020", "#ff8c8c"], accent: "#ffe040", emoji: "🔥" },
-  { id: "stealth", name: "Stealth", price: 350, fuse: ["#3a3f48", "#15181c", "#000000"], wing: ["#2c3138", "#0e1014", "#2c3138"], accent: "#9b59ff", emoji: "🦇" },
-  { id: "gold", name: "Gold", price: 500, fuse: ["#fff1a8", "#d4a526", "#6a5010"], wing: ["#ffd860", "#a07a18", "#ffd860"], accent: "#ffffff", emoji: "👑" },
-  { id: "neon", name: "Neon", price: 800, fuse: ["#a8fff0", "#22c2c8", "#0a3a4a"], wing: ["#7af0ff", "#1a8a9a", "#7af0ff"], accent: "#ff40d0", emoji: "⚡" },
-  { id: "shark", name: "Акула", price: 600, fuse: ["#cfe6f0", "#5b8aa3", "#1f3a4a"], wing: ["#9cc4d6", "#3a6680", "#9cc4d6"], accent: "#ff5050", emoji: "🦈" },
-  { id: "dragon", name: "Дракон", price: 1200, fuse: ["#ffd060", "#c8401a", "#5a0a05"], wing: ["#ff8a30", "#a01a10", "#ff8a30"], accent: "#00ffaa", emoji: "🐉" },
-  { id: "unicorn", name: "Единорог", price: 1000, fuse: ["#ffe8ff", "#f098f8", "#8030a0"], wing: ["#ffc0f8", "#a850c8", "#ffc0f8"], accent: "#fff060", emoji: "🦄" },
-  { id: "ghost", name: "Призрак", price: 700, fuse: ["#ffffff", "#d8d8e8", "#7080a0"], wing: ["#e8e8f8", "#9098b0", "#e8e8f8"], accent: "#80c0ff", emoji: "👻" },
-  { id: "alien", name: "Пришелец", price: 900, fuse: ["#c0ff80", "#4aa830", "#0a3010"], wing: ["#a0e060", "#308020", "#a0e060"], accent: "#ff20ff", emoji: "👽" },
-  { id: "rocket", name: "Ракета", price: 1500, fuse: ["#ff80a0", "#e02040", "#600810"], wing: ["#ffb0c0", "#a01830", "#ffb0c0"], accent: "#ffff00", emoji: "🚀" },
-  { id: "panda", name: "Панда", price: 850, fuse: ["#ffffff", "#e0e0e0", "#202020"], wing: ["#f0f0f0", "#303030", "#f0f0f0"], accent: "#ff80a0", emoji: "🐼" },
-  { id: "tiger", name: "Тигр", price: 1100, fuse: ["#ffc060", "#e07820", "#3a1808"], wing: ["#ffa040", "#a05010", "#ffa040"], accent: "#000000", emoji: "🐯" },
-  { id: "robot", name: "Робот", price: 1300, fuse: ["#d0d8e8", "#7080a0", "#202838"], wing: ["#a0b0c8", "#404858", "#a0b0c8"], accent: "#00ffff", emoji: "🤖" },
-  { id: "pizza", name: "Пицца", price: 750, fuse: ["#ffd890", "#c08040", "#603010"], wing: ["#ffc070", "#a06020", "#ffc070"], accent: "#e02020", emoji: "🍕" },
-  { id: "rainbow", name: "Радуга", price: 2000, fuse: ["#ff4040", "#40ff40", "#4040ff"], wing: ["#ffff40", "#ff40ff", "#40ffff"], accent: "#ffffff", emoji: "🌈" },
+  { id: "classic", name: "Стандартный", price: 0, fuse: ["#f5f7fa", "#c8ced6", "#7a828c"], wing: ["#dde2e8", "#9aa3ad", "#5a626c"], accent: "#e23a3a", emoji: "" },
+  { id: "flame", name: "Пламя", price: 250, fuse: ["#ffd0a0", "#e84a18", "#5a1408"], wing: ["#ffa050", "#a82010", "#5a0a04"], accent: "#ffe040", emoji: "" },
+  { id: "pulse", name: "Импульс", price: 300, fuse: ["#d0f0ff", "#3a9ad8", "#0a3060"], wing: ["#a8e0ff", "#1a70b8", "#0a2848"], accent: "#80e8ff", emoji: "" },
+  { id: "neon", name: "Неон", price: 600, fuse: ["#ffd0ff", "#c040d8", "#400858"], wing: ["#ff90f8", "#9020c0", "#300648"], accent: "#ff40f0", emoji: "" },
+  { id: "solar", name: "Солнечный шторм", price: 1200, fuse: ["#fff0a0", "#f8a020", "#5a2808"], wing: ["#ffd060", "#c87018", "#503010"], accent: "#ffff60", emoji: "" },
+  { id: "shadow", name: "Тень", price: 800, fuse: ["#5a4050", "#28181c", "#080408"], wing: ["#403040", "#181018", "#000000"], accent: "#ff2040", emoji: "" },
+  { id: "cyber", name: "Кибер", price: 500, fuse: ["#c0ffc0", "#30d050", "#082818"], wing: ["#80f0a0", "#188838", "#042010"], accent: "#00ff80", emoji: "" },
+  { id: "angel", name: "Ангел", price: 1500, fuse: ["#ffffff", "#e8e8f0", "#a8a8b8"], wing: ["#f8f8ff", "#c0c0d0", "#808090"], accent: "#ffe060", emoji: "" },
 
   // === VEHICLES ===
   { id: "v-heli", name: "Вертолёт", price: 1200, fuse: ["#3a4a30", "#1a2818", "#0a1408"], wing: ["#3a4a30", "#1a2818", "#3a4a30"], accent: "#ffcc00", emoji: "🚁", vehicle: "helicopter", category: "vehicle" },
