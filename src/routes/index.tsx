@@ -3299,10 +3299,10 @@ function drawJet(
 ) {
   ctx.save();
   ctx.translate(PLANE_X, y);
-  const pitch = Math.max(-0.5, Math.min(0.5, vy * 0.18));
+  const pitch = Math.max(-0.25, Math.min(0.25, vy * 0.08));
   ctx.rotate(pitch);
   const bank = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
-  ctx.scale(1, 1 + bank * 0.05);
+  ctx.scale(1, 1 + bank * 0.02);
 
   // soft shadow
   ctx.fillStyle = "rgba(0,0,0,0.3)";
