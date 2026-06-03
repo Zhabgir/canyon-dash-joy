@@ -669,7 +669,7 @@ function Game() {
     planeY.current = H / 2;
     planeVy.current = 0;
     offset.current = 0;
-    distance.current = 0;
+    distance.current = 5000;
     segments.current = [];
     missiles.current = [];
     missileTimer.current = 240;
