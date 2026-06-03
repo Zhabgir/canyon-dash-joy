@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import gameIcon from "../assets/game-icon.png";
+import menuBgAsset from "../assets/space-rush-menu.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -2051,7 +2052,7 @@ function Game() {
         )}
 
         {state === "menu" && (
-          <Overlay>
+          <Overlay bgImage={menuBgAsset.url}>
             <div className="relative flex flex-col items-center gap-3">
               <div className="relative">
                 <img
@@ -2267,9 +2268,12 @@ function Game() {
   );
 }
 
-function Overlay({ children }: { children: React.ReactNode }) {
+function Overlay({ children, bgImage }: { children: React.ReactNode; bgImage?: string }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden rounded-lg bg-black/60 px-3 backdrop-blur-sm">
+    <div
+      className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden rounded-lg bg-black/60 px-3 backdrop-blur-sm"
+      style={bgImage ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${bgImage})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+    >
       {children}
     </div>
   );
