@@ -1046,10 +1046,10 @@ function Game() {
       const playing = stateRef.current === "playing";
 
       if (playing) {
-        // smooth vertical control
+        // smooth vertical control (gentler accel + damping = silky movement)
         const target = (keys.current.down ? 1 : 0) - (keys.current.up ? 1 : 0);
-        planeVy.current += target * 0.9;
-        planeVy.current *= 0.82;
+        planeVy.current += target * 0.55;
+        planeVy.current *= 0.9;
         planeY.current += Math.max(-PLAYER_SPEED, Math.min(PLAYER_SPEED, planeVy.current));
 
         // time scale: slowmo halves, boost speeds up
