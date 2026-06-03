@@ -3390,7 +3390,8 @@ function drawJet(
     // Sprite faces right (+x = flight direction). Sized to roughly match prior body.
     const w = 78;
     const h = (jet.naturalHeight / jet.naturalWidth) * w;
-    ctx.drawImage(jet, -w / 2, -h / 2, w, h);
+    const tinted = getTintedJet(jet, skin);
+    ctx.drawImage(tinted, -w / 2, -h / 2, w, h);
   } else {
     // Fallback while image loads — simple silhouette
     ctx.fillStyle = "#2a6a72";
