@@ -2708,6 +2708,7 @@ function Game() {
             >
               ↻  RETRY
             </button>
+            </div>
           </Overlay>
         )}
       </div>
