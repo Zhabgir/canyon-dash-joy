@@ -73,7 +73,7 @@ export const Route = createFileRoute("/")({
   component: Game,
 });
 
-type GameState = "menu" | "playing" | "revive" | "over" | "choice";
+type GameState = "menu" | "playing" | "paused" | "revive" | "over" | "choice";
 
 const REVIVE_COST = 100;
 const REVIVE_SECONDS = 10;
