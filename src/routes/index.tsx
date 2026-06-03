@@ -533,6 +533,21 @@ function Game() {
   type RareEvent = { kind: RareEventKind; t: number; duration: number; seed: number };
   const rareEvent = useRef<RareEvent | null>(null);
   const rareCooldown = useRef(900); // frames until first possible event
+
+  // ===== Boss =====
+  type BossPhase = "enter" | "shoot" | "rest" | "die";
+  type Boss = {
+    x: number; y: number; vy: number;
+    hp: number; maxHp: number;
+    phase: BossPhase; t: number; shotTimer: number; phaseTimer: number;
+    fallVy: number; rot: number;
+  };
+  type BigMissile = { x: number; y: number; vx: number; vy: number; r: number; t: number };
+  const boss = useRef<Boss | null>(null);
+  const bigMissiles = useRef<BigMissile[]>([]);
+  const nextBossScore = useRef(5000);
+  const bossHitCd = useRef(0); // i-frames after ramming boss
+  const [bossHud, setBossHud] = useState<{ hp: number; max: number } | null>(null);
   
   const portalY = (p: PortalEntity) => {
     const px = p.worldX - distance.current;
@@ -672,6 +687,11 @@ function Game() {
     nextPortalScore.current = 800;
     rareEvent.current = null;
     rareCooldown.current = 900;
+    boss.current = null;
+    bigMissiles.current = [];
+    nextBossScore.current = 5000;
+    bossHitCd.current = 0;
+    setBossHud(null);
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     usedRevive.current = false;
     const count = Math.ceil(W / SEG_W) + 2;
@@ -1012,7 +1032,7 @@ function Game() {
 
         // ===== Missile spawn =====
         missileTimer.current -= 1 * timeScale;
-        if (missileTimer.current <= 0 && boost.current <= 0) {
+        if (missileTimer.current <= 0 && boost.current <= 0 && !boss.current) {
           const rightIdx = segments.current.length - 2;
           const segR = segments.current[rightIdx];
           const topY = segR ? segR.topH + 12 : 30;
@@ -1204,6 +1224,182 @@ function Game() {
           // not in space map — slowly recharge
           rareCooldown.current = Math.max(600, rareCooldown.current - 1);
         }
+
+        // ===== Boss =====
+        const curScoreForBoss = Math.floor(distance.current / 10);
+        if (!boss.current && curScoreForBoss >= nextBossScore.current) {
+          // wipe normal missiles entering frame
+          missiles.current = [];
+          boss.current = {
+            x: W + 220, y: H / 2, vy: 0,
+            hp: 7, maxHp: 7,
+            phase: "enter", t: 0, shotTimer: 90, phaseTimer: 0,
+            fallVy: 0, rot: 0,
+          };
+          setBossHud({ hp: 7, max: 7 });
+          shake.current = 14;
+        }
+
+        if (bossHitCd.current > 0) bossHitCd.current--;
+
+        if (boss.current) {
+          const b = boss.current;
+          b.t += 1;
+
+          if (b.phase === "enter") {
+            const targetX = W - 160;
+            b.x += (targetX - b.x) * 0.04;
+            b.y += (H / 2 - b.y) * 0.04;
+            if (Math.abs(b.x - targetX) < 4) {
+              b.phase = "shoot";
+              b.phaseTimer = 0;
+              b.shotTimer = 40;
+            }
+          } else if (b.phase === "shoot") {
+            b.phaseTimer += 1;
+            // slow vertical drift
+            b.vy += (Math.sin(b.t * 0.04) * 0.6 - b.vy) * 0.08;
+            b.y = clamp(b.y + b.vy, 110, H - 110);
+            b.shotTimer -= 1;
+            if (b.shotTimer <= 0) {
+              const targetY = planeY.current;
+              const dx = PLANE_X - (b.x - 60);
+              const dy = targetY - b.y;
+              const dist = Math.hypot(dx, dy);
+              const sp = 3.2;
+              bigMissiles.current.push({
+                x: b.x - 60, y: b.y,
+                vx: (dx / dist) * sp,
+                vy: (dy / dist) * sp,
+                r: 18, t: 0,
+              });
+              b.shotTimer = 75 + Math.random() * 35;
+              shake.current = Math.max(shake.current, 4);
+            }
+            if (b.phaseTimer > 360) {
+              b.phase = "rest";
+              b.phaseTimer = 0;
+            }
+          } else if (b.phase === "rest") {
+            b.phaseTimer += 1;
+            // move closer to player so they can ram
+            const targetX = W - 290;
+            b.x += (targetX - b.x) * 0.035;
+            b.y += (planeY.current - b.y) * 0.012;
+            if (b.phaseTimer > 260) {
+              b.phase = "shoot";
+              b.phaseTimer = 0;
+              b.shotTimer = 50;
+            }
+          } else if (b.phase === "die") {
+            b.fallVy += 0.35;
+            b.y += b.fallVy;
+            b.rot += 0.04;
+            b.x -= 1.2;
+            if (b.t % 6 === 0) {
+              for (let k = 0; k < 6; k++) {
+                particles.current.push({
+                  x: b.x + (Math.random() - 0.5) * 120,
+                  y: b.y + (Math.random() - 0.5) * 60,
+                  vx: (Math.random() - 0.5) * 3,
+                  vy: -1 - Math.random() * 2,
+                  life: 40, maxLife: 40,
+                  color: Math.random() < 0.5 ? "#ff7a3a" : "#ffd070",
+                  size: 3 + Math.random() * 2,
+                });
+              }
+            }
+            if (b.y > H + 120) {
+              boss.current = null;
+              setBossHud(null);
+              nextBossScore.current += 5000;
+              bigMissiles.current = [];
+            }
+          }
+
+          // Update big missiles
+          for (let i = bigMissiles.current.length - 1; i >= 0; i--) {
+            const m = bigMissiles.current[i];
+            m.x += m.vx * timeScale;
+            m.y += m.vy * timeScale;
+            m.t += 1;
+            if (m.x < -60 || m.y < -60 || m.y > H + 60) {
+              bigMissiles.current.splice(i, 1);
+              continue;
+            }
+            // smoke trail
+            if (m.t % 2 === 0) {
+              particles.current.push({
+                x: m.x, y: m.y,
+                vx: (Math.random() - 0.5) * 0.6,
+                vy: (Math.random() - 0.5) * 0.6,
+                life: 26, maxLife: 26,
+                color: "#ff8a3a", size: 3,
+              });
+            }
+            const dxh = m.x - PLANE_X;
+            const dyh = m.y - planeY.current;
+            if (Math.hypot(dxh, dyh) < m.r + PLANE_SIZE / 2) {
+              bigMissiles.current.splice(i, 1);
+              shake.current = 14;
+              flash.current = 10;
+              if (shield.current) {
+                shield.current = false;
+                sfxShieldHit();
+              } else {
+                die();
+              }
+            }
+          }
+
+          // Player vs boss collision (ram damage during rest)
+          if (boss.current && b.phase !== "die") {
+            const bw = 220, bh = 110;
+            const hit =
+              PLANE_X + PLANE_SIZE / 2 > b.x - bw / 2 &&
+              PLANE_X - PLANE_SIZE / 2 < b.x + bw / 2 &&
+              planeY.current + PLANE_SIZE / 2 > b.y - bh / 2 &&
+              planeY.current - PLANE_SIZE / 2 < b.y + bh / 2;
+            if (hit) {
+              if (b.phase === "rest" && bossHitCd.current === 0) {
+                b.hp -= 1;
+                setBossHud({ hp: b.hp, max: b.maxHp });
+                bossHitCd.current = 45;
+                shake.current = 16;
+                flash.current = 12;
+                // bounce player back
+                planeVy.current = (planeY.current < b.y ? -1 : 1) * 6;
+                for (let k = 0; k < 22; k++) {
+                  const a = Math.random() * Math.PI * 2;
+                  particles.current.push({
+                    x: PLANE_X + 12, y: planeY.current,
+                    vx: Math.cos(a) * 4, vy: Math.sin(a) * 4,
+                    life: 32, maxLife: 32,
+                    color: "#ffb84a", size: 2.4,
+                  });
+                }
+                if (b.hp <= 0) {
+                  b.phase = "die";
+                  b.t = 0;
+                  b.fallVy = -2;
+                  bigMissiles.current = [];
+                }
+              } else if (bossHitCd.current === 0) {
+                // touching boss while it's shooting = death (unless shield)
+                if (shield.current) {
+                  shield.current = false;
+                  sfxShieldHit();
+                  bossHitCd.current = 30;
+                  planeVy.current = -5;
+                } else {
+                  die();
+                }
+              }
+            }
+          }
+        }
+
+
 
         if (slowmo.current > 0) slowmo.current--;
         if (boost.current > 0) boost.current--;
@@ -1467,6 +1663,109 @@ function Game() {
       }
       for (const m of missiles.current) drawMissile(ctx, m);
 
+      // Boss + big missiles
+      if (boss.current) {
+        const b = boss.current;
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.rot);
+        const flicker = b.phase === "die" ? 0.6 + Math.random() * 0.4 : 1;
+        // hull main body
+        const grad = ctx.createLinearGradient(0, -55, 0, 55);
+        grad.addColorStop(0, "#5a6a85");
+        grad.addColorStop(0.5, "#2d3548");
+        grad.addColorStop(1, "#15192a");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(-110, -30);
+        ctx.lineTo(80, -55);
+        ctx.lineTo(108, -10);
+        ctx.lineTo(108, 18);
+        ctx.lineTo(70, 50);
+        ctx.lineTo(-100, 38);
+        ctx.lineTo(-115, 0);
+        ctx.closePath();
+        ctx.fill();
+        // upper bridge
+        ctx.fillStyle = "#3a4660";
+        ctx.fillRect(-30, -68, 70, 18);
+        // windows
+        for (let i = 0; i < 7; i++) {
+          ctx.fillStyle = `rgba(120,210,255,${0.5 + 0.5 * Math.sin(tick.current * 0.1 + i)})`;
+          ctx.fillRect(-80 + i * 22, -18, 10, 6);
+        }
+        // gun turret (front-left)
+        ctx.fillStyle = "#1a1f30";
+        ctx.fillRect(-130, -8, 30, 18);
+        ctx.fillStyle = b.phase === "shoot" ? `rgba(255,${120 - 80 * Math.sin(tick.current * 0.3)},60,${flicker})` : "#3a2030";
+        ctx.beginPath();
+        ctx.arc(-130, 1, 9, 0, Math.PI * 2);
+        ctx.fill();
+        // engines
+        for (let i = 0; i < 3; i++) {
+          const ey = -20 + i * 22;
+          ctx.fillStyle = "#0a0e18";
+          ctx.fillRect(100, ey - 4, 14, 8);
+          ctx.fillStyle = `rgba(120,180,255,${0.6 + 0.4 * Math.sin(tick.current * 0.4 + i)})`;
+          ctx.fillRect(112, ey - 2, 10 + Math.random() * 6, 4);
+        }
+        ctx.restore();
+
+        // HP bar above boss
+        if (b.phase !== "die") {
+          const bx = b.x - 90, by = b.y - 90;
+          ctx.fillStyle = "rgba(0,0,0,0.6)";
+          ctx.fillRect(bx, by, 180, 10);
+          ctx.fillStyle = "#ff3a4a";
+          ctx.fillRect(bx + 2, by + 2, (176 * b.hp) / b.maxHp, 6);
+          ctx.strokeStyle = "rgba(255,255,255,0.5)";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(bx, by, 180, 10);
+        }
+
+        // phase hint
+        if (b.phase === "rest") {
+          ctx.fillStyle = `rgba(120,255,160,${0.4 + 0.3 * Math.sin(tick.current * 0.2)})`;
+          ctx.font = "bold 11px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("ТАРАНЬ!", b.x, b.y - 100);
+        }
+      }
+      // big missiles from boss
+      for (const m of bigMissiles.current) {
+        ctx.save();
+        ctx.translate(m.x, m.y);
+        const ang = Math.atan2(m.vy, m.vx);
+        ctx.rotate(ang);
+        // glow
+        const g = ctx.createRadialGradient(0, 0, 2, 0, 0, m.r + 14);
+        g.addColorStop(0, "rgba(255,220,120,0.9)");
+        g.addColorStop(0.4, "rgba(255,120,40,0.6)");
+        g.addColorStop(1, "rgba(255,80,40,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, m.r + 14, 0, Math.PI * 2);
+        ctx.fill();
+        // body
+        ctx.fillStyle = "#2a2230";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, m.r, m.r * 0.7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ff5a3a";
+        ctx.beginPath();
+        ctx.moveTo(m.r, 0);
+        ctx.lineTo(m.r - 6, -m.r * 0.5);
+        ctx.lineTo(m.r - 6, m.r * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        // fins
+        ctx.fillStyle = "#1a1a24";
+        ctx.fillRect(-m.r, -m.r * 0.8, 6, m.r * 0.6);
+        ctx.fillRect(-m.r, m.r * 0.2, 6, m.r * 0.6);
+        ctx.restore();
+      }
+
+
       // particles
       for (const p of particles.current) {
         const a = p.life / p.maxLife;
@@ -1562,6 +1861,21 @@ function Game() {
             </div>
           )}
         </div>
+
+        {/* Boss HP bar */}
+        {bossHud && (
+          <div className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 flex flex-col items-center gap-1 font-mono">
+            <div className="text-[10px] uppercase tracking-widest text-red-300 drop-shadow">
+              ★ BOSS ★
+            </div>
+            <div className="flex h-3 w-64 overflow-hidden rounded-full border border-red-400/70 bg-black/70">
+              <div
+                className="h-full bg-gradient-to-r from-red-500 to-orange-400 transition-[width] duration-200"
+                style={{ width: `${(bossHud.hp / bossHud.max) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* coins + active buffs */}
         <div className="pointer-events-none absolute right-3 top-3 flex flex-col items-end gap-1.5 font-mono drop-shadow">
