@@ -370,6 +370,7 @@ interface Star {
   y: number;
   z: number; // parallax depth 0.2..1
   s: number;
+  kind?: number; // 0+ = planet variant, undefined = tiny star
 }
 interface Coin {
   x: number;
