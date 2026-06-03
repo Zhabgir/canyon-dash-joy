@@ -3499,6 +3499,78 @@ function drawJet(
   ctx.moveTo(-8, -7); ctx.lineTo(-8, 7);
   ctx.stroke();
 
+  // ---- Pattern overlay (clipped to fuselage) ----
+  if (skin.pattern) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(22, -3);
+    ctx.lineTo(8, -7);
+    ctx.lineTo(-18, -7);
+    ctx.lineTo(-20, -5);
+    ctx.lineTo(-20, 5);
+    ctx.lineTo(-18, 7);
+    ctx.lineTo(8, 7);
+    ctx.lineTo(22, 3);
+    ctx.closePath();
+    ctx.clip();
+    const pc = skin.patternColor || "#1a1a1a";
+    ctx.fillStyle = pc;
+    ctx.strokeStyle = pc;
+    if (skin.pattern === "stripes-v") {
+      for (let x = -18; x <= 22; x += 4) ctx.fillRect(x, -7, 1.6, 14);
+    } else if (skin.pattern === "stripes-h") {
+      for (let y = -7; y <= 7; y += 2.5) ctx.fillRect(-20, y, 42, 1.1);
+    } else if (skin.pattern === "dots") {
+      for (let x = -16; x <= 20; x += 4) {
+        for (let y = -5; y <= 5; y += 4) {
+          ctx.beginPath();
+          ctx.arc(x + ((Math.abs(y) > 2) ? 2 : 0), y, 1.1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } else if (skin.pattern === "checker") {
+      const s = 3;
+      for (let x = -18; x < 22; x += s) {
+        for (let y = -7; y < 7; y += s) {
+          if (((Math.floor((x + 18) / s) + Math.floor((y + 7) / s)) & 1) === 0) ctx.fillRect(x, y, s, s);
+        }
+      }
+    } else if (skin.pattern === "zigzag") {
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      for (let x = -20; x <= 24; x += 3) {
+        const y = ((x / 3) | 0) % 2 === 0 ? -2 : 2;
+        if (x === -20) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    } else if (skin.pattern === "stars") {
+      const pts: [number, number][] = [[-14, -3], [-6, 2], [2, -4], [10, 1], [16, -2], [-10, 4], [6, 5]];
+      for (const [px, py] of pts) {
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const a = (Math.PI * 2 * i) / 10 - Math.PI / 2;
+          const r = i % 2 === 0 ? 1.6 : 0.7;
+          const xx = px + Math.cos(a) * r;
+          const yy = py + Math.sin(a) * r;
+          if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+    } else if (skin.pattern === "flames") {
+      for (let x = -16; x <= 18; x += 6) {
+        ctx.beginPath();
+        ctx.moveTo(x, 4);
+        ctx.quadraticCurveTo(x + 1, 0, x + 2, -3);
+        ctx.quadraticCurveTo(x - 1, 0, x - 2, 4);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
   // accent body stripe
   ctx.fillStyle = skin.accent;
   ctx.fillRect(-15, -1.2, 30, 2.4);
