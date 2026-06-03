@@ -1126,6 +1126,32 @@ function Game() {
     setState("playing");
   }, [ensureAudio, startEngine, user]);
 
+  const pauseGame = useCallback(() => {
+    if (stateRef.current !== "playing") return;
+    stopEngine();
+    setState("paused");
+  }, [stopEngine]);
+
+  const resumeGame = useCallback(() => {
+    if (stateRef.current !== "paused") return;
+    setResumeCountdown(3);
+    let n = 3;
+    const tickDown = () => {
+      n -= 1;
+      if (n <= 0) {
+        setResumeCountdown(null);
+        ensureAudio();
+        if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
+        startEngine();
+        setState("playing");
+      } else {
+        setResumeCountdown(n);
+        setTimeout(tickDown, 1000);
+      }
+    };
+    setTimeout(tickDown, 1000);
+  }, [ensureAudio, startEngine]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
