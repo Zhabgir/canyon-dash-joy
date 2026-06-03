@@ -2161,6 +2161,8 @@ function Game() {
       a.play().catch(() => {});
     } else if (state === "menu") {
       a.pause();
+    } else if (state === "paused") {
+      a.pause();
     } else if (state === "over" || state === "revive") {
       a.pause();
       a.currentTime = 0;
