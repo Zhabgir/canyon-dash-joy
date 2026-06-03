@@ -2394,6 +2394,94 @@ function Game() {
           />
         )}
 
+        {/* Daily rewards modal */}
+        {state === "menu" && rewardsOpen && (
+          <div
+            className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={() => setRewardsOpen(false)}
+          >
+            <div
+              className="relative w-full max-w-2xl rounded-2xl border border-rose-400/40 bg-gradient-to-b from-slate-900 to-rose-950 p-5 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-xl font-black uppercase tracking-wider text-rose-200">
+                  🎁 Ежедневные награды
+                </h2>
+                <button
+                  onClick={() => setRewardsOpen(false)}
+                  className="rounded-full bg-white/10 px-3 py-1 text-sm font-bold text-white hover:bg-white/20"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="mb-3 text-center text-xs text-rose-200/80">
+                День {dailyRewards.day} из 30 ·{" "}
+                {canClaimDaily ? (
+                  <span className="font-bold text-emerald-300">награда доступна!</span>
+                ) : (
+                  <span className="text-white/60">приходите завтра</span>
+                )}
+              </p>
+
+              <div className="grid max-h-[55vh] grid-cols-5 gap-2 overflow-y-auto pr-1 sm:grid-cols-6">
+                {DAILY_REWARDS.map((r, i) => {
+                  const day = i + 1;
+                  const claimed = day < dailyRewards.day || (day === dailyRewards.day && !canClaimDaily);
+                  const isToday = day === dailyRewards.day && canClaimDaily;
+                  const icon = r.type === "coins" ? "🪙" : r.type === "skin" ? "👤" : "🗺️";
+                  const label =
+                    r.type === "coins"
+                      ? `+${r.amount}`
+                      : r.type === "skin"
+                        ? r.name
+                        : r.name;
+                  return (
+                    <div
+                      key={day}
+                      className={`relative flex flex-col items-center justify-center gap-0.5 rounded-xl border p-2 text-center transition-all ${
+                        isToday
+                          ? "animate-pulse border-emerald-300 bg-emerald-500/20 ring-2 ring-emerald-300/60"
+                          : claimed
+                            ? "border-white/10 bg-white/5 opacity-50"
+                            : "border-white/15 bg-white/8"
+                      }`}
+                    >
+                      <span className="text-[10px] font-bold text-white/70">День {day}</span>
+                      <span className="text-2xl">{icon}</span>
+                      <span className="line-clamp-1 text-[10px] font-bold text-white">{label}</span>
+                      {claimed && (
+                        <span className="absolute right-1 top-1 text-xs text-emerald-300">✓</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={claimDailyReward}
+                disabled={!canClaimDaily}
+                className={`mt-4 w-full rounded-full px-6 py-3 text-base font-black uppercase tracking-wider text-white shadow-lg transition-all ${
+                  canClaimDaily
+                    ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:scale-105 active:scale-95"
+                    : "cursor-not-allowed bg-white/10 text-white/40"
+                }`}
+              >
+                {canClaimDaily ? `Забрать награду (День ${dailyRewards.day})` : "Уже получено сегодня"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Reward toast */}
+        {rewardToast && (
+          <div className="pointer-events-none absolute left-1/2 top-20 z-40 -translate-x-1/2 rounded-full border border-emerald-300/60 bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-2 text-sm font-black text-white shadow-2xl">
+            🎉 {rewardToast}
+          </div>
+        )}
+
+
         {state === "revive" && (
           <Overlay>
             <h2 className="text-2xl font-black uppercase tracking-wider text-orange-300 drop-shadow-[0_2px_8px_rgba(255,140,40,0.6)]">
