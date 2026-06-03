@@ -2243,12 +2243,13 @@ function Game() {
             </button>
 
             {/* Shop row (4 buttons) */}
-            <div className="absolute inset-x-3 bottom-[15%] z-20 grid grid-cols-4 gap-2 sm:gap-3">
+            <div className="absolute inset-x-3 bottom-[15%] z-20 grid grid-cols-5 gap-2 sm:gap-3">
               {[
-                { label: "Скины", icon: "👤", grad: "from-pink-500 via-fuchsia-500 to-purple-600", ring: "ring-fuchsia-300/60", glow: "shadow-fuchsia-500/40", onClick: () => setShopTab("skins") },
-                { label: "Карты", icon: "🗺️", grad: "from-emerald-400 via-teal-500 to-cyan-600", ring: "ring-emerald-300/60", glow: "shadow-emerald-500/40", onClick: () => setShopTab("maps") },
-                { label: "Транспорт", icon: "🚀", grad: "from-orange-400 via-red-500 to-pink-600", ring: "ring-orange-300/60", glow: "shadow-orange-500/40", onClick: () => setShopTab("vehicles") },
-                { label: "Задания", icon: "📋", grad: "from-amber-300 via-yellow-500 to-orange-500", ring: "ring-yellow-300/60", glow: "shadow-yellow-500/40", onClick: () => setQuestsOpen(true) },
+                { label: "Скины", icon: "👤", grad: "from-pink-500 via-fuchsia-500 to-purple-600", ring: "ring-fuchsia-300/60", glow: "shadow-fuchsia-500/40", onClick: () => setShopTab("skins"), badge: false },
+                { label: "Карты", icon: "🗺️", grad: "from-emerald-400 via-teal-500 to-cyan-600", ring: "ring-emerald-300/60", glow: "shadow-emerald-500/40", onClick: () => setShopTab("maps"), badge: false },
+                { label: "Транспорт", icon: "🚀", grad: "from-orange-400 via-red-500 to-pink-600", ring: "ring-orange-300/60", glow: "shadow-orange-500/40", onClick: () => setShopTab("vehicles"), badge: false },
+                { label: "Задания", icon: "📋", grad: "from-amber-300 via-yellow-500 to-orange-500", ring: "ring-yellow-300/60", glow: "shadow-yellow-500/40", onClick: () => setQuestsOpen(true), badge: false },
+                { label: "Награды", icon: "🎁", grad: "from-rose-400 via-red-500 to-amber-500", ring: "ring-rose-300/60", glow: "shadow-rose-500/40", onClick: () => setRewardsOpen(true), badge: canClaimDaily },
               ].map((b) => (
                 <button
                   key={b.label}
