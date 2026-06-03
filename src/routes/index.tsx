@@ -2053,75 +2053,31 @@ function Game() {
 
         {state === "menu" && (
           <Overlay bgImage={menuBgAsset.url}>
-            <div className="relative flex flex-col items-center gap-3">
-              <div className="relative">
-                <img
-                  src={gameIcon}
-                  alt="Space Rush"
-                  width={96}
-                  height={96}
-                  className="h-20 w-20 rounded-2xl shadow-lg shadow-indigo-500/40 sm:h-24 sm:w-24"
-                />
-                <div className="absolute -inset-2 -z-10 animate-pulse rounded-full bg-indigo-500/30 blur-2xl" />
-              </div>
-              <h2 className="bg-gradient-to-b from-cyan-200 via-indigo-400 to-fuchsia-600 bg-clip-text text-3xl font-black tracking-tighter text-transparent drop-shadow-[0_4px_12px_rgba(120,120,255,0.5)] sm:text-4xl md:text-5xl">
-                SPACE RUSH
-              </h2>
-            </div>
-            <p className="max-w-xs text-center text-sm text-white/80">
-              Тапай <b>верх</b> / <b>низ</b> экрана, чтобы маневрировать. Уворачивайся от ракет, собирай космо-монеты и бонусы.
-            </p>
-            <div className="flex flex-wrap justify-center gap-2.5 text-[11px] text-white/85">
-              <LegendChip color="#6bd4ff" label="Щит" />
-              <LegendChip color="#b48bff" label="Slow-Mo" />
-              <LegendChip color="#ffce4a" label="Boost" />
-            </div>
             <button
               onClick={start}
-              className="group relative mt-2 w-full max-w-[260px] overflow-hidden rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-6 py-3 text-lg font-bold text-white shadow-lg shadow-orange-500/40 transition-transform hover:scale-105 active:scale-95 sm:px-10"
-            >
-              <span className="relative z-10">▶  PLAY</span>
-              <span className="absolute inset-0 -z-0 animate-pulse bg-white/20 opacity-0 group-hover:opacity-100" />
-            </button>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <button
-                onClick={() => setShopTab("skins")}
-                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
-              >
-                ✈ Скины
-              </button>
-              <button
-                onClick={() => setShopTab("maps")}
-                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
-              >
-                🗺 Карты
-              </button>
-              <button
-                onClick={() => setShopTab("vehicles")}
-                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
-              >
-                🚁 Транспорт
-              </button>
-              <button
-                onClick={() => setQuestsOpen(true)}
-                className="relative rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-white/20"
-              >
-                🎯 Задания
-                {questState.quests.some((q) => !q.claimed && q.progress >= q.def.target) && (
-                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse rounded-full bg-green-400 ring-2 ring-black/60" />
-                )}
-              </button>
-            </div>
-            <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/60 bg-black/40 px-3 py-1 font-mono text-xs font-bold text-yellow-300">
-              <span>●</span>
-              <span>{wallet.toLocaleString()}</span>
-            </div>
-            <RankDisplay totalDistance={totalDistance} />
-            {best > 0 && (
-              <p className="text-xs text-white/50">
-                Лучший: <span className="font-mono text-white/80">{best.toLocaleString()}</span> · ● {bestCoins}
-              </p>
-            )}
+              aria-label="Play"
+              className="absolute left-1/2 top-[63%] h-[9%] w-[38%] -translate-x-1/2 rounded-full hover:bg-white/10 active:bg-white/20"
+            />
+            <button
+              onClick={() => setShopTab("skins")}
+              aria-label="Скины"
+              className="absolute left-[8%] top-[80%] h-[7%] w-[19%] rounded-xl hover:bg-white/10 active:bg-white/20"
+            />
+            <button
+              onClick={() => setShopTab("maps")}
+              aria-label="Карты"
+              className="absolute left-[29%] top-[80%] h-[7%] w-[19%] rounded-xl hover:bg-white/10 active:bg-white/20"
+            />
+            <button
+              onClick={() => setShopTab("vehicles")}
+              aria-label="Транспорт"
+              className="absolute left-[50%] top-[80%] h-[7%] w-[22%] rounded-xl hover:bg-white/10 active:bg-white/20"
+            />
+            <button
+              onClick={() => setQuestsOpen(true)}
+              aria-label="Задания"
+              className="absolute left-[74%] top-[80%] h-[7%] w-[19%] rounded-xl hover:bg-white/10 active:bg-white/20"
+            />
           </Overlay>
         )}
 
