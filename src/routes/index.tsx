@@ -538,7 +538,46 @@ function Game() {
     setMapId(loadJSON<string>(LS.map, "space"));
     setQuestState(loadQuests());
     setTotalDistance(loadJSON<number>(LS.totalDistance, 0));
+    setDailyRewards(loadJSON<DailyRewardState>(LS.dailyRewards, { lastClaim: null, day: 1 }));
   }, []);
+
+  const canClaimDaily = dailyRewards.lastClaim !== todayStr();
+
+  const claimDailyReward = () => {
+    if (!canClaimDaily) return;
+    const reward = DAILY_REWARDS[(dailyRewards.day - 1) % 30];
+    let msg = "";
+    if (reward.type === "coins") {
+      setWallet((w) => {
+        const nw = w + reward.amount;
+        saveJSON(LS.wallet, nw);
+        return nw;
+      });
+      msg = `+${reward.amount} монет!`;
+    } else if (reward.type === "skin") {
+      setOwnedSkins((prev) => {
+        if (prev.includes(reward.id)) return prev;
+        const next = [...prev, reward.id];
+        saveJSON(LS.ownedSkins, next);
+        return next;
+      });
+      msg = `Новый скин: ${reward.name}!`;
+    } else if (reward.type === "map") {
+      setOwnedMaps((prev) => {
+        if (prev.includes(reward.id)) return prev;
+        const next = [...prev, reward.id];
+        saveJSON(LS.ownedMaps, next);
+        return next;
+      });
+      msg = `Новая карта: ${reward.name}!`;
+    }
+    const nextDay = dailyRewards.day >= 30 ? 1 : dailyRewards.day + 1;
+    const next: DailyRewardState = { lastClaim: todayStr(), day: nextDay };
+    setDailyRewards(next);
+    saveJSON(LS.dailyRewards, next);
+    setRewardToast(msg);
+    setTimeout(() => setRewardToast(null), 2400);
+  };
 
   // Sync quests with database when user is signed in
   useEffect(() => {
