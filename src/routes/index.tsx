@@ -704,6 +704,7 @@ function Game() {
   const bigMissiles = useRef<BigMissile[]>([]);
   const nextBossScore = useRef(5000);
   const bossHitCd = useRef(0); // i-frames after ramming boss
+  const speedBoostStartScore = useRef<number | null>(null);
   const [bossHud, setBossHud] = useState<{ hp: number; max: number } | null>(null);
   
   
@@ -849,6 +850,7 @@ function Game() {
     bigMissiles.current = [];
     nextBossScore.current = 5000;
     bossHitCd.current = 0;
+    speedBoostStartScore.current = null;
     setBossHud(null);
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     usedRevive.current = false;
@@ -1143,8 +1145,11 @@ function Game() {
         // time scale: slowmo halves, boost speeds up
         const timeScale =
           (slowmo.current > 0 ? 0.5 : 1) * (boost.current > 0 ? 1.55 : 1);
-        const speedMult = 1 + Math.floor(distance.current / 1000) * 0.02;
-        const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + distance.current / 6000);
+        const curScoreNow = Math.floor(distance.current / 10);
+        const startS = speedBoostStartScore.current;
+        const boostScore = startS == null ? 0 : Math.min(4000, Math.max(0, curScoreNow - startS));
+        const speedMult = 1 + Math.floor(boostScore / 100) * 0.02;
+        const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + (boostScore * 10) / 6000);
         const speed = baseSpeed * timeScale * speedMult;
 
         offset.current += speed;
@@ -1474,6 +1479,9 @@ function Game() {
               setBossHud(null);
               nextBossScore.current += 5000;
               bigMissiles.current = [];
+              if (speedBoostStartScore.current == null) {
+                speedBoostStartScore.current = Math.floor(distance.current / 10);
+              }
             }
           }
 
