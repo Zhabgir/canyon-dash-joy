@@ -73,7 +73,7 @@ export const Route = createFileRoute("/")({
   component: Game,
 });
 
-type GameState = "menu" | "playing" | "revive" | "over" | "choice";
+type GameState = "menu" | "playing" | "paused" | "revive" | "over" | "choice";
 
 const REVIVE_COST = 100;
 const REVIVE_SECONDS = 10;
@@ -523,6 +523,7 @@ function Game() {
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(false);
   mutedRef.current = muted;
+  const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -1124,6 +1125,32 @@ function Game() {
     setHud((h) => ({ ...h, shield: true }));
     setState("playing");
   }, [ensureAudio, startEngine, user]);
+
+  const pauseGame = useCallback(() => {
+    if (stateRef.current !== "playing") return;
+    stopEngine();
+    setState("paused");
+  }, [stopEngine]);
+
+  const resumeGame = useCallback(() => {
+    if (stateRef.current !== "paused") return;
+    setResumeCountdown(3);
+    let n = 3;
+    const tickDown = () => {
+      n -= 1;
+      if (n <= 0) {
+        setResumeCountdown(null);
+        ensureAudio();
+        if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
+        startEngine();
+        setState("playing");
+      } else {
+        setResumeCountdown(n);
+        setTimeout(tickDown, 1000);
+      }
+    };
+    setTimeout(tickDown, 1000);
+  }, [ensureAudio, startEngine]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -2134,6 +2161,8 @@ function Game() {
       a.play().catch(() => {});
     } else if (state === "menu") {
       a.pause();
+    } else if (state === "paused") {
+      a.pause();
     } else if (state === "over" || state === "revive") {
       a.pause();
       a.currentTime = 0;
@@ -2194,6 +2223,50 @@ function Game() {
           >
             {muted ? "🔇" : "🔊"}
           </button>
+        )}
+
+        {/* in-game pause button */}
+        {state === "playing" && (
+          <button
+            onClick={pauseGame}
+            className="absolute top-3 right-3 z-20 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-bold text-white/90 backdrop-blur-sm hover:bg-black/80"
+            aria-label="Pause"
+          >
+            ⏸ СТОП
+          </button>
+        )}
+
+        {/* Pause overlay */}
+        {state === "paused" && (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm">
+            <div className="font-mono text-3xl font-extrabold uppercase tracking-widest text-white">
+              Пауза
+            </div>
+            <button
+              onClick={resumeGame}
+              className="rounded-full border border-white/30 bg-white px-8 py-3 font-mono text-lg font-bold uppercase tracking-wide text-black hover:bg-white/90"
+            >
+              ▶ Продолжить
+            </button>
+            <button
+              onClick={() => {
+                setResumeCountdown(null);
+                setState("menu");
+              }}
+              className="rounded-full border border-white/30 bg-black/60 px-6 py-2 font-mono text-sm text-white/80 hover:bg-black/80"
+            >
+              В меню
+            </button>
+          </div>
+        )}
+
+        {/* Resume countdown */}
+        {resumeCountdown !== null && (
+          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/40">
+            <div className="font-mono text-8xl font-extrabold text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
+              {resumeCountdown}
+            </div>
+          </div>
         )}
 
 
