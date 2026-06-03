@@ -4,6 +4,7 @@ import gameIcon from "../assets/game-icon.png";
 import menuBgAsset from "../assets/space-menu-bg.png.asset.json";
 import playerJetSrc from "../assets/player-jet.png";
 import asgoreMusic from "../assets/asgore.mp3.asset.json";
+import gameOverBg from "../assets/game-over.jpg";
 
 // Cached player jet sprite (loaded once)
 let _jetImg: HTMLImageElement | null = null;
@@ -2678,8 +2679,10 @@ function Game() {
         )}
 
         {state === "over" && (
-          <Overlay>
-            <h2 className="text-3xl font-black uppercase tracking-wider text-red-400 drop-shadow-[0_2px_8px_rgba(255,60,40,0.6)]">
+          <Overlay bgImage={gameOverBg}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+            <div className="relative z-10 flex flex-col items-center gap-4">
+            <h2 className="text-3xl font-black uppercase tracking-wider text-red-400 drop-shadow-[0_2px_8px_rgba(255,60,40,0.8)]">
               Crashed
             </h2>
             <div className="flex flex-col items-center gap-1">
@@ -2705,6 +2708,7 @@ function Game() {
             >
               ↻  RETRY
             </button>
+            </div>
           </Overlay>
         )}
       </div>
