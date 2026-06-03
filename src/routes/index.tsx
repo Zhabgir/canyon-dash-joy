@@ -2043,7 +2043,7 @@ function Game() {
           <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-lg bg-black">
             <div
               className="relative max-h-full max-w-full"
-              style={{ aspectRatio: "1341 / 1173", width: "min(100%, calc(100vh * 1341 / 1173))", height: "min(100%, calc(100vw * 1173 / 1341))" }}
+              style={{ aspectRatio: "1200 / 896", width: "min(100%, calc(100vh * 1200 / 896))", height: "min(100%, calc(100vw * 896 / 1200))" }}
             >
               <img
                 src={menuBgAsset.url}
@@ -2054,27 +2054,27 @@ function Game() {
               <button
                 onClick={start}
                 aria-label="Play"
-                className="absolute left-[30.6%] top-[55%] h-[12.4%] w-[36.9%] rounded-full hover:bg-white/10 active:bg-white/20"
+                className="absolute left-[30.8%] top-[57.8%] h-[13.4%] w-[38.4%] rounded-full hover:bg-white/10 active:bg-white/20"
               />
               <button
                 onClick={() => setShopTab("skins")}
                 aria-label="Скины"
-                className="absolute left-[5.6%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl hover:bg-white/10 active:bg-white/20"
+                className="absolute left-[5.8%] top-[74%] h-[7.3%] w-[22.5%] rounded-xl hover:bg-white/10 active:bg-white/20"
               />
               <button
                 onClick={() => setShopTab("maps")}
                 aria-label="Карты"
-                className="absolute left-[28.3%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl hover:bg-white/10 active:bg-white/20"
+                className="absolute left-[30%] top-[74%] h-[7.3%] w-[18.8%] rounded-xl hover:bg-white/10 active:bg-white/20"
               />
               <button
                 onClick={() => setShopTab("vehicles")}
                 aria-label="Транспорт"
-                className="absolute left-[51.1%] top-[72%] h-[8.1%] w-[20.5%] rounded-xl hover:bg-white/10 active:bg-white/20"
+                className="absolute left-[50%] top-[74%] h-[7.3%] w-[22.5%] rounded-xl hover:bg-white/10 active:bg-white/20"
               />
               <button
                 onClick={() => setQuestsOpen(true)}
                 aria-label="Задания"
-                className="absolute left-[73.5%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl hover:bg-white/10 active:bg-white/20"
+                className="absolute left-[74.2%] top-[74%] h-[7.3%] w-[20%] rounded-xl hover:bg-white/10 active:bg-white/20"
               />
             </div>
           </div>
