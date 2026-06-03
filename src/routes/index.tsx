@@ -1225,6 +1225,182 @@ function Game() {
           rareCooldown.current = Math.max(600, rareCooldown.current - 1);
         }
 
+        // ===== Boss =====
+        const curScoreForBoss = Math.floor(distance.current / 10);
+        if (!boss.current && curScoreForBoss >= nextBossScore.current) {
+          // wipe normal missiles entering frame
+          missiles.current = [];
+          boss.current = {
+            x: W + 220, y: H / 2, vy: 0,
+            hp: 7, maxHp: 7,
+            phase: "enter", t: 0, shotTimer: 90, phaseTimer: 0,
+            fallVy: 0, rot: 0,
+          };
+          setBossHud({ hp: 7, max: 7 });
+          shake.current = 14;
+        }
+
+        if (bossHitCd.current > 0) bossHitCd.current--;
+
+        if (boss.current) {
+          const b = boss.current;
+          b.t += 1;
+
+          if (b.phase === "enter") {
+            const targetX = W - 160;
+            b.x += (targetX - b.x) * 0.04;
+            b.y += (H / 2 - b.y) * 0.04;
+            if (Math.abs(b.x - targetX) < 4) {
+              b.phase = "shoot";
+              b.phaseTimer = 0;
+              b.shotTimer = 40;
+            }
+          } else if (b.phase === "shoot") {
+            b.phaseTimer += 1;
+            // slow vertical drift
+            b.vy += (Math.sin(b.t * 0.04) * 0.6 - b.vy) * 0.08;
+            b.y = clamp(b.y + b.vy, 110, H - 110);
+            b.shotTimer -= 1;
+            if (b.shotTimer <= 0) {
+              const targetY = planeY.current;
+              const dx = PLANE_X - (b.x - 60);
+              const dy = targetY - b.y;
+              const dist = Math.hypot(dx, dy);
+              const sp = 3.2;
+              bigMissiles.current.push({
+                x: b.x - 60, y: b.y,
+                vx: (dx / dist) * sp,
+                vy: (dy / dist) * sp,
+                r: 18, t: 0,
+              });
+              b.shotTimer = 75 + Math.random() * 35;
+              shake.current = Math.max(shake.current, 4);
+            }
+            if (b.phaseTimer > 360) {
+              b.phase = "rest";
+              b.phaseTimer = 0;
+            }
+          } else if (b.phase === "rest") {
+            b.phaseTimer += 1;
+            // move closer to player so they can ram
+            const targetX = W - 290;
+            b.x += (targetX - b.x) * 0.035;
+            b.y += (planeY.current - b.y) * 0.012;
+            if (b.phaseTimer > 260) {
+              b.phase = "shoot";
+              b.phaseTimer = 0;
+              b.shotTimer = 50;
+            }
+          } else if (b.phase === "die") {
+            b.fallVy += 0.35;
+            b.y += b.fallVy;
+            b.rot += 0.04;
+            b.x -= 1.2;
+            if (b.t % 6 === 0) {
+              for (let k = 0; k < 6; k++) {
+                particles.current.push({
+                  x: b.x + (Math.random() - 0.5) * 120,
+                  y: b.y + (Math.random() - 0.5) * 60,
+                  vx: (Math.random() - 0.5) * 3,
+                  vy: -1 - Math.random() * 2,
+                  life: 40, maxLife: 40,
+                  color: Math.random() < 0.5 ? "#ff7a3a" : "#ffd070",
+                  size: 3 + Math.random() * 2,
+                });
+              }
+            }
+            if (b.y > H + 120) {
+              boss.current = null;
+              setBossHud(null);
+              nextBossScore.current += 5000;
+              bigMissiles.current = [];
+            }
+          }
+
+          // Update big missiles
+          for (let i = bigMissiles.current.length - 1; i >= 0; i--) {
+            const m = bigMissiles.current[i];
+            m.x += m.vx * timeScale;
+            m.y += m.vy * timeScale;
+            m.t += 1;
+            if (m.x < -60 || m.y < -60 || m.y > H + 60) {
+              bigMissiles.current.splice(i, 1);
+              continue;
+            }
+            // smoke trail
+            if (m.t % 2 === 0) {
+              particles.current.push({
+                x: m.x, y: m.y,
+                vx: (Math.random() - 0.5) * 0.6,
+                vy: (Math.random() - 0.5) * 0.6,
+                life: 26, maxLife: 26,
+                color: "#ff8a3a", size: 3,
+              });
+            }
+            const dxh = m.x - PLANE_X;
+            const dyh = m.y - planeY.current;
+            if (Math.hypot(dxh, dyh) < m.r + PLANE_SIZE / 2) {
+              bigMissiles.current.splice(i, 1);
+              shake.current = 14;
+              flash.current = 10;
+              if (shield.current) {
+                shield.current = false;
+                sfxShieldHit();
+              } else {
+                die();
+              }
+            }
+          }
+
+          // Player vs boss collision (ram damage during rest)
+          if (boss.current && b.phase !== "die") {
+            const bw = 220, bh = 110;
+            const hit =
+              PLANE_X + PLANE_SIZE / 2 > b.x - bw / 2 &&
+              PLANE_X - PLANE_SIZE / 2 < b.x + bw / 2 &&
+              planeY.current + PLANE_SIZE / 2 > b.y - bh / 2 &&
+              planeY.current - PLANE_SIZE / 2 < b.y + bh / 2;
+            if (hit) {
+              if (b.phase === "rest" && bossHitCd.current === 0) {
+                b.hp -= 1;
+                setBossHud({ hp: b.hp, max: b.maxHp });
+                bossHitCd.current = 45;
+                shake.current = 16;
+                flash.current = 12;
+                // bounce player back
+                planeVy.current = (planeY.current < b.y ? -1 : 1) * 6;
+                for (let k = 0; k < 22; k++) {
+                  const a = Math.random() * Math.PI * 2;
+                  particles.current.push({
+                    x: PLANE_X + 12, y: planeY.current,
+                    vx: Math.cos(a) * 4, vy: Math.sin(a) * 4,
+                    life: 32, maxLife: 32,
+                    color: "#ffb84a", size: 2.4,
+                  });
+                }
+                if (b.hp <= 0) {
+                  b.phase = "die";
+                  b.t = 0;
+                  b.fallVy = -2;
+                  bigMissiles.current = [];
+                }
+              } else if (bossHitCd.current === 0) {
+                // touching boss while it's shooting = death (unless shield)
+                if (shield.current) {
+                  shield.current = false;
+                  sfxShieldHit();
+                  bossHitCd.current = 30;
+                  planeVy.current = -5;
+                } else {
+                  die();
+                }
+              }
+            }
+          }
+        }
+
+
+
         if (slowmo.current > 0) slowmo.current--;
         if (boost.current > 0) boost.current--;
 
