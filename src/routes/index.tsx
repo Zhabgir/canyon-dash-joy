@@ -2,6 +2,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import gameIcon from "../assets/game-icon.png";
 import menuBgAsset from "../assets/space-menu-bg.png.asset.json";
+import playerJetSrc from "../assets/player-jet.png";
+
+// Cached player jet sprite (loaded once)
+let _jetImg: HTMLImageElement | null = null;
+function getJetImg(): HTMLImageElement | null {
+  if (typeof window === "undefined") return null;
+  if (!_jetImg) {
+    const img = new Image();
+    img.src = playerJetSrc;
+    _jetImg = img;
+  }
+  return _jetImg.complete && _jetImg.naturalWidth > 0 ? _jetImg : null;
+}
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -3362,278 +3375,34 @@ function drawJet(
     return;
   }
 
-  // ============ REALISTIC ROCKET (points +x = flight direction) ============
-  // Coordinate system: nose at +x, exhaust at -x, body height ~14
-  const f0 = skin.fuse[0], f1 = skin.fuse[1], f2 = skin.fuse[2];
-  const w0 = skin.wing[0], w1 = skin.wing[1], w2 = skin.wing[2];
-
+  // ============ REALISTIC JET SPRITE (Su-34 style) ============
   // outer glow halo tinted with accent
-  const halo = ctx.createRadialGradient(0, 0, 6, 0, 0, 34);
-  halo.addColorStop(0, withAlpha(skin.accent, 0.28));
+  const halo = ctx.createRadialGradient(0, 0, 6, 0, 0, 38);
+  halo.addColorStop(0, withAlpha(skin.accent, 0.22));
   halo.addColorStop(1, withAlpha(skin.accent, 0));
   ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.arc(0, 0, 34, 0, Math.PI * 2);
+  ctx.arc(0, 0, 38, 0, Math.PI * 2);
   ctx.fill();
 
-  // ---- Side boosters (twin) ----
-  for (const by of [-9, 9]) {
-    const bg = ctx.createLinearGradient(0, by - 3, 0, by + 3);
-    bg.addColorStop(0, f0);
-    bg.addColorStop(0.5, w1);
-    bg.addColorStop(1, f2);
-    ctx.fillStyle = bg;
+  const jet = getJetImg();
+  if (jet) {
+    // Sprite faces right (+x = flight direction). Sized to roughly match prior body.
+    const w = 78;
+    const h = (jet.naturalHeight / jet.naturalWidth) * w;
+    ctx.drawImage(jet, -w / 2, -h / 2, w, h);
+  } else {
+    // Fallback while image loads — simple silhouette
+    ctx.fillStyle = "#2a6a72";
     ctx.beginPath();
-    ctx.moveTo(14, by);                  // booster nose tip
-    ctx.lineTo(10, by - 3);
-    ctx.lineTo(-16, by - 3);
-    ctx.lineTo(-19, by - 1);             // exhaust mouth top
-    ctx.lineTo(-19, by + 1);
-    ctx.lineTo(-16, by + 3);
-    ctx.lineTo(10, by + 3);
-    ctx.closePath();
-    ctx.fill();
-    // dark exhaust ring
-    ctx.fillStyle = "#0a0a0e";
-    ctx.beginPath();
-    ctx.ellipse(-19, by, 1.4, 2, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // accent stripe
-    ctx.strokeStyle = withAlpha(skin.accent, 0.85);
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(8, by - 2);
-    ctx.lineTo(-14, by - 2);
-    ctx.stroke();
-  }
-
-  // ---- Tail fins ----
-  const finGrad = ctx.createLinearGradient(0, -16, 0, 16);
-  finGrad.addColorStop(0, w0);
-  finGrad.addColorStop(0.5, w1);
-  finGrad.addColorStop(1, w2);
-  ctx.fillStyle = finGrad;
-  // upper fin
-  ctx.beginPath();
-  ctx.moveTo(-8, -4);
-  ctx.lineTo(-22, -16);
-  ctx.lineTo(-20, -16);
-  ctx.lineTo(-12, -4);
-  ctx.closePath();
-  ctx.fill();
-  // lower fin
-  ctx.beginPath();
-  ctx.moveTo(-8, 4);
-  ctx.lineTo(-22, 16);
-  ctx.lineTo(-20, 16);
-  ctx.lineTo(-12, 4);
-  ctx.closePath();
-  ctx.fill();
-  // fin tip accent
-  ctx.fillStyle = skin.accent;
-  ctx.beginPath();
-  ctx.moveTo(-22, -16);
-  ctx.lineTo(-20, -16);
-  ctx.lineTo(-19, -13);
-  ctx.lineTo(-21, -13);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(-22, 16);
-  ctx.lineTo(-20, 16);
-  ctx.lineTo(-19, 13);
-  ctx.lineTo(-21, 13);
-  ctx.closePath();
-  ctx.fill();
-
-  // ---- Main fuselage ----
-  const fuseG = ctx.createLinearGradient(0, -7, 0, 7);
-  fuseG.addColorStop(0, f0);
-  fuseG.addColorStop(0.45, f1);
-  fuseG.addColorStop(1, f2);
-  ctx.fillStyle = fuseG;
-  ctx.beginPath();
-  ctx.moveTo(22, -3);                    // shoulder before nose
-  ctx.lineTo(8, -7);
-  ctx.lineTo(-18, -7);
-  ctx.lineTo(-20, -5);
-  ctx.lineTo(-20, 5);
-  ctx.lineTo(-18, 7);
-  ctx.lineTo(8, 7);
-  ctx.lineTo(22, 3);
-  ctx.closePath();
-  ctx.fill();
-
-  // top-light specular highlight
-  const spec = ctx.createLinearGradient(0, -7, 0, -2);
-  spec.addColorStop(0, "rgba(255,255,255,0.55)");
-  spec.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = spec;
-  ctx.beginPath();
-  ctx.moveTo(20, -3);
-  ctx.lineTo(8, -6);
-  ctx.lineTo(-18, -6);
-  ctx.lineTo(-18, -3);
-  ctx.lineTo(8, -3);
-  ctx.closePath();
-  ctx.fill();
-
-  // bottom shading
-  ctx.fillStyle = "rgba(0,0,0,0.22)";
-  ctx.beginPath();
-  ctx.moveTo(20, 3);
-  ctx.lineTo(8, 6);
-  ctx.lineTo(-18, 6);
-  ctx.lineTo(-18, 7);
-  ctx.lineTo(8, 7);
-  ctx.lineTo(20, 3);
-  ctx.closePath();
-  ctx.fill();
-
-  // panel/rivet lines
-  ctx.strokeStyle = "rgba(0,0,0,0.32)";
-  ctx.lineWidth = 0.5;
-  ctx.beginPath();
-  ctx.moveTo(20, 0); ctx.lineTo(-18, 0);
-  ctx.moveTo(2, -7); ctx.lineTo(2, 7);
-  ctx.moveTo(-8, -7); ctx.lineTo(-8, 7);
-  ctx.stroke();
-
-  // ---- Pattern overlay (clipped to fuselage) ----
-  if (skin.pattern) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(22, -3);
-    ctx.lineTo(8, -7);
-    ctx.lineTo(-18, -7);
+    ctx.moveTo(30, 0);
+    ctx.lineTo(10, -6);
     ctx.lineTo(-20, -5);
     ctx.lineTo(-20, 5);
-    ctx.lineTo(-18, 7);
-    ctx.lineTo(8, 7);
-    ctx.lineTo(22, 3);
+    ctx.lineTo(10, 6);
     ctx.closePath();
-    ctx.clip();
-    const pc = skin.patternColor || "#1a1a1a";
-    ctx.fillStyle = pc;
-    ctx.strokeStyle = pc;
-    if (skin.pattern === "stripes-v") {
-      for (let x = -18; x <= 22; x += 4) ctx.fillRect(x, -7, 1.6, 14);
-    } else if (skin.pattern === "stripes-h") {
-      for (let y = -7; y <= 7; y += 2.5) ctx.fillRect(-20, y, 42, 1.1);
-    } else if (skin.pattern === "dots") {
-      for (let x = -16; x <= 20; x += 4) {
-        for (let y = -5; y <= 5; y += 4) {
-          ctx.beginPath();
-          ctx.arc(x + ((Math.abs(y) > 2) ? 2 : 0), y, 1.1, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    } else if (skin.pattern === "checker") {
-      const s = 3;
-      for (let x = -18; x < 22; x += s) {
-        for (let y = -7; y < 7; y += s) {
-          if (((Math.floor((x + 18) / s) + Math.floor((y + 7) / s)) & 1) === 0) ctx.fillRect(x, y, s, s);
-        }
-      }
-    } else if (skin.pattern === "zigzag") {
-      ctx.lineWidth = 1.1;
-      ctx.beginPath();
-      for (let x = -20; x <= 24; x += 3) {
-        const y = ((x / 3) | 0) % 2 === 0 ? -2 : 2;
-        if (x === -20) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    } else if (skin.pattern === "stars") {
-      const pts: [number, number][] = [[-14, -3], [-6, 2], [2, -4], [10, 1], [16, -2], [-10, 4], [6, 5]];
-      for (const [px, py] of pts) {
-        ctx.beginPath();
-        for (let i = 0; i < 10; i++) {
-          const a = (Math.PI * 2 * i) / 10 - Math.PI / 2;
-          const r = i % 2 === 0 ? 1.6 : 0.7;
-          const xx = px + Math.cos(a) * r;
-          const yy = py + Math.sin(a) * r;
-          if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
-        }
-        ctx.closePath();
-        ctx.fill();
-      }
-    } else if (skin.pattern === "flames") {
-      for (let x = -16; x <= 18; x += 6) {
-        ctx.beginPath();
-        ctx.moveTo(x, 4);
-        ctx.quadraticCurveTo(x + 1, 0, x + 2, -3);
-        ctx.quadraticCurveTo(x - 1, 0, x - 2, 4);
-        ctx.closePath();
-        ctx.fill();
-      }
-    }
-    ctx.restore();
+    ctx.fill();
   }
-
-  // accent body stripe
-  ctx.fillStyle = skin.accent;
-  ctx.fillRect(-15, -1.2, 30, 2.4);
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
-  ctx.fillRect(-15, 0.6, 30, 0.4);
-
-  // ---- Nose cone ----
-  const noseG = ctx.createLinearGradient(15, -3, 15, 3);
-  noseG.addColorStop(0, "#ffffff");
-  noseG.addColorStop(0.4, skin.accent);
-  noseG.addColorStop(1, f2);
-  ctx.fillStyle = noseG;
-  ctx.beginPath();
-  ctx.moveTo(30, 0);                     // nose tip
-  ctx.lineTo(22, -3);
-  ctx.quadraticCurveTo(26, 0, 22, 3);
-  ctx.closePath();
-  ctx.fill();
-  // nose tip highlight
-  ctx.fillStyle = "rgba(255,255,255,0.7)";
-  ctx.beginPath();
-  ctx.arc(27, -1, 1.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  // ---- Cockpit / viewport ----
-  const cock = ctx.createRadialGradient(10, -1, 0.5, 10, 0, 4);
-  cock.addColorStop(0, "#bfe8ff");
-  cock.addColorStop(0.55, "#2a78c8");
-  cock.addColorStop(1, "#0a1a3a");
-  ctx.fillStyle = cock;
-  ctx.beginPath();
-  ctx.ellipse(10, 0, 4, 3.2, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(0,0,0,0.6)";
-  ctx.lineWidth = 0.6;
-  ctx.stroke();
-  // glint
-  ctx.fillStyle = "rgba(255,255,255,0.85)";
-  ctx.beginPath();
-  ctx.ellipse(11, -1.4, 1.4, 0.7, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  // ---- Main engine bell ----
-  ctx.fillStyle = "#1a1a1f";
-  ctx.beginPath();
-  ctx.moveTo(-18, -5);
-  ctx.lineTo(-23, -6);
-  ctx.lineTo(-23, 6);
-  ctx.lineTo(-18, 5);
-  ctx.closePath();
-  ctx.fill();
-  // bell rim
-  ctx.fillStyle = "#3a3a45";
-  ctx.fillRect(-23.5, -6, 1, 12);
-  // hot core
-  const core = ctx.createRadialGradient(-22, 0, 0.5, -22, 0, 4);
-  core.addColorStop(0, "rgba(255,240,180,0.95)");
-  core.addColorStop(1, "rgba(255,80,20,0)");
-  ctx.fillStyle = core;
-  ctx.beginPath();
-  ctx.ellipse(-22, 0, 3.5, 4, 0, 0, Math.PI * 2);
-  ctx.fill();
-
 
   // shield bubble
   if (hasShield) {
@@ -3641,16 +3410,17 @@ function drawJet(
     ctx.strokeStyle = `rgba(120,210,255,${pulse})`;
     ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.arc(0, 0, 26, 0, Math.PI * 2);
+    ctx.arc(0, 0, 30, 0, Math.PI * 2);
     ctx.stroke();
-    const g = ctx.createRadialGradient(0, 0, 8, 0, 0, 26);
+    const g = ctx.createRadialGradient(0, 0, 8, 0, 0, 30);
     g.addColorStop(0, "rgba(120,210,255,0)");
     g.addColorStop(1, "rgba(120,210,255,0.22)");
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(0, 0, 26, 0, Math.PI * 2);
+    ctx.arc(0, 0, 30, 0, Math.PI * 2);
     ctx.fill();
   }
+
 
   ctx.restore();
 }
