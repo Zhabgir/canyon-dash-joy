@@ -511,6 +511,9 @@ function Game() {
   const [questsOpen, setQuestsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [rewardsOpen, setRewardsOpen] = useState(false);
+  const [dailyRewards, setDailyRewards] = useState<DailyRewardState>({ lastClaim: null, day: 1 });
+  const [rewardToast, setRewardToast] = useState<string | null>(null);
   const [questState, setQuestState] = useState<QuestState>({ date: todayStr(), quests: [] });
   const [totalDistance, setTotalDistance] = useState(0);
   const totalCoinsRef = useRef(0);
