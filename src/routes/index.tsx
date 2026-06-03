@@ -2060,21 +2060,26 @@ function Game() {
             {/* Shop row (4 buttons) */}
             <div className="absolute inset-x-3 bottom-[15%] z-20 grid grid-cols-4 gap-2 sm:gap-3">
               {[
-                { label: "Скины", icon: "👤", onClick: () => setShopTab("skins") },
-                { label: "Карты", icon: "🗺️", onClick: () => setShopTab("maps") },
-                { label: "Транспорт", icon: "🚀", onClick: () => setShopTab("vehicles") },
-                { label: "Задания", icon: "📋", onClick: () => setQuestsOpen(true) },
+                { label: "Скины", icon: "👤", grad: "from-pink-500 via-fuchsia-500 to-purple-600", ring: "ring-fuchsia-300/60", glow: "shadow-fuchsia-500/40", onClick: () => setShopTab("skins") },
+                { label: "Карты", icon: "🗺️", grad: "from-emerald-400 via-teal-500 to-cyan-600", ring: "ring-emerald-300/60", glow: "shadow-emerald-500/40", onClick: () => setShopTab("maps") },
+                { label: "Транспорт", icon: "🚀", grad: "from-orange-400 via-red-500 to-pink-600", ring: "ring-orange-300/60", glow: "shadow-orange-500/40", onClick: () => setShopTab("vehicles") },
+                { label: "Задания", icon: "📋", grad: "from-amber-300 via-yellow-500 to-orange-500", ring: "ring-yellow-300/60", glow: "shadow-yellow-500/40", onClick: () => setQuestsOpen(true) },
               ].map((b) => (
                 <button
                   key={b.label}
                   onClick={b.onClick}
-                  className="group flex flex-col items-center justify-center gap-1 rounded-xl border border-purple-400/40 bg-black/60 px-2 py-3 text-white backdrop-blur-sm transition-all hover:scale-105 hover:border-purple-300 hover:bg-purple-900/40 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className={`group relative flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-2xl bg-gradient-to-br ${b.grad} px-2 py-3.5 text-white shadow-lg ${b.glow} ring-2 ${b.ring} transition-all duration-200 hover:scale-110 hover:-translate-y-1 active:scale-95 focus:outline-none`}
                 >
-                  <span className="text-2xl transition-transform group-hover:scale-110">{b.icon}</span>
-                  <span className="text-[11px] font-bold uppercase tracking-wider sm:text-xs">{b.label}</span>
+                  {/* glossy highlight */}
+                  <span className="pointer-events-none absolute inset-x-2 top-1 h-1/3 rounded-full bg-gradient-to-b from-white/40 to-transparent blur-sm" />
+                  {/* shimmer sweep */}
+                  <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                  <span className="relative text-2xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] transition-transform group-hover:scale-125 group-hover:rotate-6">{b.icon}</span>
+                  <span className="relative text-[10px] font-black uppercase tracking-wider drop-shadow-md sm:text-xs">{b.label}</span>
                 </button>
               ))}
             </div>
+
 
             {/* Bottom row: Stats, Settings, Leave */}
             <div className="absolute inset-x-3 bottom-3 z-20 flex items-center justify-center gap-2">
