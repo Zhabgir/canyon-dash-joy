@@ -16,6 +16,44 @@ function getJetImg(): HTMLImageElement | null {
   return _jetImg.complete && _jetImg.naturalWidth > 0 ? _jetImg : null;
 }
 
+// Tinted jet cache: keep a recoloured canvas per skin id
+const _tintCache = new Map<string, HTMLCanvasElement>();
+function getTintedJet(
+  jet: HTMLImageElement,
+  skin: { id: string; fuse: [string, string, string]; accent: string },
+): HTMLCanvasElement | HTMLImageElement {
+  // White/neutral skin = no tint
+  if (skin.id === "classic") {
+    const cached = _tintCache.get("__raw");
+    if (cached) return cached;
+    const c = document.createElement("canvas");
+    c.width = jet.naturalWidth;
+    c.height = jet.naturalHeight;
+    c.getContext("2d")!.drawImage(jet, 0, 0);
+    _tintCache.set("__raw", c);
+    return c;
+  }
+  const key = `${skin.id}|${skin.fuse[1]}|${skin.accent}`;
+  const hit = _tintCache.get(key);
+  if (hit) return hit;
+  const c = document.createElement("canvas");
+  c.width = jet.naturalWidth;
+  c.height = jet.naturalHeight;
+  const cx = c.getContext("2d")!;
+  // 1. base sprite
+  cx.drawImage(jet, 0, 0);
+  // 2. multiply skin color over only the opaque pixels (keeps shading)
+  cx.globalCompositeOperation = "multiply";
+  cx.fillStyle = skin.fuse[1];
+  cx.fillRect(0, 0, c.width, c.height);
+  // 3. restore original alpha mask (multiply also tinted transparent halo)
+  cx.globalCompositeOperation = "destination-in";
+  cx.drawImage(jet, 0, 0);
+  cx.globalCompositeOperation = "source-over";
+  _tintCache.set(key, c);
+  return c;
+}
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -3390,7 +3428,8 @@ function drawJet(
     // Sprite faces right (+x = flight direction). Sized to roughly match prior body.
     const w = 78;
     const h = (jet.naturalHeight / jet.naturalWidth) * w;
-    ctx.drawImage(jet, -w / 2, -h / 2, w, h);
+    const tinted = getTintedJet(jet, skin);
+    ctx.drawImage(tinted, -w / 2, -h / 2, w, h);
   } else {
     // Fallback while image loads — simple silhouette
     ctx.fillStyle = "#2a6a72";
