@@ -2070,145 +2070,326 @@ function drawRareEvent(
   tick: number,
 ) {
   const p = e.t / e.duration; // 0..1
-  // smooth fade in/out
-  const fade = Math.min(1, Math.min(e.t, e.duration - e.t) / 60);
+  const fade = Math.min(1, Math.min(e.t, e.duration - e.t) / 80);
   ctx.save();
   ctx.globalAlpha = fade;
 
   if (e.kind === "star") {
-    // Огромная звезда проплывает справа налево на фоне
-    const cx = W + 200 - p * (W + 400);
-    const cy = H * 0.35;
-    const R = 150;
-    // halo
-    const glow = ctx.createRadialGradient(cx, cy, 10, cx, cy, R * 2.2);
-    glow.addColorStop(0, "rgba(255,230,150,0.9)");
-    glow.addColorStop(0.4, "rgba(255,150,80,0.35)");
-    glow.addColorStop(1, "rgba(255,80,40,0)");
-    ctx.fillStyle = glow;
+    // ======= STAR (close flyby) =======
+    const cx = W + 280 - p * (W + 560);
+    const cy = H * 0.32 + Math.sin(p * Math.PI) * -20;
+    const pulse = 1 + Math.sin(tick * 0.08) * 0.04;
+    const R = 180 * pulse;
+
+    // 1) full-screen warm tint (sun bath)
+    const tint = ctx.createRadialGradient(cx, cy, R * 0.4, cx, cy, Math.max(W, H));
+    tint.addColorStop(0, "rgba(255,210,140,0.45)");
+    tint.addColorStop(0.4, "rgba(255,140,70,0.18)");
+    tint.addColorStop(1, "rgba(120,30,10,0)");
+    ctx.fillStyle = tint;
     ctx.fillRect(0, 0, W, H);
-    // core
-    const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
-    core.addColorStop(0, "#fff8e0");
-    core.addColorStop(0.5, "#ffd060");
-    core.addColorStop(1, "#ff6020");
+
+    // 2) god rays (radial light beams)
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 14; i++) {
+      const ang = (i / 14) * Math.PI * 2 + tick * 0.005;
+      const len = Math.max(W, H) * 1.4;
+      const grad = ctx.createLinearGradient(cx, cy, cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
+      grad.addColorStop(0, "rgba(255,220,160,0.25)");
+      grad.addColorStop(1, "rgba(255,220,160,0)");
+      ctx.fillStyle = grad;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(ang);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(len, -18);
+      ctx.lineTo(len, 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // 3) outer corona (soft halo)
+    const halo = ctx.createRadialGradient(cx, cy, R * 0.6, cx, cy, R * 2.6);
+    halo.addColorStop(0, "rgba(255,200,120,0.7)");
+    halo.addColorStop(0.35, "rgba(255,130,60,0.3)");
+    halo.addColorStop(1, "rgba(255,60,20,0)");
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 2.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 4) plasma flares (curved tongues)
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + tick * 0.015;
+      const flareLen = R * (1.0 + Math.sin(tick * 0.06 + i * 1.3) * 0.25);
+      const fx = cx + Math.cos(a) * R * 0.95;
+      const fy = cy + Math.sin(a) * R * 0.95;
+      const fg = ctx.createRadialGradient(fx, fy, 0, fx, fy, flareLen * 0.5);
+      fg.addColorStop(0, "rgba(255,230,180,0.85)");
+      fg.addColorStop(0.5, "rgba(255,140,60,0.4)");
+      fg.addColorStop(1, "rgba(255,80,30,0)");
+      ctx.fillStyle = fg;
+      ctx.beginPath();
+      ctx.arc(fx, fy, flareLen * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // 5) star body — multi-layer with surface granulation
+    const core = ctx.createRadialGradient(cx - R * 0.25, cy - R * 0.25, 0, cx, cy, R);
+    core.addColorStop(0, "#ffffff");
+    core.addColorStop(0.25, "#fff2c0");
+    core.addColorStop(0.6, "#ffb24a");
+    core.addColorStop(0.9, "#ff6a1a");
+    core.addColorStop(1, "#c43a08");
     ctx.fillStyle = core;
     ctx.beginPath();
-    ctx.arc(cx, cy, R + Math.sin(tick * 0.1) * 4, 0, Math.PI * 2);
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
     ctx.fill();
-    // flares
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2 + tick * 0.02;
-      const len = R * (1.2 + Math.sin(tick * 0.08 + i) * 0.2);
-      ctx.strokeStyle = "rgba(255,200,120,0.5)";
-      ctx.lineWidth = 3;
+
+    // 6) surface convection cells (dark sunspots + bright granules)
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.clip();
+    for (let i = 0; i < 24; i++) {
+      const sa = (i * 137 + tick * 0.4) * 0.01;
+      const sr = R * (0.2 + ((i * 53) % 70) / 100);
+      const sx = cx + Math.cos(sa + i) * sr;
+      const sy = cy + Math.sin(sa * 1.3 + i) * sr;
+      const sz = 8 + ((i * 17) % 18);
+      const bright = (i + Math.floor(tick / 8)) % 5 === 0;
+      const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, sz);
+      if (bright) {
+        g.addColorStop(0, "rgba(255,255,230,0.7)");
+        g.addColorStop(1, "rgba(255,200,120,0)");
+      } else {
+        g.addColorStop(0, "rgba(180,60,10,0.35)");
+        g.addColorStop(1, "rgba(180,60,10,0)");
+      }
+      ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + Math.cos(a) * len, cy + Math.sin(a) * len);
-      ctx.stroke();
+      ctx.arc(sx, sy, sz, 0, Math.PI * 2);
+      ctx.fill();
     }
+    ctx.restore();
+
+    // 7) bright rim (limb brightening)
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const rim = ctx.createRadialGradient(cx, cy, R * 0.85, cx, cy, R * 1.05);
+    rim.addColorStop(0, "rgba(255,200,100,0)");
+    rim.addColorStop(0.6, "rgba(255,240,200,0.5)");
+    rim.addColorStop(1, "rgba(255,200,100,0)");
+    ctx.fillStyle = rim;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 1.05, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 8) lens flare streak across screen
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const streak = ctx.createLinearGradient(0, cy, W, cy);
+    streak.addColorStop(0, "rgba(255,220,160,0)");
+    streak.addColorStop(cx / W, "rgba(255,250,220,0.6)");
+    streak.addColorStop(1, "rgba(255,220,160,0)");
+    ctx.fillStyle = streak;
+    ctx.fillRect(0, cy - 2, W, 4);
+    ctx.restore();
   } else if (e.kind === "asteroids") {
-    // Поле астероидов — пролетают мимо игрока
+    // ======= ASTEROID FIELD =======
+    // subtle dust haze
+    ctx.fillStyle = "rgba(60,50,40,0.15)";
+    ctx.fillRect(0, 0, W, H);
     const seed = e.seed;
-    for (let i = 0; i < 35; i++) {
+    for (let i = 0; i < 55; i++) {
       const r = ((seed * 1000 + i * 73) % 1000) / 1000;
-      const speed = 3 + r * 5;
-      const baseX = ((i * 137) % (W + 400)) - 200;
-      const x = ((baseX - e.t * speed) % (W + 400) + (W + 400)) % (W + 400) - 200;
-      const y = 40 + ((i * 53 + Math.floor(seed * 500)) % (H - 80));
-      const size = 8 + ((i * 17) % 24);
-      const rot = tick * 0.02 + i;
+      const depth = 0.3 + r * 0.7; // parallax
+      const speed = 2 + depth * 6;
+      const baseX = (i * 137) % (W + 500);
+      const x = (((baseX - e.t * speed) % (W + 500)) + (W + 500)) % (W + 500) - 250;
+      const y = 20 + ((i * 53 + Math.floor(seed * 500)) % (H - 40));
+      const size = (5 + ((i * 17) % 28)) * depth;
+      const rot = tick * (0.01 + r * 0.03) + i;
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(rot);
-      ctx.fillStyle = "#6a5a4a";
+      // body
+      const ag = ctx.createRadialGradient(-size * 0.3, -size * 0.3, 0, 0, 0, size);
+      ag.addColorStop(0, "#9a8a76");
+      ag.addColorStop(0.6, "#6a5a4a");
+      ag.addColorStop(1, "#2a2218");
+      ctx.fillStyle = ag;
       ctx.beginPath();
-      for (let k = 0; k < 7; k++) {
-        const aa = (k / 7) * Math.PI * 2;
-        const rr = size * (0.75 + ((i * k * 31) % 100) / 400);
+      for (let k = 0; k < 9; k++) {
+        const aa = (k / 9) * Math.PI * 2;
+        const rr = size * (0.7 + ((i * k * 31) % 100) / 350);
         const px = Math.cos(aa) * rr;
         const py = Math.sin(aa) * rr;
         if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
       }
       ctx.closePath();
       ctx.fill();
-      ctx.fillStyle = "rgba(0,0,0,0.4)";
-      ctx.beginPath();
-      ctx.arc(size * 0.3, size * 0.3, size * 0.25, 0, Math.PI * 2);
-      ctx.fill();
+      // craters
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      for (let c = 0; c < 3; c++) {
+        const ca = c * 2.1;
+        ctx.beginPath();
+        ctx.arc(Math.cos(ca) * size * 0.4, Math.sin(ca) * size * 0.4, size * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
   } else if (e.kind === "wreck") {
-    // Разрушенный крейсер плывёт навстречу
-    const cx = W + 250 - p * (W + 500);
-    const cy = H * 0.45 + Math.sin(tick * 0.02) * 8;
+    // ======= DERELICT CRUISER =======
+    const cx = W + 320 - p * (W + 640);
+    const cy = H * 0.45 + Math.sin(tick * 0.02) * 6;
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.rotate(-0.15);
-    // hull (broken)
-    ctx.fillStyle = "#3a3a44";
-    ctx.fillRect(-160, -28, 220, 56);
-    ctx.fillStyle = "#2a2a32";
-    ctx.fillRect(-160, 18, 220, 10);
-    // jagged break
-    ctx.fillStyle = "#1a1a22";
+    ctx.rotate(-0.12);
+    // hull main
+    const hg = ctx.createLinearGradient(0, -40, 0, 40);
+    hg.addColorStop(0, "#4a4a5a");
+    hg.addColorStop(0.5, "#2e2e3a");
+    hg.addColorStop(1, "#1a1a24");
+    ctx.fillStyle = hg;
+    ctx.fillRect(-200, -32, 270, 64);
+    // upper deck
+    ctx.fillStyle = "#3a3a48";
+    ctx.fillRect(-180, -42, 200, 12);
+    // lower fin
+    ctx.fillStyle = "#202028";
     ctx.beginPath();
-    ctx.moveTo(60, -28);
-    ctx.lineTo(80, -10);
-    ctx.lineTo(55, 5);
-    ctx.lineTo(85, 18);
-    ctx.lineTo(60, 28);
-    ctx.lineTo(60, -28);
+    ctx.moveTo(-200, 32);
+    ctx.lineTo(-60, 50);
+    ctx.lineTo(40, 32);
+    ctx.closePath();
     ctx.fill();
-    // windows
-    for (let i = 0; i < 6; i++) {
-      ctx.fillStyle = (i + Math.floor(tick / 20)) % 4 === 0 ? "#553" : "#221";
-      ctx.fillRect(-140 + i * 30, -10, 10, 8);
-    }
-    // sparks + smoke from break
+    // jagged break (right side torn off)
+    ctx.fillStyle = "#0d0d14";
+    ctx.beginPath();
+    ctx.moveTo(70, -42);
+    ctx.lineTo(95, -20);
+    ctx.lineTo(60, -5);
+    ctx.lineTo(100, 10);
+    ctx.lineTo(55, 22);
+    ctx.lineTo(85, 35);
+    ctx.lineTo(70, 50);
+    ctx.lineTo(70, -42);
+    ctx.fill();
+    // exposed beams
+    ctx.strokeStyle = "#554";
+    ctx.lineWidth = 1.5;
     for (let i = 0; i < 4; i++) {
-      const sx = 70 + (Math.sin(tick * 0.3 + i) * 8);
-      const sy = -5 + Math.cos(tick * 0.2 + i * 2) * 15;
-      ctx.fillStyle = "rgba(255,180,60,0.8)";
+      ctx.beginPath();
+      ctx.moveTo(60, -20 + i * 12);
+      ctx.lineTo(95 + (i % 2) * 8, -15 + i * 14);
+      ctx.stroke();
+    }
+    // flickering windows
+    for (let i = 0; i < 7; i++) {
+      const on = (i * 7 + Math.floor(tick / 15)) % 5 !== 0;
+      ctx.fillStyle = on ? "#6a5520" : "#1a1612";
+      ctx.fillRect(-180 + i * 28, -14, 12, 8);
+    }
+    // reactor leak: pulsing green-orange glow + sparks
+    const leakPulse = 0.5 + Math.sin(tick * 0.2) * 0.4;
+    const leak = ctx.createRadialGradient(75, 5, 0, 75, 5, 60);
+    leak.addColorStop(0, `rgba(255,180,60,${leakPulse})`);
+    leak.addColorStop(0.5, `rgba(255,80,30,${leakPulse * 0.5})`);
+    leak.addColorStop(1, "rgba(180,40,10,0)");
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = leak;
+    ctx.fillRect(20, -50, 120, 110);
+    ctx.restore();
+    // sparks
+    for (let i = 0; i < 8; i++) {
+      const sx = 70 + Math.sin(tick * 0.4 + i * 1.7) * 18;
+      const sy = -5 + Math.cos(tick * 0.3 + i * 2) * 22;
+      ctx.fillStyle = i % 2 ? "rgba(255,220,120,0.9)" : "rgba(255,140,60,0.8)";
       ctx.fillRect(sx, sy, 2, 2);
     }
-    ctx.fillStyle = "rgba(180,180,200,0.18)";
-    for (let i = 0; i < 8; i++) {
-      const sx = 70 + i * 8 + (tick * 0.5) % 20;
-      const sy = -20 + Math.sin(tick * 0.05 + i) * 30;
+    // smoke trail
+    ctx.fillStyle = "rgba(180,180,200,0.14)";
+    for (let i = 0; i < 12; i++) {
+      const sx = 80 + i * 16 + (tick * 0.4) % 16;
+      const sy = -10 + Math.sin(tick * 0.04 + i) * 28;
       ctx.beginPath();
-      ctx.arc(sx, sy, 10 + i, 0, Math.PI * 2);
+      ctx.arc(sx, sy, 12 + i * 1.5, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
   } else if (e.kind === "chase") {
-    // Неизвестный корабль убегает впереди — игрок гонится
-    const cx = W * 0.65 + Math.sin(tick * 0.04) * 80;
-    const cy = H * 0.4 + Math.cos(tick * 0.03) * 50;
+    // ======= MYSTERY SHIP CHASE =======
+    // erratic darting motion + occasional jump
+    const dart = Math.sin(tick * 0.07) * 60 + Math.sin(tick * 0.23) * 20;
+    const cx = W * 0.62 + Math.sin(tick * 0.04) * 100 + dart * 0.3;
+    const cy = H * 0.38 + Math.cos(tick * 0.03) * 60;
+    // motion blur trail
+    for (let i = 6; i > 0; i--) {
+      const tx = cx - i * 14;
+      const ty = cy + Math.sin(tick * 0.05 + i) * 3;
+      ctx.fillStyle = `rgba(120,200,255,${0.06 * i})`;
+      ctx.beginPath();
+      ctx.ellipse(tx, ty, 28, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.save();
     ctx.translate(cx, cy);
-    // hull
-    ctx.fillStyle = "#1a1a2a";
+    // engine plume
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const eg = ctx.createRadialGradient(-30, 0, 0, -30, 0, 40);
+    eg.addColorStop(0, "rgba(180,230,255,0.9)");
+    eg.addColorStop(0.4, "rgba(80,160,255,0.5)");
+    eg.addColorStop(1, "rgba(60,100,200,0)");
+    ctx.fillStyle = eg;
+    ctx.fillRect(-80, -35, 70, 70);
+    ctx.restore();
+    // hull dark
+    const hg = ctx.createLinearGradient(0, -14, 0, 14);
+    hg.addColorStop(0, "#2a2a3e");
+    hg.addColorStop(0.5, "#15151f");
+    hg.addColorStop(1, "#0a0a14");
+    ctx.fillStyle = hg;
     ctx.beginPath();
-    ctx.moveTo(-30, 0);
-    ctx.lineTo(20, -12);
-    ctx.lineTo(40, 0);
-    ctx.lineTo(20, 12);
+    ctx.moveTo(-32, 0);
+    ctx.lineTo(18, -14);
+    ctx.lineTo(42, 0);
+    ctx.lineTo(18, 14);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = "#3a3a55";
-    ctx.fillRect(-25, -4, 35, 8);
-    // engine glow
-    const eg = ctx.createRadialGradient(-30, 0, 0, -30, 0, 25);
-    eg.addColorStop(0, "rgba(120,200,255,0.9)");
-    eg.addColorStop(1, "rgba(120,200,255,0)");
-    ctx.fillStyle = eg;
-    ctx.fillRect(-60, -25, 50, 50);
-    // blinking light
-    if (Math.floor(tick / 12) % 2 === 0) {
-      ctx.fillStyle = "#ff4040";
+    // top fin
+    ctx.fillStyle = "#3d3d55";
+    ctx.beginPath();
+    ctx.moveTo(-10, -10);
+    ctx.lineTo(8, -22);
+    ctx.lineTo(20, -10);
+    ctx.closePath();
+    ctx.fill();
+    // cockpit glow (cyan)
+    const cg = ctx.createRadialGradient(15, 0, 0, 15, 0, 8);
+    cg.addColorStop(0, "rgba(120,255,220,0.9)");
+    cg.addColorStop(1, "rgba(120,255,220,0)");
+    ctx.fillStyle = cg;
+    ctx.fillRect(5, -8, 25, 16);
+    // blinking red beacon
+    if (Math.floor(tick / 10) % 2 === 0) {
+      ctx.fillStyle = "#ff3030";
       ctx.beginPath();
-      ctx.arc(15, -10, 2.5, 0, Math.PI * 2);
+      ctx.arc(12, -12, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,60,60,0.4)";
+      ctx.beginPath();
+      ctx.arc(12, -12, 6, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
