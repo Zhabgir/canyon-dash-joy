@@ -3611,7 +3611,11 @@ function drawJet(
     const w = 78;
     const h = (jet.naturalHeight / jet.naturalWidth) * w;
     const tinted = getTintedJet(jet, skin);
+    // Sprite faces left in source — flip horizontally so nose points in flight direction (+x)
+    ctx.save();
+    ctx.scale(-1, 1);
     ctx.drawImage(tinted, -w / 2, -h / 2, w, h);
+    ctx.restore();
   } else {
     // Fallback while image loads — simple silhouette
     ctx.fillStyle = "#2a6a72";
