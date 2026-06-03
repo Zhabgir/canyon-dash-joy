@@ -850,6 +850,7 @@ function Game() {
     bigMissiles.current = [];
     nextBossScore.current = 5000;
     bossHitCd.current = 0;
+    speedBoostStartScore.current = null;
     setBossHud(null);
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     usedRevive.current = false;
