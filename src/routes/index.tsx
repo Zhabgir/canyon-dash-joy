@@ -3341,168 +3341,206 @@ function drawJet(
     return;
   }
 
-  // horizontal stabilizers
-  ctx.fillStyle = "#39424d";
+  // ============ REALISTIC ROCKET (points +x = flight direction) ============
+  // Coordinate system: nose at +x, exhaust at -x, body height ~14
+  const f0 = skin.fuse[0], f1 = skin.fuse[1], f2 = skin.fuse[2];
+  const w0 = skin.wing[0], w1 = skin.wing[1], w2 = skin.wing[2];
+
+  // outer glow halo tinted with accent
+  const halo = ctx.createRadialGradient(0, 0, 6, 0, 0, 34);
+  halo.addColorStop(0, withAlpha(skin.accent, 0.28));
+  halo.addColorStop(1, withAlpha(skin.accent, 0));
+  ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.moveTo(-12, -3);
-  ctx.lineTo(-24, -11);
-  ctx.lineTo(-22, -11);
-  ctx.lineTo(-10, -3);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(-12, 3);
-  ctx.lineTo(-24, 11);
-  ctx.lineTo(-22, 11);
-  ctx.lineTo(-10, 3);
-  ctx.closePath();
+  ctx.arc(0, 0, 34, 0, Math.PI * 2);
   ctx.fill();
 
-  // main swept wings
-  const wing = ctx.createLinearGradient(0, -20, 0, 20);
-  wing.addColorStop(0, skin.wing[0]);
-  wing.addColorStop(0.5, skin.wing[1]);
-  wing.addColorStop(1, skin.wing[2]);
-  ctx.fillStyle = wing;
-  ctx.beginPath();
-  ctx.moveTo(8, -4);
-  ctx.lineTo(-3, -22);
-  ctx.lineTo(-15, -22);
-  ctx.lineTo(-14, -16);
-  ctx.lineTo(-7, -4);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(8, 4);
-  ctx.lineTo(-3, 22);
-  ctx.lineTo(-15, 22);
-  ctx.lineTo(-14, 16);
-  ctx.lineTo(-7, 4);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.strokeStyle = "rgba(0,0,0,0.4)";
-  ctx.lineWidth = 0.7;
-  ctx.beginPath();
-  ctx.moveTo(0, -6);
-  ctx.lineTo(-8, -20);
-  ctx.moveTo(0, 6);
-  ctx.lineTo(-8, 20);
-  ctx.stroke();
-
-  // wing-mounted missiles
-  for (const wy of [-15, 13]) {
-    ctx.fillStyle = "#262b33";
+  // ---- Side boosters (twin) ----
+  for (const by of [-9, 9]) {
+    const bg = ctx.createLinearGradient(0, by - 3, 0, by + 3);
+    bg.addColorStop(0, f0);
+    bg.addColorStop(0.5, w1);
+    bg.addColorStop(1, f2);
+    ctx.fillStyle = bg;
     ctx.beginPath();
-    ctx.moveTo(9, wy);
-    ctx.lineTo(-10, wy);
-    ctx.lineTo(-12, wy + 1);
-    ctx.lineTo(-10, wy + 2);
-    ctx.lineTo(9, wy + 2);
+    ctx.moveTo(14, by);                  // booster nose tip
+    ctx.lineTo(10, by - 3);
+    ctx.lineTo(-16, by - 3);
+    ctx.lineTo(-19, by - 1);             // exhaust mouth top
+    ctx.lineTo(-19, by + 1);
+    ctx.lineTo(-16, by + 3);
+    ctx.lineTo(10, by + 3);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = "#e34a3a";
+    // dark exhaust ring
+    ctx.fillStyle = "#0a0a0e";
     ctx.beginPath();
-    ctx.moveTo(12, wy + 1);
-    ctx.lineTo(9, wy);
-    ctx.lineTo(9, wy + 2);
-    ctx.closePath();
+    ctx.ellipse(-19, by, 1.4, 2, 0, 0, Math.PI * 2);
     ctx.fill();
+    // accent stripe
+    ctx.strokeStyle = withAlpha(skin.accent, 0.85);
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(8, by - 2);
+    ctx.lineTo(-14, by - 2);
+    ctx.stroke();
   }
 
-  // fuselage
-  const fuse = ctx.createLinearGradient(0, -6, 0, 6);
-  fuse.addColorStop(0, skin.fuse[0]);
-  fuse.addColorStop(0.5, skin.fuse[1]);
-  fuse.addColorStop(1, skin.fuse[2]);
-  ctx.fillStyle = fuse;
+  // ---- Tail fins ----
+  const finGrad = ctx.createLinearGradient(0, -16, 0, 16);
+  finGrad.addColorStop(0, w0);
+  finGrad.addColorStop(0.5, w1);
+  finGrad.addColorStop(1, w2);
+  ctx.fillStyle = finGrad;
+  // upper fin
   ctx.beginPath();
-  ctx.moveTo(28, 0);
-  ctx.lineTo(22, -3);
-  ctx.lineTo(7, -6);
-  ctx.lineTo(-18, -5);
-  ctx.lineTo(-20, -3);
-  ctx.lineTo(-20, 3);
-  ctx.lineTo(-18, 5);
-  ctx.lineTo(7, 6);
+  ctx.moveTo(-8, -4);
+  ctx.lineTo(-22, -16);
+  ctx.lineTo(-20, -16);
+  ctx.lineTo(-12, -4);
+  ctx.closePath();
+  ctx.fill();
+  // lower fin
+  ctx.beginPath();
+  ctx.moveTo(-8, 4);
+  ctx.lineTo(-22, 16);
+  ctx.lineTo(-20, 16);
+  ctx.lineTo(-12, 4);
+  ctx.closePath();
+  ctx.fill();
+  // fin tip accent
+  ctx.fillStyle = skin.accent;
+  ctx.beginPath();
+  ctx.moveTo(-22, -16);
+  ctx.lineTo(-20, -16);
+  ctx.lineTo(-19, -13);
+  ctx.lineTo(-21, -13);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-22, 16);
+  ctx.lineTo(-20, 16);
+  ctx.lineTo(-19, 13);
+  ctx.lineTo(-21, 13);
+  ctx.closePath();
+  ctx.fill();
+
+  // ---- Main fuselage ----
+  const fuseG = ctx.createLinearGradient(0, -7, 0, 7);
+  fuseG.addColorStop(0, f0);
+  fuseG.addColorStop(0.45, f1);
+  fuseG.addColorStop(1, f2);
+  ctx.fillStyle = fuseG;
+  ctx.beginPath();
+  ctx.moveTo(22, -3);                    // shoulder before nose
+  ctx.lineTo(8, -7);
+  ctx.lineTo(-18, -7);
+  ctx.lineTo(-20, -5);
+  ctx.lineTo(-20, 5);
+  ctx.lineTo(-18, 7);
+  ctx.lineTo(8, 7);
   ctx.lineTo(22, 3);
   ctx.closePath();
   ctx.fill();
 
-  // panel lines along fuselage
-  ctx.strokeStyle = "rgba(0,0,0,0.25)";
-  ctx.lineWidth = 0.6;
+  // top-light specular highlight
+  const spec = ctx.createLinearGradient(0, -7, 0, -2);
+  spec.addColorStop(0, "rgba(255,255,255,0.55)");
+  spec.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = spec;
   ctx.beginPath();
-  ctx.moveTo(20, -2);
-  ctx.lineTo(-16, -2);
-  ctx.moveTo(20, 2);
-  ctx.lineTo(-16, 2);
-  ctx.stroke();
-
-  // intakes
-  ctx.fillStyle = "#13171c";
-  ctx.beginPath();
-  ctx.ellipse(-3, -5, 5, 1.6, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(-3, 5, 5, 1.6, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // tail fin
-  ctx.fillStyle = "#525c67";
-  ctx.beginPath();
-  ctx.moveTo(-8, 0);
-  ctx.lineTo(-19, -1);
-  ctx.lineTo(-14, 1);
+  ctx.moveTo(20, -3);
+  ctx.lineTo(8, -6);
+  ctx.lineTo(-18, -6);
+  ctx.lineTo(-18, -3);
+  ctx.lineTo(8, -3);
   ctx.closePath();
   ctx.fill();
 
-  // nose cone
-  ctx.fillStyle = "#6b7480";
+  // bottom shading
+  ctx.fillStyle = "rgba(0,0,0,0.22)";
   ctx.beginPath();
-  ctx.moveTo(28, 0);
-  ctx.lineTo(20, -2);
-  ctx.lineTo(20, 2);
+  ctx.moveTo(20, 3);
+  ctx.lineTo(8, 6);
+  ctx.lineTo(-18, 6);
+  ctx.lineTo(-18, 7);
+  ctx.lineTo(8, 7);
+  ctx.lineTo(20, 3);
   ctx.closePath();
   ctx.fill();
 
-  // canopy
-  const canopy = ctx.createLinearGradient(4, -3, 14, 3);
-  canopy.addColorStop(0, "#163460");
-  canopy.addColorStop(0.6, "#5b8fc9");
-  canopy.addColorStop(1, "#0c1c36");
-  ctx.fillStyle = canopy;
+  // panel/rivet lines
+  ctx.strokeStyle = "rgba(0,0,0,0.32)";
+  ctx.lineWidth = 0.5;
   ctx.beginPath();
-  ctx.ellipse(9, 0, 6.5, 3.2, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(0,0,0,0.6)";
-  ctx.lineWidth = 0.7;
+  ctx.moveTo(20, 0); ctx.lineTo(-18, 0);
+  ctx.moveTo(2, -7); ctx.lineTo(2, 7);
+  ctx.moveTo(-8, -7); ctx.lineTo(-8, 7);
   ctx.stroke();
+
+  // accent body stripe
+  ctx.fillStyle = skin.accent;
+  ctx.fillRect(-15, -1.2, 30, 2.4);
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.fillRect(-15, 0.6, 30, 0.4);
+
+  // ---- Nose cone ----
+  const noseG = ctx.createLinearGradient(15, -3, 15, 3);
+  noseG.addColorStop(0, "#ffffff");
+  noseG.addColorStop(0.4, skin.accent);
+  noseG.addColorStop(1, f2);
+  ctx.fillStyle = noseG;
+  ctx.beginPath();
+  ctx.moveTo(30, 0);                     // nose tip
+  ctx.lineTo(22, -3);
+  ctx.quadraticCurveTo(26, 0, 22, 3);
+  ctx.closePath();
+  ctx.fill();
+  // nose tip highlight
   ctx.fillStyle = "rgba(255,255,255,0.7)";
   ctx.beginPath();
-  ctx.ellipse(10, -1.3, 2.8, 0.9, -0.2, 0, Math.PI * 2);
+  ctx.arc(27, -1, 1.2, 0, Math.PI * 2);
   ctx.fill();
 
-  // roundel
-  ctx.fillStyle = "#d0d8e0";
+  // ---- Cockpit / viewport ----
+  const cock = ctx.createRadialGradient(10, -1, 0.5, 10, 0, 4);
+  cock.addColorStop(0, "#bfe8ff");
+  cock.addColorStop(0.55, "#2a78c8");
+  cock.addColorStop(1, "#0a1a3a");
+  ctx.fillStyle = cock;
   ctx.beginPath();
-  ctx.arc(-2, 0, 1.7, 0, Math.PI * 2);
+  ctx.ellipse(10, 0, 4, 3.2, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = skin.accent;
+  ctx.strokeStyle = "rgba(0,0,0,0.6)";
+  ctx.lineWidth = 0.6;
+  ctx.stroke();
+  // glint
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
   ctx.beginPath();
-  ctx.arc(-2, 0, 0.9, 0, Math.PI * 2);
+  ctx.ellipse(11, -1.4, 1.4, 0.7, -0.2, 0, Math.PI * 2);
   ctx.fill();
 
-  // emoji decal on fuselage
-  if (skin.emoji) {
-    ctx.save();
-    ctx.rotate(Math.PI / 2);
-    ctx.font = "9px serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(skin.emoji, 0, 2);
-    ctx.restore();
-  }
+  // ---- Main engine bell ----
+  ctx.fillStyle = "#1a1a1f";
+  ctx.beginPath();
+  ctx.moveTo(-18, -5);
+  ctx.lineTo(-23, -6);
+  ctx.lineTo(-23, 6);
+  ctx.lineTo(-18, 5);
+  ctx.closePath();
+  ctx.fill();
+  // bell rim
+  ctx.fillStyle = "#3a3a45";
+  ctx.fillRect(-23.5, -6, 1, 12);
+  // hot core
+  const core = ctx.createRadialGradient(-22, 0, 0.5, -22, 0, 4);
+  core.addColorStop(0, "rgba(255,240,180,0.95)");
+  core.addColorStop(1, "rgba(255,80,20,0)");
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.ellipse(-22, 0, 3.5, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
 
   // shield bubble
   if (hasShield) {
