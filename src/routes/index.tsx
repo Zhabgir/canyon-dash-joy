@@ -2042,7 +2042,7 @@ function Game() {
 
         {state === "menu" && (
           <div className="absolute inset-0 z-10 overflow-hidden rounded-lg bg-black">
-            <div className="relative mx-auto h-full" style={{ aspectRatio: "1341/1173" }}>
+            <div className="relative mx-auto h-full" style={{ aspectRatio: "1200/896" }}>
               <img
                 src={menuBgAsset.url}
                 alt="Space Rush menu"
@@ -2053,30 +2053,31 @@ function Game() {
               <button
                 onClick={start}
                 aria-label="Play"
-                className="absolute left-[30.6%] top-[55%] h-[12.4%] w-[36.9%] rounded-full transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+                className="absolute left-[30.8%] top-[52%] h-[14%] w-[38.5%] rounded-full transition-transform hover:scale-105 active:scale-95 focus:outline-none"
               />
               {/* Bottom menu hotspots */}
               <button
                 onClick={() => setShopTab("skins")}
                 aria-label="Скины"
-                className="absolute left-[5.6%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+                className="absolute left-[5.8%] top-[71%] h-[9%] w-[22.5%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
               />
               <button
                 onClick={() => setShopTab("maps")}
                 aria-label="Карты"
-                className="absolute left-[28.3%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+                className="absolute left-[30%] top-[71%] h-[9%] w-[18.8%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
               />
               <button
                 onClick={() => setShopTab("vehicles")}
                 aria-label="Транспорт"
-                className="absolute left-[51.1%] top-[72%] h-[8.1%] w-[20.5%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+                className="absolute left-[50%] top-[71%] h-[9%] w-[22.5%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
               />
               <button
                 onClick={() => setQuestsOpen(true)}
                 aria-label="Задания"
-                className="absolute left-[73.5%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+                className="absolute left-[74%] top-[71%] h-[9%] w-[20%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
               />
             </div>
+
           </div>
         )}
 
