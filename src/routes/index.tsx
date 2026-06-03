@@ -1149,7 +1149,7 @@ function Game() {
         const startS = speedBoostStartScore.current;
         const boostScore = startS == null ? 0 : Math.min(4000, Math.max(0, curScoreNow - startS));
         const speedMult = 1 + Math.floor(boostScore / 100) * 0.02;
-        const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + distance.current / 6000);
+        const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + (boostScore * 10) / 6000);
         const speed = baseSpeed * timeScale * speedMult;
 
         offset.current += speed;
