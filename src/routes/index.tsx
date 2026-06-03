@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import gameIcon from "../assets/game-icon.png";
 import menuBgAsset from "../assets/space-menu-bg.png.asset.json";
 import playerJetSrc from "../assets/player-jet.png";
+import asgoreMusic from "../assets/asgore.mp3.asset.json";
 
 // Cached player jet sprite (loaded once)
 let _jetImg: HTMLImageElement | null = null;
@@ -2123,7 +2124,7 @@ function Game() {
   return (
     <div className="fixed inset-0 bg-black">
       <div className="relative h-full w-full overflow-hidden">
-        <audio ref={musicRef} src="/music/asgore.mp3" preload="auto" loop />
+        <audio ref={musicRef} src={asgoreMusic.url} preload="auto" loop />
         <canvas
           ref={canvasRef}
           width={W}
