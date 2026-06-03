@@ -1479,6 +1479,9 @@ function Game() {
               setBossHud(null);
               nextBossScore.current += 5000;
               bigMissiles.current = [];
+              if (speedBoostStartScore.current == null) {
+                speedBoostStartScore.current = Math.floor(distance.current / 10);
+              }
             }
           }
 
