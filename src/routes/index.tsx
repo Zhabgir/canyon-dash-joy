@@ -2023,44 +2023,157 @@ function Game() {
 
         {state === "menu" && (
           <div className="absolute inset-0 z-10 overflow-hidden rounded-lg bg-black">
-            <div className="relative mx-auto h-full" style={{ aspectRatio: "1200/896" }}>
-              <img
-                src={menuBgAsset.url}
-                alt="Space Rush menu"
-                draggable={false}
-                className="absolute inset-0 h-full w-full object-contain select-none pointer-events-none"
-              />
-              {/* PLAY button hotspot */}
-              <button
-                onClick={start}
-                aria-label="Play"
-                className="absolute left-[30.8%] top-[52%] h-[14%] w-[38.5%] rounded-full transition-transform hover:scale-105 active:scale-95 focus:outline-none"
-              />
-              {/* Bottom menu hotspots */}
-              <button
-                onClick={() => setShopTab("skins")}
-                aria-label="Скины"
-                className="absolute left-[5.8%] top-[71%] h-[9%] w-[22.5%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
-              />
-              <button
-                onClick={() => setShopTab("maps")}
-                aria-label="Карты"
-                className="absolute left-[30%] top-[71%] h-[9%] w-[18.8%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
-              />
-              <button
-                onClick={() => setShopTab("vehicles")}
-                aria-label="Транспорт"
-                className="absolute left-[50%] top-[71%] h-[9%] w-[22.5%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
-              />
-              <button
-                onClick={() => setQuestsOpen(true)}
-                aria-label="Задания"
-                className="absolute left-[74%] top-[71%] h-[9%] w-[20%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
-              />
+            {/* Background image */}
+            <img
+              src={menuBgAsset.url}
+              alt=""
+              draggable={false}
+              className="absolute inset-0 h-full w-full object-cover select-none pointer-events-none opacity-80"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/70 pointer-events-none" />
+
+            {/* Top-right coins */}
+            <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-full border border-yellow-300/60 bg-black/70 px-3 py-1.5 font-mono text-sm font-bold text-yellow-200 backdrop-blur-sm shadow-lg shadow-yellow-500/20">
+              <span className="text-base">🪙</span>
+              <span>{wallet.toLocaleString()}</span>
             </div>
 
+            {/* Title */}
+            <div className="absolute left-1/2 top-[8%] -translate-x-1/2 text-center">
+              <h1 className="bg-gradient-to-b from-cyan-200 via-purple-300 to-pink-400 bg-clip-text text-4xl font-black uppercase tracking-[0.2em] text-transparent drop-shadow-[0_4px_12px_rgba(168,85,247,0.5)] sm:text-5xl md:text-6xl">
+                Space Rush
+              </h1>
+              <div className="mt-1 text-[10px] uppercase tracking-[0.4em] text-white/50">
+                Космический забег
+              </div>
+            </div>
+
+            {/* PLAY button */}
+            <button
+              onClick={start}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 group relative overflow-hidden rounded-full bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 px-12 py-4 text-2xl font-black uppercase tracking-widest text-white shadow-[0_10px_40px_-5px_rgba(236,72,153,0.6)] ring-2 ring-white/30 transition-transform hover:scale-110 active:scale-95 focus:outline-none sm:px-16 sm:py-5 sm:text-3xl"
+            >
+              <span className="relative z-10 drop-shadow-md">▶ Играть</span>
+              <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            </button>
+
+            {/* Shop row (4 buttons) */}
+            <div className="absolute inset-x-3 bottom-[15%] z-20 grid grid-cols-4 gap-2 sm:gap-3">
+              {[
+                { label: "Скины", icon: "👤", onClick: () => setShopTab("skins") },
+                { label: "Карты", icon: "🗺️", onClick: () => setShopTab("maps") },
+                { label: "Транспорт", icon: "🚀", onClick: () => setShopTab("vehicles") },
+                { label: "Задания", icon: "📋", onClick: () => setQuestsOpen(true) },
+              ].map((b) => (
+                <button
+                  key={b.label}
+                  onClick={b.onClick}
+                  className="group flex flex-col items-center justify-center gap-1 rounded-xl border border-purple-400/40 bg-black/60 px-2 py-3 text-white backdrop-blur-sm transition-all hover:scale-105 hover:border-purple-300 hover:bg-purple-900/40 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                >
+                  <span className="text-2xl transition-transform group-hover:scale-110">{b.icon}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider sm:text-xs">{b.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Bottom row: Stats, Settings, Leave */}
+            <div className="absolute inset-x-3 bottom-3 z-20 flex items-center justify-center gap-2">
+              <button
+                onClick={() => setStatsOpen(true)}
+                className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-semibold text-white/85 backdrop-blur-sm transition-all hover:scale-105 hover:bg-black/80 active:scale-95"
+              >
+                <span>📊</span> Статистика
+              </button>
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-semibold text-white/85 backdrop-blur-sm transition-all hover:scale-105 hover:bg-black/80 active:scale-95"
+              >
+                <span>⚙️</span> Настройки
+              </button>
+              {user ? (
+                <button
+                  onClick={() => supabase.auth.signOut()}
+                  className="flex items-center gap-1.5 rounded-full border border-red-400/40 bg-black/60 px-3 py-1.5 text-xs font-semibold text-red-200 backdrop-blur-sm transition-all hover:scale-105 hover:bg-red-950/60 active:scale-95"
+                >
+                  <span>🚪</span> Выйти
+                </button>
+              ) : (
+                <Link
+                  to="/auth"
+                  className="flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-black/60 px-3 py-1.5 text-xs font-semibold text-cyan-200 backdrop-blur-sm transition-all hover:scale-105 hover:bg-cyan-950/60 active:scale-95"
+                >
+                  <span>🔑</span> Войти
+                </Link>
+              )}
+            </div>
           </div>
         )}
+
+        {/* Stats overlay */}
+        {state === "menu" && statsOpen && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setStatsOpen(false)}>
+            <div
+              className="relative w-[90%] max-w-sm rounded-2xl border border-purple-400/40 bg-gradient-to-b from-slate-900 to-purple-950 p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="mb-4 text-center text-xl font-black uppercase tracking-widest text-cyan-200">📊 Статистика</h2>
+              <div className="space-y-3 font-mono text-sm">
+                <div className="flex justify-between rounded-lg bg-black/40 px-3 py-2 text-white/90">
+                  <span className="text-white/60">Рекорд</span>
+                  <span className="font-bold text-yellow-200">{best.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between rounded-lg bg-black/40 px-3 py-2 text-white/90">
+                  <span className="text-white/60">Лучшие монеты</span>
+                  <span className="font-bold text-yellow-200">🪙 {bestCoins}</span>
+                </div>
+                <div className="flex justify-between rounded-lg bg-black/40 px-3 py-2 text-white/90">
+                  <span className="text-white/60">Баланс</span>
+                  <span className="font-bold text-yellow-200">🪙 {wallet}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setStatsOpen(false)}
+                className="mt-5 w-full rounded-full bg-purple-600 px-4 py-2 text-sm font-bold uppercase tracking-wider text-white hover:bg-purple-500 active:scale-95"
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Settings overlay */}
+        {state === "menu" && settingsOpen && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setSettingsOpen(false)}>
+            <div
+              className="relative w-[90%] max-w-sm rounded-2xl border border-purple-400/40 bg-gradient-to-b from-slate-900 to-purple-950 p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="mb-4 text-center text-xl font-black uppercase tracking-widest text-cyan-200">⚙️ Настройки</h2>
+              <div className="space-y-3">
+                <button
+                  onClick={() => setMuted((m) => !m)}
+                  className="flex w-full items-center justify-between rounded-lg bg-black/40 px-4 py-3 text-white hover:bg-black/60"
+                >
+                  <span className="font-semibold">Звук</span>
+                  <span className="text-lg">{muted ? "🔇 Выкл" : "🔊 Вкл"}</span>
+                </button>
+                {user && (
+                  <div className="rounded-lg bg-black/40 px-4 py-3 text-sm text-white/70">
+                    <div className="text-[10px] uppercase tracking-widest text-white/40">Аккаунт</div>
+                    <div className="mt-1 truncate font-mono">{user.user_metadata?.display_name || user.email}</div>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setSettingsOpen(false)}
+                className="mt-5 w-full rounded-full bg-purple-600 px-4 py-2 text-sm font-bold uppercase tracking-wider text-white hover:bg-purple-500 active:scale-95"
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        )}
+
 
         {state === "menu" && shopTab && (
           <ShopOverlay
