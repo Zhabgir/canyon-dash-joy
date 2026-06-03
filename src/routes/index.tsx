@@ -1626,15 +1626,15 @@ function Game() {
         engineRef.current.osc.frequency.setTargetAtTime(targetFreq, audioCtxRef.current.currentTime, 0.08);
       }
 
-      if (shake.current > 0) shake.current--;
+      if (shake.current > 0) shake.current = Math.max(0, shake.current - 1.6);
       if (flash.current > 0) flash.current--;
 
       // ============ RENDER ============
       ctx.save();
-      if (shake.current > 0) {
+      if (shake.current > 0.4) {
         ctx.translate(
-          (Math.random() - 0.5) * shake.current * 0.8,
-          (Math.random() - 0.5) * shake.current * 0.8,
+          (Math.random() - 0.5) * shake.current * 0.35,
+          (Math.random() - 0.5) * shake.current * 0.35,
         );
       }
 
