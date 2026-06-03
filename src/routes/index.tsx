@@ -993,6 +993,10 @@ function Game() {
 
         offset.current += speed;
         distance.current += speed * (boost.current > 0 ? 1.4 : 1); // boost gives bonus score
+        const elapsed = Date.now() - warpStartTime.current;
+        if (elapsed < 5000) {
+          distance.current += 1000 / 60;
+        }
         while (offset.current >= SEG_W) {
           offset.current -= SEG_W;
           segments.current.shift();
