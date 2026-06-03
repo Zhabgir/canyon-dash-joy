@@ -1611,13 +1611,25 @@ function Game() {
 
       // stars
       for (const s of stars.current) {
-        const col = isOther
-          ? `hsla(${(tick.current * 3 + s.x) % 360}, 100%, 75%, ${0.4 + s.z * 0.6})`
-          : isCher
-            ? `rgba(80,90,70,${0.15 + s.z * 0.25})`
-            : `rgba(255,235,210,${0.3 + s.z * 0.7})`;
-        ctx.fillStyle = col;
-        ctx.fillRect(s.x, s.y, s.s, s.s);
+        if (s.s > 5) {
+          // Big beautiful star / sun
+          const glow = ctx.createRadialGradient(s.x, s.y, s.s * 0.15, s.x, s.y, s.s);
+          glow.addColorStop(0, "rgba(255,255,240,1)");
+          glow.addColorStop(0.2, "rgba(255,245,180,0.95)");
+          glow.addColorStop(0.4, "rgba(255,200,80,0.7)");
+          glow.addColorStop(0.7, "rgba(255,100,40,0.25)");
+          glow.addColorStop(1, "rgba(255,60,20,0)");
+          ctx.fillStyle = glow;
+          ctx.fillRect(s.x - s.s, s.y - s.s, s.s * 2, s.s * 2);
+        } else {
+          const col = isOther
+            ? `hsla(${(tick.current * 3 + s.x) % 360}, 100%, 75%, ${0.4 + s.z * 0.6})`
+            : isCher
+              ? `rgba(80,90,70,${0.15 + s.z * 0.25})`
+              : `rgba(255,235,210,${0.3 + s.z * 0.7})`;
+          ctx.fillStyle = col;
+          ctx.fillRect(s.x, s.y, s.s, s.s);
+        }
       }
 
       // distant mountain silhouettes (background parallax)
