@@ -2113,12 +2113,22 @@ function Game() {
     if (!a) return;
     a.volume = 0.45;
     a.loop = true;
+    const restartMusic = () => {
+      if (state === "playing") {
+        a.currentTime = 0;
+        a.play().catch(() => {});
+      }
+    };
+    a.addEventListener("ended", restartMusic);
     if (state === "playing") {
       a.play().catch(() => {});
     } else if (state === "menu" || state === "over") {
       a.pause();
       if (state === "over") a.currentTime = 0;
     }
+    return () => {
+      a.removeEventListener("ended", restartMusic);
+    };
   }, [state]);
 
   return (
