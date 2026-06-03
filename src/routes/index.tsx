@@ -1222,8 +1222,9 @@ function Game() {
           const m = missiles.current[i];
           m.trail.push({ x: m.x, y: m.y });
           if (m.trail.length > 12) m.trail.shift();
-          m.x += m.vx * timeScale;
-          m.y += m.vy * timeScale;
+          const mSpeedMult = 1 + Math.floor(distance.current / 1000) * 0.02;
+          m.x += m.vx * timeScale * mSpeedMult;
+          m.y += m.vy * timeScale * mSpeedMult;
           if (m.x < -40 || m.x > W + 80 || m.y < -40 || m.y > H + 40) {
             missiles.current.splice(i, 1);
             continue;
