@@ -2268,9 +2268,12 @@ function Game() {
   );
 }
 
-function Overlay({ children }: { children: React.ReactNode }) {
+function Overlay({ children, bgImage }: { children: React.ReactNode; bgImage?: string }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden rounded-lg bg-black/60 px-3 backdrop-blur-sm">
+    <div
+      className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden rounded-lg bg-black/60 px-3 backdrop-blur-sm"
+      style={bgImage ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${bgImage})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+    >
       {children}
     </div>
   );
