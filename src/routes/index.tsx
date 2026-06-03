@@ -400,6 +400,8 @@ function Game() {
   const [mapId, setMapId] = useState<string>("space");
   const [shopTab, setShopTab] = useState<null | "skins" | "maps" | "vehicles">(null);
   const [questsOpen, setQuestsOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [questState, setQuestState] = useState<QuestState>({ date: todayStr(), quests: [] });
   const [totalDistance, setTotalDistance] = useState(0);
   const totalCoinsRef = useRef(0);
