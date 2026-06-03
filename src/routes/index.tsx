@@ -2052,7 +2052,7 @@ function Game() {
         )}
 
         {state === "menu" && (
-          <Overlay>
+          <Overlay bgImage={menuBgAsset.url}>
             <div className="relative flex flex-col items-center gap-3">
               <div className="relative">
                 <img
