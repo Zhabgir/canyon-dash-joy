@@ -2512,7 +2512,7 @@ function drawRareEvent(
     ctx.globalCompositeOperation = "lighter";
     const streak = ctx.createLinearGradient(0, cy, W, cy);
     streak.addColorStop(0, "rgba(255,220,160,0)");
-    streak.addColorStop(cx / W, "rgba(255,250,220,0.6)");
+    streak.addColorStop(Math.max(0, Math.min(1, cx / W)), "rgba(255,250,220,0.6)");
     streak.addColorStop(1, "rgba(255,220,160,0)");
     ctx.fillStyle = streak;
     ctx.fillRect(0, cy - 2, W, 4);
