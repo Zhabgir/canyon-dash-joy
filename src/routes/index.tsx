@@ -2225,6 +2225,50 @@ function Game() {
           </button>
         )}
 
+        {/* in-game pause button */}
+        {state === "playing" && (
+          <button
+            onClick={pauseGame}
+            className="absolute top-3 right-3 z-20 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-bold text-white/90 backdrop-blur-sm hover:bg-black/80"
+            aria-label="Pause"
+          >
+            ⏸ СТОП
+          </button>
+        )}
+
+        {/* Pause overlay */}
+        {state === "paused" && (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm">
+            <div className="font-mono text-3xl font-extrabold uppercase tracking-widest text-white">
+              Пауза
+            </div>
+            <button
+              onClick={resumeGame}
+              className="rounded-full border border-white/30 bg-white px-8 py-3 font-mono text-lg font-bold uppercase tracking-wide text-black hover:bg-white/90"
+            >
+              ▶ Продолжить
+            </button>
+            <button
+              onClick={() => {
+                setResumeCountdown(null);
+                setState("menu");
+              }}
+              className="rounded-full border border-white/30 bg-black/60 px-6 py-2 font-mono text-sm text-white/80 hover:bg-black/80"
+            >
+              В меню
+            </button>
+          </div>
+        )}
+
+        {/* Resume countdown */}
+        {resumeCountdown !== null && (
+          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/40">
+            <div className="font-mono text-8xl font-extrabold text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
+              {resumeCountdown}
+            </div>
+          </div>
+        )}
+
 
         {/* touch zones — only active during play */}
         {state === "playing" && (
