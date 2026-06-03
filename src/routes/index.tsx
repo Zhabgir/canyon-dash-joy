@@ -549,7 +549,7 @@ function Game() {
   const nextBossScore = useRef(5000);
   const bossHitCd = useRef(0); // i-frames after ramming boss
   const [bossHud, setBossHud] = useState<{ hp: number; max: number } | null>(null);
-  const warpStartTime = useRef<number>(0);
+  
   
   const portalY = (p: PortalEntity) => {
     const px = p.worldX - distance.current;
@@ -718,7 +718,6 @@ function Game() {
     ensureAudio();
     if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
     startEngine();
-    warpStartTime.current = Date.now();
     setState("playing");
   }, [resetWorld, ensureAudio, startEngine]);
 
@@ -993,10 +992,6 @@ function Game() {
 
         offset.current += speed;
         distance.current += speed * (boost.current > 0 ? 1.4 : 1); // boost gives bonus score
-        const elapsed = Date.now() - warpStartTime.current;
-        if (elapsed < 5000) {
-          distance.current += 1000 / 60;
-        }
         while (offset.current >= SEG_W) {
           offset.current -= SEG_W;
           segments.current.shift();
