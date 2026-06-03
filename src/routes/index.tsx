@@ -2262,6 +2262,12 @@ function Game() {
                   <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                   <span className="relative text-2xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] transition-transform group-hover:scale-125 group-hover:rotate-6">{b.icon}</span>
                   <span className="relative text-[10px] font-black uppercase tracking-wider drop-shadow-md sm:text-xs">{b.label}</span>
+                  {b.badge && (
+                    <span className="absolute right-1 top-1 flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white/80" />
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
