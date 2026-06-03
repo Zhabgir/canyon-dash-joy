@@ -1452,6 +1452,9 @@ function Game() {
       ctx.fillStyle = mist;
       ctx.fillRect(0, H * 0.6, W, H * 0.4);
 
+      // rare space events (visual only — no text)
+      if (rareEvent.current) drawRareEvent(ctx, rareEvent.current, tick.current);
+
       // powerups, coins, portals, missiles
       for (const p of powers.current) drawPowerup(ctx, p);
       for (const c of coinsRef.current) drawCoin(ctx, c);
