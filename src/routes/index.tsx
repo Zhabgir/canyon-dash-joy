@@ -2123,7 +2123,7 @@ function Game() {
   return (
     <div className="fixed inset-0 bg-black">
       <div className="relative h-full w-full overflow-hidden">
-        <audio ref={musicRef} src="/music/asgore.mp3" preload="auto" loop />
+        <audio ref={musicRef} src={asgoreMusic.url} preload="auto" loop />
         <canvas
           ref={canvasRef}
           width={W}
