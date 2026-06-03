@@ -1032,7 +1032,7 @@ function Game() {
 
         // ===== Missile spawn =====
         missileTimer.current -= 1 * timeScale;
-        if (missileTimer.current <= 0 && boost.current <= 0) {
+        if (missileTimer.current <= 0 && boost.current <= 0 && !boss.current) {
           const rightIdx = segments.current.length - 2;
           const segR = segments.current[rightIdx];
           const topY = segR ? segR.topH + 12 : 30;
