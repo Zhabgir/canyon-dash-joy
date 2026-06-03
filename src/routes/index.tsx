@@ -1991,18 +1991,6 @@ function Game() {
           </div>
         )}
 
-        {/* coins + active buffs */}
-        <div className="pointer-events-none absolute right-3 top-3 flex flex-col items-end gap-1.5 font-mono drop-shadow">
-          <div className="flex items-center gap-1.5 rounded-full border border-yellow-300/70 bg-black/60 px-3 py-1 text-sm font-bold text-yellow-300 backdrop-blur-sm">
-            <span className="text-base leading-none">●</span>
-            <span>{coins}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {hud.shield && <Badge color="#6bd4ff">⛨</Badge>}
-            {hud.slowmo > 0 && <Badge color="#b48bff">⧖ {Math.ceil(hud.slowmo / 60)}</Badge>}
-            {hud.boost > 0 && <Badge color="#ffce4a">⚡ {Math.ceil(hud.boost / 60)}</Badge>}
-          </div>
-        </div>
 
         {/* auth badge */}
         <div className="pointer-events-auto absolute left-3 bottom-3 z-20 flex items-center gap-2 font-mono text-[11px]">
