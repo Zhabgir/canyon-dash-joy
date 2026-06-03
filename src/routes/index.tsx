@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import gameIcon from "../assets/game-icon.png";
+import menuBgAsset from "../assets/space-menu-bg.png.asset.json";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -2040,66 +2041,41 @@ function Game() {
         )}
 
         {state === "menu" && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-between overflow-hidden rounded-lg bg-gradient-to-b from-[#0a0420] via-[#1a0a3a] to-[#04010f] p-6">
-            {/* Starfield background */}
-            <div className="pointer-events-none absolute inset-0 opacity-60"
-              style={{
-                backgroundImage:
-                  "radial-gradient(2px 2px at 20% 30%, white, transparent), radial-gradient(1px 1px at 60% 70%, white, transparent), radial-gradient(1.5px 1.5px at 80% 20%, #a5b4fc, transparent), radial-gradient(1px 1px at 35% 85%, white, transparent), radial-gradient(2px 2px at 90% 60%, #c4b5fd, transparent), radial-gradient(1px 1px at 10% 50%, white, transparent)",
-              }}
-            />
-            {/* Nebula glow */}
-            <div className="pointer-events-none absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-purple-600/30 blur-3xl" />
-            <div className="pointer-events-none absolute bottom-0 right-0 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl" />
-
-            {/* Top bar: currency */}
-            <div className="relative z-10 flex w-full justify-end">
-              <div className="flex items-center gap-2 rounded-full border border-yellow-400/40 bg-black/50 px-4 py-1.5 backdrop-blur">
-                <span className="text-lg">🪙</span>
-                <span className="font-mono text-base font-bold text-yellow-300">{wallet}</span>
-              </div>
-            </div>
-
-            {/* Title */}
-            <div className="relative z-10 flex flex-col items-center gap-2 text-center">
-              <h1 className="bg-gradient-to-b from-cyan-200 via-purple-300 to-pink-400 bg-clip-text text-5xl font-black uppercase tracking-[0.2em] text-transparent drop-shadow-[0_0_20px_rgba(168,85,247,0.6)] sm:text-6xl">
-                Space Rush
-              </h1>
-              <p className="text-xs font-medium uppercase tracking-[0.4em] text-cyan-300/70">
-                Cosmic Adventure
-              </p>
-            </div>
-
-            {/* Play button */}
-            <div className="relative z-10">
+          <div className="absolute inset-0 z-10 overflow-hidden rounded-lg bg-black">
+            <div className="relative mx-auto h-full" style={{ aspectRatio: "1341/1173" }}>
+              <img
+                src={menuBgAsset.url}
+                alt="Space Rush menu"
+                draggable={false}
+                className="absolute inset-0 h-full w-full object-contain select-none pointer-events-none"
+              />
+              {/* PLAY button hotspot */}
               <button
                 onClick={start}
-                className="group relative rounded-full bg-gradient-to-b from-orange-400 via-pink-500 to-purple-600 px-16 py-5 text-2xl font-black uppercase tracking-widest text-white shadow-[0_0_40px_rgba(236,72,153,0.6)] transition-all hover:scale-105 hover:shadow-[0_0_60px_rgba(236,72,153,0.9)] active:scale-95"
-              >
-                <span className="relative z-10">▶ Play</span>
-                <span className="absolute inset-0 rounded-full bg-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
-              </button>
-            </div>
-
-            {/* Bottom menu */}
-            <div className="relative z-10 grid w-full max-w-2xl grid-cols-4 gap-3">
-              {[
-                { label: "Скины", icon: "👤", onClick: () => setShopTab("skins") },
-                { label: "Карты", icon: "🗺️", onClick: () => setShopTab("maps") },
-                { label: "Транспорт", icon: "🚀", onClick: () => setShopTab("vehicles") },
-                { label: "Задания", icon: "📋", onClick: () => setQuestsOpen(true) },
-              ].map((b) => (
-                <button
-                  key={b.label}
-                  onClick={b.onClick}
-                  className="flex flex-col items-center gap-1 rounded-2xl border border-purple-400/40 bg-purple-900/40 px-3 py-3 backdrop-blur transition-all hover:scale-105 hover:border-cyan-300/70 hover:bg-purple-700/50 active:scale-95"
-                >
-                  <span className="text-2xl">{b.icon}</span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-cyan-100">
-                    {b.label}
-                  </span>
-                </button>
-              ))}
+                aria-label="Play"
+                className="absolute left-[30.6%] top-[55%] h-[12.4%] w-[36.9%] rounded-full transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+              />
+              {/* Bottom menu hotspots */}
+              <button
+                onClick={() => setShopTab("skins")}
+                aria-label="Скины"
+                className="absolute left-[5.6%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+              />
+              <button
+                onClick={() => setShopTab("maps")}
+                aria-label="Карты"
+                className="absolute left-[28.3%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+              />
+              <button
+                onClick={() => setShopTab("vehicles")}
+                aria-label="Транспорт"
+                className="absolute left-[51.1%] top-[72%] h-[8.1%] w-[20.5%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+              />
+              <button
+                onClick={() => setQuestsOpen(true)}
+                aria-label="Задания"
+                className="absolute left-[73.5%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+              />
             </div>
           </div>
         )}
