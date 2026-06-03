@@ -2040,33 +2040,44 @@ function Game() {
         )}
 
         {state === "menu" && (
-          <Overlay bgImage={menuBgAsset.url}>
-            <button
-              onClick={start}
-              aria-label="Play"
-              className="absolute left-1/2 top-[63%] h-[9%] w-[38%] -translate-x-1/2 rounded-full hover:bg-white/10 active:bg-white/20"
-            />
-            <button
-              onClick={() => setShopTab("skins")}
-              aria-label="Скины"
-              className="absolute left-[8%] top-[80%] h-[7%] w-[19%] rounded-xl hover:bg-white/10 active:bg-white/20"
-            />
-            <button
-              onClick={() => setShopTab("maps")}
-              aria-label="Карты"
-              className="absolute left-[29%] top-[80%] h-[7%] w-[19%] rounded-xl hover:bg-white/10 active:bg-white/20"
-            />
-            <button
-              onClick={() => setShopTab("vehicles")}
-              aria-label="Транспорт"
-              className="absolute left-[50%] top-[80%] h-[7%] w-[22%] rounded-xl hover:bg-white/10 active:bg-white/20"
-            />
-            <button
-              onClick={() => setQuestsOpen(true)}
-              aria-label="Задания"
-              className="absolute left-[74%] top-[80%] h-[7%] w-[19%] rounded-xl hover:bg-white/10 active:bg-white/20"
-            />
-          </Overlay>
+          <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-lg bg-black">
+            <div
+              className="relative max-h-full max-w-full"
+              style={{ aspectRatio: "1341 / 1173", width: "min(100%, calc(100vh * 1341 / 1173))", height: "min(100%, calc(100vw * 1173 / 1341))" }}
+            >
+              <img
+                src={menuBgAsset.url}
+                alt="Space Rush menu"
+                className="absolute inset-0 h-full w-full object-contain"
+                draggable={false}
+              />
+              <button
+                onClick={start}
+                aria-label="Play"
+                className="absolute left-[30.6%] top-[55%] h-[12.4%] w-[36.9%] rounded-full hover:bg-white/10 active:bg-white/20"
+              />
+              <button
+                onClick={() => setShopTab("skins")}
+                aria-label="Скины"
+                className="absolute left-[5.6%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl hover:bg-white/10 active:bg-white/20"
+              />
+              <button
+                onClick={() => setShopTab("maps")}
+                aria-label="Карты"
+                className="absolute left-[28.3%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl hover:bg-white/10 active:bg-white/20"
+              />
+              <button
+                onClick={() => setShopTab("vehicles")}
+                aria-label="Транспорт"
+                className="absolute left-[51.1%] top-[72%] h-[8.1%] w-[20.5%] rounded-xl hover:bg-white/10 active:bg-white/20"
+              />
+              <button
+                onClick={() => setQuestsOpen(true)}
+                aria-label="Задания"
+                className="absolute left-[73.5%] top-[72%] h-[8.1%] w-[20.9%] rounded-xl hover:bg-white/10 active:bg-white/20"
+              />
+            </div>
+          </div>
         )}
 
         {state === "menu" && shopTab && (
