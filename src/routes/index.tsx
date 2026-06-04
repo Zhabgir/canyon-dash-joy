@@ -3698,21 +3698,9 @@ function drawJet(
     ctx.fillText(skin.emoji, 0, 0);
     ctx.restore();
 
-    // shield bubble
+    // sci-fi hex energy shield
     if (hasShield) {
-      const pulse = 0.6 + Math.sin(tick * 0.18) * 0.15;
-      ctx.strokeStyle = `rgba(120,210,255,${pulse})`;
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.arc(0, 0, 22, 0, Math.PI * 2);
-      ctx.stroke();
-      const g = ctx.createRadialGradient(0, 0, 6, 0, 0, 22);
-      g.addColorStop(0, "rgba(120,210,255,0)");
-      g.addColorStop(1, "rgba(120,210,255,0.22)");
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(0, 0, 22, 0, Math.PI * 2);
-      ctx.fill();
+      drawHexShield(ctx, tick, 24);
     }
     ctx.restore();
     return;
@@ -3752,21 +3740,9 @@ function drawJet(
     ctx.fill();
   }
 
-  // shield bubble
+  // sci-fi hex energy shield
   if (hasShield) {
-    const pulse = 0.6 + Math.sin(tick * 0.18) * 0.15;
-    ctx.strokeStyle = `rgba(120,210,255,${pulse})`;
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.arc(0, 0, 24, 0, Math.PI * 2);
-    ctx.stroke();
-    const g = ctx.createRadialGradient(0, 0, 6, 0, 0, 24);
-    g.addColorStop(0, "rgba(120,210,255,0)");
-    g.addColorStop(1, "rgba(120,210,255,0.22)");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(0, 0, 24, 0, Math.PI * 2);
-    ctx.fill();
+    drawHexShield(ctx, tick, 26);
   }
 
   ctx.restore();
