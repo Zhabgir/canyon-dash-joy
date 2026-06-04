@@ -708,7 +708,7 @@ function Game() {
   const playerRockets = useRef<PlayerRocket[]>([]);
   const nextBossScore = useRef(500);
   const bossHitCd = useRef(0); // i-frames after ramming boss
-  const godMode = useRef(true);
+  
   const speedBoostStartScore = useRef<number | null>(null);
   const rocketCdRef = useRef(0); // frames until next player rocket available
   const rocketHudPrev = useRef(0);
