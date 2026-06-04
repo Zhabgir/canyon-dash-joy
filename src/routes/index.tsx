@@ -702,13 +702,18 @@ function Game() {
     fallVy: number; rot: number;
   };
   type BigMissile = { x: number; y: number; vx: number; vy: number; r: number; t: number };
+  type PlayerRocket = { x: number; y: number; vx: number; t: number };
   const boss = useRef<Boss | null>(null);
   const bigMissiles = useRef<BigMissile[]>([]);
+  const playerRockets = useRef<PlayerRocket[]>([]);
   const nextBossScore = useRef(500);
   const bossHitCd = useRef(0); // i-frames after ramming boss
   const godMode = useRef(true);
   const speedBoostStartScore = useRef<number | null>(null);
+  const rocketCdRef = useRef(0); // frames until next player rocket available
   const [bossHud, setBossHud] = useState<{ hp: number; max: number } | null>(null);
+  const [rocketHud, setRocketHud] = useState<number>(0); // seconds remaining
+
   
   
   const portalY = (p: PortalEntity) => {
