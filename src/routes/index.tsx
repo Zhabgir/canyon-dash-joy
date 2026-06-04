@@ -856,10 +856,14 @@ function Game() {
     rareCooldown.current = 900;
     boss.current = null;
     bigMissiles.current = [];
+    playerRockets.current = [];
     nextBossScore.current = 500;
     bossHitCd.current = 0;
+    rocketCdRef.current = 0;
     speedBoostStartScore.current = null;
     setBossHud(null);
+    setRocketHud(0);
+
     mapRef.current = MAPS.find((m) => m.id === mapId) ?? MAPS[0];
     usedRevive.current = false;
     const count = Math.ceil(W / SEG_W) + 2;
