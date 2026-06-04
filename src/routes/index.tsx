@@ -3694,7 +3694,7 @@ function drawJet(
 
     // energy shield (same as jet)
     if (hasShield) {
-      drawEnergyShield(ctx, tick, 40, 24);
+      drawEnergyShield(ctx, tick, 32, 20);
     }
     ctx.restore();
     return;
@@ -3736,7 +3736,7 @@ function drawJet(
 
   // energy shield — forward-facing arc, hex panel feel
   if (hasShield) {
-    drawEnergyShield(ctx, tick, 44, 26);
+    drawEnergyShield(ctx, tick, 36, 22);
   }
 
 
