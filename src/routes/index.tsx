@@ -1176,7 +1176,7 @@ function Game() {
         const curScoreNow = Math.floor(distance.current / 10);
         const startS = speedBoostStartScore.current;
         const boostScore = startS == null ? 0 : Math.min(4000, Math.max(0, curScoreNow - startS));
-        const speedMult = 1 + (boostScore / 20) * 3.0;
+        const speedMult = 1 + (boostScore / 20) * 0.6;
         const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + (boostScore * 10) / 6000);
         const speed = baseSpeed * timeScale * speedMult;
 
@@ -1232,7 +1232,7 @@ function Game() {
           const spawnY = topY + Math.random() * Math.max(20, botY - topY);
           const spawnX = W + 20;
           const targetY = planeY.current + (Math.random() - 0.5) * 70;
-          const sp = (5 + difficultyFor() * 3.5 + Math.random() * 1.5) * 0.48;
+          const sp = (5 + difficultyFor() * 3.5 + Math.random() * 1.5) * 0.40;
           const dx = -W;
           const dy = targetY - spawnY;
           const dist = Math.hypot(dx, dy);
@@ -1255,7 +1255,7 @@ function Game() {
           const m = missiles.current[i];
           m.trail.push({ x: m.x, y: m.y });
           if (m.trail.length > 12) m.trail.shift();
-          const mSpeedMult = 1 + Math.floor(distance.current / 200) * 0.02;
+          const mSpeedMult = 1 + Math.floor(distance.current / 200) * 0.008;
           m.x += m.vx * timeScale * mSpeedMult;
           m.y += m.vy * timeScale * mSpeedMult;
           if (m.x < -40 || m.x > W + 80 || m.y < -40 || m.y > H + 40) {
@@ -1716,7 +1716,7 @@ function Game() {
         if (p.life <= 0) particles.current.splice(i, 1);
       }
       // parallax stars drift left
-      const driftSpeed = playing ? Math.min(MAX_SPEED, BASE_SPEED + distance.current / 6000) : 1;
+      const driftSpeed = playing ? Math.min(MAX_SPEED, BASE_SPEED + distance.current / 12000) : 1;
       for (const s of stars.current) {
         s.x -= s.z * driftSpeed * 0.4;
         if (s.x < -2) {
