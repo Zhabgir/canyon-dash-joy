@@ -1449,9 +1449,70 @@ function Game() {
           };
           setBossHud({ hp: 7, max: 7 });
           shake.current = 14;
+          // give player a rocket immediately when boss appears
+          rocketCdRef.current = 0;
+          setRocketHud(0);
         }
 
         if (bossHitCd.current > 0) bossHitCd.current--;
+
+        // Player rockets cooldown HUD
+        if (boss.current && boss.current.phase !== "die") {
+          if (rocketCdRef.current > 0) rocketCdRef.current--;
+          const secs = Math.ceil(rocketCdRef.current / 60);
+          if (secs !== rocketHudPrev.current) {
+            rocketHudPrev.current = secs;
+            setRocketHud(secs);
+          }
+        }
+
+        // Update player rockets
+        for (let i = playerRockets.current.length - 1; i >= 0; i--) {
+          const r = playerRockets.current[i];
+          r.x += r.vx;
+          r.t += 1;
+          if (r.t % 2 === 0) {
+            particles.current.push({
+              x: r.x - 10, y: r.y + (Math.random() - 0.5) * 4,
+              vx: -1 - Math.random() * 1.5, vy: (Math.random() - 0.5) * 0.6,
+              life: 18, maxLife: 18,
+              color: Math.random() < 0.5 ? "#ffd070" : "#ff8a3a",
+              size: 2 + Math.random() * 1.5,
+            });
+          }
+          if (boss.current && boss.current.phase !== "die") {
+            const b2 = boss.current;
+            const bw = 220, bh = 110;
+            if (r.x > b2.x - bw / 2 && r.x < b2.x + bw / 2 &&
+                r.y > b2.y - bh / 2 && r.y < b2.y + bh / 2) {
+              b2.hp -= 1;
+              setBossHud({ hp: b2.hp, max: b2.maxHp });
+              shake.current = Math.max(shake.current, 12);
+              flash.current = Math.max(flash.current, 8);
+              for (let k = 0; k < 24; k++) {
+                const a = Math.random() * Math.PI * 2;
+                particles.current.push({
+                  x: r.x, y: r.y,
+                  vx: Math.cos(a) * (2 + Math.random() * 4),
+                  vy: Math.sin(a) * (2 + Math.random() * 4),
+                  life: 36, maxLife: 36,
+                  color: Math.random() < 0.5 ? "#ffd070" : "#ff7a3a",
+                  size: 2.4 + Math.random() * 1.6,
+                });
+              }
+              playerRockets.current.splice(i, 1);
+              if (b2.hp <= 0) {
+                b2.phase = "die";
+                b2.t = 0;
+                b2.fallVy = -2;
+                bigMissiles.current = [];
+              }
+              continue;
+            }
+          }
+          if (r.x > W + 40) playerRockets.current.splice(i, 1);
+        }
+
 
         if (boss.current) {
           const b = boss.current;
