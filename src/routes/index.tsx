@@ -2198,6 +2198,12 @@ function Game() {
               Best {best.toLocaleString()}
             </div>
           )}
+          {hud.shield > 0 && (
+            <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-cyan-300/60 bg-cyan-500/15 px-2 py-0.5 text-[11px] font-bold text-cyan-100 backdrop-blur-sm">
+              <span>🛡️</span>
+              <span className="tabular-nums">{Math.ceil(hud.shield / 60)}с</span>
+            </div>
+          )}
         </div>
 
         {/* Boss HP bar */}
