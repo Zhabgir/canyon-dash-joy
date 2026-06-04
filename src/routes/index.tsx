@@ -1063,6 +1063,14 @@ function Game() {
 
 
   const die = useCallback(() => {
+    if (godMode.current) {
+      // god mode: brief shield bounce instead of death
+      shield.current = 60;
+      planeVy.current = -3;
+      shake.current = 8;
+      flash.current = 6;
+      return;
+    }
     // explosion particles — big arcade explosion
     for (let i = 0; i < 80; i++) {
       const a = Math.random() * Math.PI * 2;
