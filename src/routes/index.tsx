@@ -3832,6 +3832,8 @@ function drawEnergyShield(
 
   ctx.restore();
 }
+
+function drawCoin(ctx: CanvasRenderingContext2D, c: Coin) {
   const bob = Math.sin(c.t * 0.12) * 3;
   // flip rotation: scale x by sin to fake 3D spin
   const sx = Math.cos(c.t * 0.18);
