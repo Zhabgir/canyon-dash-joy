@@ -1232,7 +1232,7 @@ function Game() {
           const spawnY = topY + Math.random() * Math.max(20, botY - topY);
           const spawnX = W + 20;
           const targetY = planeY.current + (Math.random() - 0.5) * 70;
-          const sp = (5 + difficultyFor() * 3.5 + Math.random() * 1.5) * 0.56;
+          const sp = (5 + difficultyFor() * 3.5 + Math.random() * 1.5) * 0.48;
           const dx = -W;
           const dy = targetY - spawnY;
           const dist = Math.hypot(dx, dy);
@@ -3691,21 +3691,9 @@ function drawJet(
     ctx.fillText(skin.emoji, 0, 0);
     ctx.restore();
 
-    // shield bubble (same as jet)
+    // energy shield (same as jet)
     if (hasShield) {
-      const pulse = 0.6 + Math.sin(tick * 0.18) * 0.15;
-      ctx.strokeStyle = `rgba(120,210,255,${pulse})`;
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.arc(0, 0, 28, 0, Math.PI * 2);
-      ctx.stroke();
-      const g = ctx.createRadialGradient(0, 0, 8, 0, 0, 28);
-      g.addColorStop(0, "rgba(120,210,255,0)");
-      g.addColorStop(1, "rgba(120,210,255,0.22)");
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(0, 0, 28, 0, Math.PI * 2);
-      ctx.fill();
+      drawEnergyShield(ctx, tick, 40, 24);
     }
     ctx.restore();
     return;
@@ -3745,23 +3733,102 @@ function drawJet(
     ctx.fill();
   }
 
-  // shield bubble
+  // energy shield — forward-facing arc, hex panel feel
   if (hasShield) {
-    const pulse = 0.6 + Math.sin(tick * 0.18) * 0.15;
-    ctx.strokeStyle = `rgba(120,210,255,${pulse})`;
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.arc(0, 0, 30, 0, Math.PI * 2);
-    ctx.stroke();
-    const g = ctx.createRadialGradient(0, 0, 8, 0, 0, 30);
-    g.addColorStop(0, "rgba(120,210,255,0)");
-    g.addColorStop(1, "rgba(120,210,255,0.22)");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(0, 0, 30, 0, Math.PI * 2);
-    ctx.fill();
+    drawEnergyShield(ctx, tick, 44, 26);
   }
 
+
+  ctx.restore();
+}
+
+// Energy shield: forward-facing arc with hex panel facets, impact-style.
+function drawEnergyShield(
+  ctx: CanvasRenderingContext2D,
+  tick: number,
+  radius: number,
+  offsetX: number,
+) {
+  const pulse = 0.65 + Math.sin(tick * 0.18) * 0.2;
+  const cx = offsetX;
+  const cy = 0;
+  // Arc spans front of plane
+  const startA = -Math.PI / 2.2;
+  const endA = Math.PI / 2.2;
+
+  ctx.save();
+
+  // Soft inner glow fill (only inside arc)
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, radius, startA, endA);
+  ctx.closePath();
+  const g = ctx.createRadialGradient(cx, cy, radius * 0.2, cx, cy, radius);
+  g.addColorStop(0, "rgba(120,210,255,0)");
+  g.addColorStop(0.7, `rgba(120,210,255,${0.12 * pulse})`);
+  g.addColorStop(1, `rgba(160,230,255,${0.28 * pulse})`);
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  // Outer rim — bright energy edge
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, startA, endA);
+  ctx.lineWidth = 2.4;
+  ctx.strokeStyle = `rgba(180,235,255,${pulse})`;
+  ctx.shadowColor = "rgba(120,210,255,0.9)";
+  ctx.shadowBlur = 10;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Inner thinner rim
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius - 4, startA * 0.95, endA * 0.95);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = `rgba(220,245,255,${0.55 * pulse})`;
+  ctx.stroke();
+
+  // Hex facet pattern (clipped to arc)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, radius - 1, startA, endA);
+  ctx.closePath();
+  ctx.clip();
+
+  ctx.strokeStyle = `rgba(160,225,255,${0.32 * pulse})`;
+  ctx.lineWidth = 0.8;
+  const hex = 7;
+  const h = hex * Math.sqrt(3);
+  for (let row = -3; row <= 3; row++) {
+    for (let col = 0; col <= 4; col++) {
+      const px = cx + col * hex * 1.5 - hex * 0.5;
+      const py = cy + row * h + (col % 2 ? h / 2 : 0);
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 3) * i;
+        const x = px + Math.cos(a) * hex;
+        const y = py + Math.sin(a) * hex;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // Energy ripple traveling along arc
+  const t = (tick * 0.04) % 1;
+  const ra = startA + (endA - startA) * t;
+  const rx = cx + Math.cos(ra) * radius;
+  const ry = cy + Math.sin(ra) * radius;
+  const rg = ctx.createRadialGradient(rx, ry, 0, rx, ry, 9);
+  rg.addColorStop(0, "rgba(255,255,255,0.9)");
+  rg.addColorStop(1, "rgba(120,210,255,0)");
+  ctx.fillStyle = rg;
+  ctx.beginPath();
+  ctx.arc(rx, ry, 9, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.restore();
 }
