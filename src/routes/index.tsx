@@ -1650,7 +1650,14 @@ function Game() {
             }
           }
         }
-        if (planeY.current < 0 || planeY.current > H) die();
+        if (planeY.current < 0 || planeY.current > H) {
+          if (godMode.current) {
+            planeY.current = Math.max(20, Math.min(H - 20, planeY.current));
+            planeVy.current = 0;
+          } else {
+            die();
+          }
+        }
         setScore(Math.floor(distance.current / 10));
 
         // ===== Portal spawning (every 1000 score, recurring) =====
