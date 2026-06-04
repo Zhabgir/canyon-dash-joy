@@ -704,7 +704,7 @@ function Game() {
   type BigMissile = { x: number; y: number; vx: number; vy: number; r: number; t: number };
   const boss = useRef<Boss | null>(null);
   const bigMissiles = useRef<BigMissile[]>([]);
-  const nextBossScore = useRef(5000);
+  const nextBossScore = useRef(500);
   const bossHitCd = useRef(0); // i-frames after ramming boss
   const speedBoostStartScore = useRef<number | null>(null);
   const [bossHud, setBossHud] = useState<{ hp: number; max: number } | null>(null);
@@ -850,7 +850,7 @@ function Game() {
     rareCooldown.current = 900;
     boss.current = null;
     bigMissiles.current = [];
-    nextBossScore.current = 5000;
+    nextBossScore.current = 500;
     bossHitCd.current = 0;
     speedBoostStartScore.current = null;
     setBossHud(null);
