@@ -497,7 +497,7 @@ function Game() {
   const [state, setState] = useState<GameState>("menu");
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
-  const [hud, setHud] = useState({ shield: false, slowmo: 0, boost: 0 });
+  const [hud, setHud] = useState({ shield: 0, slowmo: 0, boost: 0 });
   const [coins, setCoins] = useState(0);
   const [bestCoins, setBestCoins] = useState(0);
   const [reviveLeft, setReviveLeft] = useState(REVIVE_SECONDS);
@@ -676,7 +676,7 @@ function Game() {
   const coinCount = useRef(0);
   const particles = useRef<Particle[]>([]);
   const stars = useRef<Star[]>([]);
-  const shield = useRef(false);
+  const shield = useRef(0); // frames remaining
   const slowmo = useRef(0); // frames remaining
   const boost = useRef(0); // frames remaining
   const shake = useRef(0);
@@ -839,7 +839,7 @@ function Game() {
     coinTimer.current = 90;
     coinCount.current = 0;
     particles.current = [];
-    shield.current = false;
+    shield.current = 0;
     slowmo.current = 0;
     boost.current = 0;
     shake.current = 0;
@@ -870,7 +870,7 @@ function Game() {
     ];
     setScore(0);
     setCoins(0);
-    setHud({ shield: false, slowmo: 0, boost: 0 });
+    setHud({ shield: 0, slowmo: 0, boost: 0 });
   }, [mapId]);
 
   const start = useCallback(() => {
@@ -1117,13 +1117,13 @@ function Game() {
     // re-center plane & grant temporary shield
     planeY.current = H / 2;
     planeVy.current = 0;
-    shield.current = true;
+    shield.current = 25 * 60;
     shake.current = 0;
     flash.current = 8;
     ensureAudio();
     if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
     startEngine();
-    setHud((h) => ({ ...h, shield: true }));
+    setHud((h) => ({ ...h, shield: 25 * 60 }));
     setState("playing");
   }, [ensureAudio, startEngine, user]);
 
@@ -1270,8 +1270,8 @@ function Game() {
             m.y < planeY.current + PLANE_SIZE / 2 + hitR
           ) {
             missiles.current.splice(i, 1);
-            if (shield.current) {
-              shield.current = false;
+            if (shield.current > 0) {
+              shield.current = 0;
               sfxShieldHit();
               shake.current = 8;
               flash.current = 6;
@@ -1338,7 +1338,7 @@ function Game() {
                 size: 2,
               });
             }
-            if (p.kind === "shield") shield.current = true;
+            if (p.kind === "shield") shield.current = 25 * 60;
             if (p.kind === "slowmo") slowmo.current = 360;
             if (p.kind === "boost") boost.current = 300;
             flash.current = 6;
@@ -1539,8 +1539,8 @@ function Game() {
               bigMissiles.current.splice(i, 1);
               shake.current = 14;
               flash.current = 10;
-              if (shield.current) {
-                shield.current = false;
+              if (shield.current > 0) {
+                shield.current = 0;
                 sfxShieldHit();
               } else {
                 die();
@@ -1582,8 +1582,8 @@ function Game() {
                 }
               } else if (bossHitCd.current === 0) {
                 // touching boss while it's shooting = death (unless shield)
-                if (shield.current) {
-                  shield.current = false;
+                if (shield.current > 0) {
+                  shield.current = 0;
                   sfxShieldHit();
                   bossHitCd.current = 30;
                   planeVy.current = -5;
