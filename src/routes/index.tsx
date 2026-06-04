@@ -1599,6 +1599,7 @@ function Game() {
 
         if (slowmo.current > 0) slowmo.current--;
         if (boost.current > 0) boost.current--;
+        if (shield.current > 0) shield.current--;
 
         // engine particles (trail behind jet)
         if (tick.current % 2 === 0) {
@@ -1624,8 +1625,8 @@ function Game() {
           const planeTop = planeY.current - PLANE_SIZE / 2;
           const planeBot = planeY.current + PLANE_SIZE / 2;
           if (planeTop < seg.topH || planeBot > H - seg.botH) {
-            if (shield.current) {
-              shield.current = false;
+            if (shield.current > 0) {
+              shield.current = 0;
               if (planeTop < seg.topH) {
                 planeY.current = seg.topH + PLANE_SIZE / 2 + 2;
                 planeVy.current = 3;
@@ -2084,7 +2085,7 @@ function Game() {
 
       // jet
       if (stateRef.current !== "over") {
-        drawJet(ctx, planeY.current, keys.current, boost.current > 0, shield.current, tick.current, skinRef.current, planeVy.current);
+        drawJet(ctx, planeY.current, keys.current, boost.current > 0, shield.current > 0, tick.current, skinRef.current, planeVy.current);
       }
 
       // post-effects
