@@ -706,6 +706,7 @@ function Game() {
   const bigMissiles = useRef<BigMissile[]>([]);
   const nextBossScore = useRef(500);
   const bossHitCd = useRef(0); // i-frames after ramming boss
+  const godMode = useRef(true);
   const speedBoostStartScore = useRef<number | null>(null);
   const [bossHud, setBossHud] = useState<{ hp: number; max: number } | null>(null);
   
@@ -1062,6 +1063,14 @@ function Game() {
 
 
   const die = useCallback(() => {
+    if (godMode.current) {
+      // god mode: brief shield bounce instead of death
+      shield.current = 60;
+      planeVy.current = -3;
+      shake.current = 8;
+      flash.current = 6;
+      return;
+    }
     // explosion particles — big arcade explosion
     for (let i = 0; i < 80; i++) {
       const a = Math.random() * Math.PI * 2;
@@ -1641,7 +1650,14 @@ function Game() {
             }
           }
         }
-        if (planeY.current < 0 || planeY.current > H) die();
+        if (planeY.current < 0 || planeY.current > H) {
+          if (godMode.current) {
+            planeY.current = Math.max(20, Math.min(H - 20, planeY.current));
+            planeVy.current = 0;
+          } else {
+            die();
+          }
+        }
         setScore(Math.floor(distance.current / 10));
 
         // ===== Portal spawning (every 1000 score, recurring) =====
