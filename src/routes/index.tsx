@@ -2163,6 +2163,33 @@ function Game() {
         ctx.restore();
       }
 
+      // player rockets
+      for (const r of playerRockets.current) {
+        ctx.save();
+        ctx.translate(r.x, r.y);
+        const g = ctx.createRadialGradient(0, 0, 2, 0, 0, 22);
+        g.addColorStop(0, "rgba(180,240,255,0.95)");
+        g.addColorStop(0.5, "rgba(120,200,255,0.55)");
+        g.addColorStop(1, "rgba(80,160,255,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, 22, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#e8f6ff";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 14, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#7ec8ff";
+        ctx.beginPath();
+        ctx.moveTo(14, 0);
+        ctx.lineTo(8, -4);
+        ctx.lineTo(8, 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+
 
       // particles
       for (const p of particles.current) {
