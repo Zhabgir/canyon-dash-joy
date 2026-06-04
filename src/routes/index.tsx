@@ -1484,15 +1484,16 @@ function Game() {
             }
           } else if (b.phase === "rest") {
             b.phaseTimer += 1;
-            // move close to player so they can ram
-            const targetX = PLANE_X + 140;
-            b.x += (targetX - b.x) * 0.05;
-            b.y += (planeY.current - b.y) * 0.02;
-            if (b.phaseTimer > 320) {
+            // move closer to player so they can ram
+            const targetX = W - 290;
+            b.x += (targetX - b.x) * 0.035;
+            b.y += (planeY.current - b.y) * 0.012;
+            if (b.phaseTimer > 260) {
               b.phase = "shoot";
               b.phaseTimer = 0;
               b.shotTimer = 50;
             }
+
 
           } else if (b.phase === "die") {
             b.fallVy += 0.35;
