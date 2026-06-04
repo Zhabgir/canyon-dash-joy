@@ -2338,6 +2338,33 @@ function Game() {
           </div>
         )}
 
+        {/* Rocket fire button (only during boss fight) */}
+        {state === "playing" && bossHud && (
+          <button
+            onClick={() => {
+              if (rocketCdRef.current > 0) return;
+              if (!boss.current || boss.current.phase === "die") return;
+              playerRockets.current.push({
+                x: PLANE_X + 18,
+                y: planeY.current,
+                vx: 14,
+                t: 0,
+              });
+              rocketCdRef.current = 60 * 18; // 18s cooldown
+              rocketHudPrev.current = 18;
+              setRocketHud(18);
+              shake.current = Math.max(shake.current, 4);
+            }}
+            disabled={rocketHud > 0}
+            className="absolute bottom-16 left-1/2 z-20 -translate-x-1/2 rounded-full border-2 border-orange-300/80 bg-gradient-to-b from-orange-500 to-red-600 px-5 py-2.5 text-sm font-extrabold text-white shadow-[0_0_20px_rgba(255,120,40,0.6)] backdrop-blur-sm transition disabled:cursor-not-allowed disabled:border-white/20 disabled:from-zinc-700 disabled:to-zinc-800 disabled:text-white/50 disabled:shadow-none"
+            aria-label="Fire rocket at boss"
+          >
+            {rocketHud > 0 ? `🚀 ${rocketHud}с` : "🚀 ОГОНЬ!"}
+          </button>
+        )}
+
+
+
 
         {/* in-game mute toggle (only while playing) */}
         {state === "playing" && (
