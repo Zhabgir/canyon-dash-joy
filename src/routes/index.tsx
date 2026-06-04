@@ -3754,32 +3754,43 @@ function drawHexShield(ctx: CanvasRenderingContext2D, tick: number, r: number) {
   const rot = tick * 0.012;
   ctx.save();
 
+  // forward-facing dome (right half-circle, flat side at back)
+  const R = r * 1.15;
+  const a0 = -Math.PI / 2;
+  const a1 = Math.PI / 2;
+
+  const domePath = () => {
+    ctx.beginPath();
+    ctx.moveTo(0, -R);
+    ctx.arc(0, 0, R, a0, a1);
+    ctx.closePath();
+  };
+
   // inner cyan haze
-  const haze = ctx.createRadialGradient(0, 0, r * 0.25, 0, 0, r * 1.05);
+  const haze = ctx.createRadialGradient(R * 0.15, 0, R * 0.15, R * 0.15, 0, R);
   haze.addColorStop(0, "rgba(120,220,255,0)");
-  haze.addColorStop(0.7, "rgba(120,210,255,0.10)");
-  haze.addColorStop(1, `rgba(140,230,255,${0.28 * pulse})`);
+  haze.addColorStop(0.65, "rgba(120,210,255,0.10)");
+  haze.addColorStop(1, `rgba(140,230,255,${0.32 * pulse})`);
   ctx.fillStyle = haze;
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  domePath();
   ctx.fill();
 
-  // hex tessellation clipped to shield circle
+  // hex tessellation clipped to dome
   ctx.save();
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  domePath();
   ctx.clip();
-  ctx.rotate(rot);
-  const hr = 5.2; // hex radius
+  // slow forward-sweep instead of full rotation
+  const sweep = Math.sin(tick * 0.04) * 0.1;
+  ctx.rotate(sweep);
+  const hr = 5.2;
   const hw = Math.sqrt(3) * hr;
   const hh = 1.5 * hr;
   ctx.lineWidth = 0.7;
-  for (let row = -5; row <= 5; row++) {
-    for (let col = -5; col <= 5; col++) {
+  for (let row = -6; row <= 6; row++) {
+    for (let col = -2; col <= 6; col++) {
       const cx = col * hw + (row % 2 ? hw / 2 : 0);
       const cy = row * hh;
-      // shimmer per-cell
-      const sh = 0.18 + 0.22 * (0.5 + 0.5 * Math.sin(tick * 0.08 + col * 1.3 + row * 0.7));
+      const sh = 0.2 + 0.25 * (0.5 + 0.5 * Math.sin(tick * 0.08 + col * 1.3 + row * 0.7));
       ctx.strokeStyle = `rgba(150,235,255,${sh})`;
       ctx.beginPath();
       for (let i = 0; i < 6; i++) {
@@ -3795,22 +3806,29 @@ function drawHexShield(ctx: CanvasRenderingContext2D, tick: number, r: number) {
   }
   ctx.restore();
 
-  // bright outer rim
-  ctx.strokeStyle = `rgba(180,240,255,${0.85 * pulse})`;
-  ctx.lineWidth = 1.6;
-  ctx.shadowColor = "rgba(120,220,255,0.9)";
-  ctx.shadowBlur = 8;
+  // bright outer arc rim (no flat back line for cleaner look)
+  ctx.strokeStyle = `rgba(190,245,255,${0.9 * pulse})`;
+  ctx.lineWidth = 1.8;
+  ctx.shadowColor = "rgba(120,220,255,0.95)";
+  ctx.shadowBlur = 10;
   ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.arc(0, 0, R, a0, a1);
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  // thin inner rim
+  // thin inner arc rim
   ctx.strokeStyle = "rgba(220,250,255,0.55)";
   ctx.lineWidth = 0.6;
   ctx.beginPath();
-  ctx.arc(0, 0, r - 2, 0, Math.PI * 2);
+  ctx.arc(0, 0, R - 2.2, a0, a1);
   ctx.stroke();
+
+  // anchor nubs at top/bottom where dome meets plane
+  ctx.fillStyle = `rgba(200,245,255,${0.85 * pulse})`;
+  ctx.beginPath();
+  ctx.arc(0, -R, 1.6, 0, Math.PI * 2);
+  ctx.arc(0, R, 1.6, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.restore();
 }
