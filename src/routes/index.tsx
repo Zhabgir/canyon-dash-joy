@@ -1580,7 +1580,6 @@ function Game() {
             if (b.y > H + 120) {
               boss.current = null;
               setBossHud(null);
-              nextBossScore.current += 5000;
               bigMissiles.current = [];
               if (speedBoostStartScore.current == null) {
                 speedBoostStartScore.current = Math.floor(distance.current / 10);
