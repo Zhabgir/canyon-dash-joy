@@ -422,9 +422,9 @@ const W = 800;
 const H = 500;
 const PLANE_X = 140;
 const PLANE_SIZE = 22;
-  const BASE_SPEED = 1.344;
-  const MAX_SPEED = 2.982;
-  const PLAYER_SPEED = 2.1504;
+  const BASE_SPEED = 2.2;
+  const MAX_SPEED = 4.8;
+  const PLAYER_SPEED = 3.6;
 const SEG_W = 20;
 
 interface Segment {
@@ -1166,13 +1166,13 @@ function Game() {
       if (playing) {
         // smooth vertical control (gentler accel + damping = silky movement)
         const target = (keys.current.down ? 1 : 0) - (keys.current.up ? 1 : 0);
-        planeVy.current += target * 0.55;
+        planeVy.current += target * 0.85;
         planeVy.current *= 0.9;
         planeY.current += Math.max(-PLAYER_SPEED, Math.min(PLAYER_SPEED, planeVy.current));
 
         // time scale: slowmo halves, boost speeds up
         const timeScale =
-          (slowmo.current > 0 ? 0.5 : 1) * (boost.current > 0 ? 1.55 : 1);
+          (slowmo.current > 0 ? 0.5 : 1) * (boost.current > 0 ? 2.0 : 1);
         const curScoreNow = Math.floor(distance.current / 10);
         const startS = speedBoostStartScore.current;
         const boostScore = startS == null ? 0 : Math.min(4000, Math.max(0, curScoreNow - startS));
@@ -1232,7 +1232,7 @@ function Game() {
           const spawnY = topY + Math.random() * Math.max(20, botY - topY);
           const spawnX = W + 20;
           const targetY = planeY.current + (Math.random() - 0.5) * 70;
-          const sp = (5 + difficultyFor() * 3.5 + Math.random() * 1.5) * 0.56;
+          const sp = (5 + difficultyFor() * 3.5 + Math.random() * 1.5) * 0.85;
           const dx = -W;
           const dy = targetY - spawnY;
           const dist = Math.hypot(dx, dy);
@@ -1247,7 +1247,7 @@ function Game() {
             trailColor: proj.trailColor,
             spin: Math.random() * Math.PI * 2,
           });
-          missileTimer.current = Math.max(95, 340 - difficultyFor() * 150 - Math.random() * 80);
+          missileTimer.current = Math.max(70, 280 - difficultyFor() * 140 - Math.random() * 70);
         }
 
         // ===== Missile update + collision =====
@@ -1255,7 +1255,7 @@ function Game() {
           const m = missiles.current[i];
           m.trail.push({ x: m.x, y: m.y });
           if (m.trail.length > 12) m.trail.shift();
-          const mSpeedMult = 1 + Math.floor(distance.current / 200) * 0.02;
+          const mSpeedMult = 1 + Math.floor(distance.current / 200) * 0.04;
           m.x += m.vx * timeScale * mSpeedMult;
           m.y += m.vy * timeScale * mSpeedMult;
           if (m.x < -40 || m.x > W + 80 || m.y < -40 || m.y > H + 40) {
@@ -1605,8 +1605,8 @@ function Game() {
           particles.current.push({
             x: PLANE_X - 22,
             y: planeY.current + (Math.random() - 0.5) * 3,
-            vx: -2 - Math.random() * 1.5,
-            vy: (Math.random() - 0.5) * 0.4,
+            vx: -3.5 - Math.random() * 2.5,
+            vy: (Math.random() - 0.5) * 0.6,
             life: 22,
             maxLife: 22,
             color: boost.current > 0 ? "#7bd0ff" : "#ffd070",
