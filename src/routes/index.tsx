@@ -706,7 +706,7 @@ function Game() {
   const boss = useRef<Boss | null>(null);
   const bigMissiles = useRef<BigMissile[]>([]);
   const playerRockets = useRef<PlayerRocket[]>([]);
-  const nextBossScore = useRef(500);
+  const nextBossScore = useRef(5000);
   const bossHitCd = useRef(0); // i-frames after ramming boss
   
   const speedBoostStartScore = useRef<number | null>(null);
@@ -859,7 +859,7 @@ function Game() {
     boss.current = null;
     bigMissiles.current = [];
     playerRockets.current = [];
-    nextBossScore.current = 500;
+    nextBossScore.current = 5000;
     bossHitCd.current = 0;
     rocketCdRef.current = 0;
     speedBoostStartScore.current = null;
