@@ -3691,21 +3691,9 @@ function drawJet(
     ctx.fillText(skin.emoji, 0, 0);
     ctx.restore();
 
-    // shield bubble (same as jet)
+    // energy shield (same as jet)
     if (hasShield) {
-      const pulse = 0.6 + Math.sin(tick * 0.18) * 0.15;
-      ctx.strokeStyle = `rgba(120,210,255,${pulse})`;
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.arc(0, 0, 28, 0, Math.PI * 2);
-      ctx.stroke();
-      const g = ctx.createRadialGradient(0, 0, 8, 0, 0, 28);
-      g.addColorStop(0, "rgba(120,210,255,0)");
-      g.addColorStop(1, "rgba(120,210,255,0.22)");
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(0, 0, 28, 0, Math.PI * 2);
-      ctx.fill();
+      drawEnergyShield(ctx, tick, 40, 24);
     }
     ctx.restore();
     return;
