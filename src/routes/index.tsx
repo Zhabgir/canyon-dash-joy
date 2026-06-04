@@ -1172,7 +1172,7 @@ function Game() {
 
         // time scale: slowmo halves, boost speeds up
         const timeScale =
-          (slowmo.current > 0 ? 0.5 : 1) * (boost.current > 0 ? 1.55 : 1);
+          (slowmo.current > 0 ? 0.5 : 1) * (boost.current > 0 ? 2.0 : 1);
         const curScoreNow = Math.floor(distance.current / 10);
         const startS = speedBoostStartScore.current;
         const boostScore = startS == null ? 0 : Math.min(4000, Math.max(0, curScoreNow - startS));
