@@ -711,6 +711,8 @@ function Game() {
   const godMode = useRef(true);
   const speedBoostStartScore = useRef<number | null>(null);
   const rocketCdRef = useRef(0); // frames until next player rocket available
+  const rocketHudPrev = useRef(0);
+
   const [bossHud, setBossHud] = useState<{ hp: number; max: number } | null>(null);
   const [rocketHud, setRocketHud] = useState<number>(0); // seconds remaining
 
