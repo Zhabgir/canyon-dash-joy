@@ -3698,21 +3698,9 @@ function drawJet(
     ctx.fillText(skin.emoji, 0, 0);
     ctx.restore();
 
-    // shield bubble
+    // sci-fi hex energy shield
     if (hasShield) {
-      const pulse = 0.6 + Math.sin(tick * 0.18) * 0.15;
-      ctx.strokeStyle = `rgba(120,210,255,${pulse})`;
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.arc(0, 0, 22, 0, Math.PI * 2);
-      ctx.stroke();
-      const g = ctx.createRadialGradient(0, 0, 6, 0, 0, 22);
-      g.addColorStop(0, "rgba(120,210,255,0)");
-      g.addColorStop(1, "rgba(120,210,255,0.22)");
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(0, 0, 22, 0, Math.PI * 2);
-      ctx.fill();
+      drawHexShield(ctx, tick, 24);
     }
     ctx.restore();
     return;
@@ -3752,22 +3740,77 @@ function drawJet(
     ctx.fill();
   }
 
-  // shield bubble
+  // sci-fi hex energy shield
   if (hasShield) {
-    const pulse = 0.6 + Math.sin(tick * 0.18) * 0.15;
-    ctx.strokeStyle = `rgba(120,210,255,${pulse})`;
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.arc(0, 0, 24, 0, Math.PI * 2);
-    ctx.stroke();
-    const g = ctx.createRadialGradient(0, 0, 6, 0, 0, 24);
-    g.addColorStop(0, "rgba(120,210,255,0)");
-    g.addColorStop(1, "rgba(120,210,255,0.22)");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(0, 0, 24, 0, Math.PI * 2);
-    ctx.fill();
+    drawHexShield(ctx, tick, 26);
   }
+
+  ctx.restore();
+}
+
+function drawHexShield(ctx: CanvasRenderingContext2D, tick: number, r: number) {
+  // movie-style hex energy shield: rotating hex tiles, bright rim, impact flicker
+  const pulse = 0.55 + Math.sin(tick * 0.18) * 0.18;
+  const rot = tick * 0.012;
+  ctx.save();
+
+  // inner cyan haze
+  const haze = ctx.createRadialGradient(0, 0, r * 0.25, 0, 0, r * 1.05);
+  haze.addColorStop(0, "rgba(120,220,255,0)");
+  haze.addColorStop(0.7, "rgba(120,210,255,0.10)");
+  haze.addColorStop(1, `rgba(140,230,255,${0.28 * pulse})`);
+  ctx.fillStyle = haze;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  // hex tessellation clipped to shield circle
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.rotate(rot);
+  const hr = 5.2; // hex radius
+  const hw = Math.sqrt(3) * hr;
+  const hh = 1.5 * hr;
+  ctx.lineWidth = 0.7;
+  for (let row = -5; row <= 5; row++) {
+    for (let col = -5; col <= 5; col++) {
+      const cx = col * hw + (row % 2 ? hw / 2 : 0);
+      const cy = row * hh;
+      // shimmer per-cell
+      const sh = 0.18 + 0.22 * (0.5 + 0.5 * Math.sin(tick * 0.08 + col * 1.3 + row * 0.7));
+      ctx.strokeStyle = `rgba(150,235,255,${sh})`;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 3) * i + Math.PI / 6;
+        const px = cx + Math.cos(a) * hr;
+        const py = cy + Math.sin(a) * hr;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // bright outer rim
+  ctx.strokeStyle = `rgba(180,240,255,${0.85 * pulse})`;
+  ctx.lineWidth = 1.6;
+  ctx.shadowColor = "rgba(120,220,255,0.9)";
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // thin inner rim
+  ctx.strokeStyle = "rgba(220,250,255,0.55)";
+  ctx.lineWidth = 0.6;
+  ctx.beginPath();
+  ctx.arc(0, 0, r - 2, 0, Math.PI * 2);
+  ctx.stroke();
 
   ctx.restore();
 }
