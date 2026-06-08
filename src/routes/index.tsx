@@ -2423,7 +2423,7 @@ function Game() {
 
         {state === "menu" && (
           <div className="absolute inset-0 z-10 overflow-hidden rounded-lg bg-black">
-            {/* Background image */}
+            {/* Menu background served from public so Vercel keeps the image at a stable URL. */}
             <img
               src="/space-menu-bg.jpg"
               alt=""
