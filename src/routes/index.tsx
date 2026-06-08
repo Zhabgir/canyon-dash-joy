@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import gameIcon from "../assets/game-icon.png";
-import menuBgAsset from "../assets/space-menu-bg.png.asset.json";
 import playerJetSrc from "../assets/player-jet.png";
 import asgoreMusic from "../assets/asgore.mp3.asset.json";
 import gameOverBg from "../assets/game-over.jpg";
@@ -2426,7 +2425,7 @@ function Game() {
           <div className="absolute inset-0 z-10 overflow-hidden rounded-lg bg-black">
             {/* Background image */}
             <img
-              src={menuBgAsset.url}
+              src="/space-menu-bg.jpg"
               alt=""
               draggable={false}
               className="absolute inset-0 h-full w-full object-cover select-none pointer-events-none opacity-80"
