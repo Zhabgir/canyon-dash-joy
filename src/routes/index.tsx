@@ -424,7 +424,7 @@ const PLANE_X = 140;
 const PLANE_SIZE = 22;
   const BASE_SPEED = 2.5;
   const MAX_SPEED = 5.0;
-  const PLAYER_SPEED = 3.8;
+  const PLAYER_SPEED = 2.35;
 const SEG_W = 20;
 
 interface Segment {
@@ -678,6 +678,7 @@ function Game() {
   const keys = useRef({ up: false, down: false });
   const planeY = useRef(H / 2);
   const planeVy = useRef(0);
+  const planeTilt = useRef(0);
   const segments = useRef<Segment[]>([]);
   const offset = useRef(0);
   const distance = useRef(0);
@@ -915,6 +916,7 @@ function Game() {
     resetControls();
     planeY.current = H / 2;
     planeVy.current = 0;
+    planeTilt.current = 0;
     offset.current = 0;
     distance.current = 0;
     segments.current = [];
@@ -1289,11 +1291,14 @@ function Game() {
       const playing = stateRef.current === "playing";
 
       if (playing) {
-        // smooth vertical control (gentler accel + damping = silky movement)
+        // smooth vertical control: slow acceleration, low max speed, soft tilt
         const target = (keys.current.down ? 1 : 0) - (keys.current.up ? 1 : 0);
-        planeVy.current += target * 1.0;
-        planeVy.current *= 0.9;
-        planeY.current += Math.max(-PLAYER_SPEED, Math.min(PLAYER_SPEED, planeVy.current));
+        planeVy.current += target * 0.3;
+        planeVy.current *= target === 0 ? 0.9 : 0.94;
+        const verticalStep = clamp(planeVy.current, -PLAYER_SPEED, PLAYER_SPEED);
+        planeY.current += verticalStep * 0.82;
+        const targetTilt = clamp(verticalStep * 0.085, -0.22, 0.22);
+        planeTilt.current += (targetTilt - planeTilt.current) * 0.065;
 
         // time scale: slowmo halves, boost speeds up
         const timeScale =
@@ -2420,7 +2425,7 @@ function Game() {
       // jet
       if (stateRef.current !== "over") {
         drawAiBuddy(ctx, aiBuddy.current, tick.current);
-        drawJet(ctx, planeY.current, keys.current, boost.current > 0, shield.current > 0, tick.current, skinRef.current, planeVy.current);
+        drawJet(ctx, planeY.current, boost.current > 0, shield.current > 0, tick.current, skinRef.current, planeTilt.current);
       }
 
       // post-effects
@@ -4149,19 +4154,17 @@ function drawAiBuddy(ctx: CanvasRenderingContext2D, buddy: AiBuddy, tick: number
 function drawJet(
   ctx: CanvasRenderingContext2D,
   y: number,
-  keys: { up: boolean; down: boolean },
   isBoost: boolean,
   hasShield: boolean,
   tick: number,
   skin: Skin,
-  vy: number = 0,
+  tilt: number = 0,
 ) {
   ctx.save();
   ctx.translate(PLANE_X, y);
-  const pitch = Math.max(-0.25, Math.min(0.25, vy * 0.08));
+  const pitch = clamp(tilt, -0.22, 0.22);
   ctx.rotate(pitch);
-  const bank = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
-  ctx.scale(1, 1 + bank * 0.02);
+  ctx.scale(1, 1 + Math.abs(pitch) * 0.08);
 
   // soft shadow
   ctx.fillStyle = "rgba(0,0,0,0.3)";
