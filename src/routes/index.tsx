@@ -57,6 +57,7 @@ function getTintedJet(
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { getAiBuddyLine } from "@/lib/api/gemini.functions";
 
 
 export const Route = createFileRoute("/")({
@@ -489,6 +490,20 @@ interface Coin {
   y: number;
   t: number;
 }
+interface AiBuddy {
+  x: number;
+  y: number;
+  vy: number;
+  targetY: number;
+  mood: "scan" | "coin" | "danger";
+  message: string;
+  messageTimer: number;
+  faceTimer: number;
+  coinCooldown: number;
+  warningCooldown: number;
+  shieldCooldown: number;
+  shieldPulse: number;
+}
 
 function Game() {
   const { user } = useAuth();
@@ -496,7 +511,7 @@ function Game() {
   const [state, setState] = useState<GameState>("menu");
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
-  const [hud, setHud] = useState({ shield: 0, slowmo: 0, boost: 0 });
+  const [hud, setHud] = useState({ shield: 0, slowmo: 0, boost: 0, buddyShield: 0 });
   const [coins, setCoins] = useState(0);
   const [bestCoins, setBestCoins] = useState(0);
   const [reviveLeft, setReviveLeft] = useState(REVIVE_SECONDS);
@@ -673,6 +688,22 @@ function Game() {
   const coinsRef = useRef<Coin[]>([]);
   const coinTimer = useRef(80);
   const coinCount = useRef(0);
+  const aiBuddy = useRef<AiBuddy>({
+    x: PLANE_X + 112,
+    y: H / 2 - 34,
+    vy: 0,
+    targetY: H / 2 - 34,
+    mood: "scan",
+    message: "",
+    messageTimer: 0,
+    faceTimer: 70,
+    coinCooldown: 0,
+    warningCooldown: 0,
+    shieldCooldown: 0,
+    shieldPulse: 0,
+  });
+  const aiLinePending = useRef(false);
+  const nextAiLineAt = useRef(0);
   const particles = useRef<Particle[]>([]);
   const stars = useRef<Star[]>([]);
   const shield = useRef(0); // frames remaining
@@ -691,6 +722,50 @@ function Game() {
   type RareEvent = { kind: RareEventKind; t: number; duration: number; seed: number };
   const rareEvent = useRef<RareEvent | null>(null);
   const rareCooldown = useRef(900); // frames until first possible event
+
+  const showAiBuddyLine = useCallback(
+    (event: "danger" | "narrow" | "shield" | "coin" | "revive" | "start", fallback: string) => {
+      const buddy = aiBuddy.current;
+      const now = Date.now();
+      const urgent = event === "shield" || event === "revive";
+      const warning = event === "danger" || event === "narrow";
+
+      if (!urgent && !warning && now < nextAiLineAt.current) return;
+      if (warning && now < nextAiLineAt.current - 2_000) return;
+
+      buddy.message = fallback;
+      buddy.messageTimer = urgent ? 120 : warning ? 130 : 90;
+      buddy.faceTimer = Math.max(buddy.faceTimer, urgent ? 70 : warning ? 55 : 38);
+      nextAiLineAt.current = now + (urgent ? 8_000 : warning ? 5_500 : 18_000);
+
+      if (aiLinePending.current || (!urgent && !warning && Math.random() < 0.35)) return;
+
+      aiLinePending.current = true;
+
+      getAiBuddyLine({
+        data: {
+          event,
+          score: Math.floor(distance.current / 10),
+          coins: coinCount.current,
+          mapName: mapRef.current.name,
+        },
+      })
+        .then((result) => {
+          if (stateRef.current !== "playing") return;
+          const freshBuddy = aiBuddy.current;
+          freshBuddy.message = result.line;
+          freshBuddy.messageTimer = urgent ? 130 : warning ? 140 : 100;
+          freshBuddy.faceTimer = Math.max(freshBuddy.faceTimer, 54);
+        })
+        .catch((error) => {
+          console.warn("Gemini buddy line failed", error);
+        })
+        .finally(() => {
+          aiLinePending.current = false;
+        });
+    },
+    [],
+  );
 
   // ===== Boss =====
   type BossPhase = "enter" | "shoot" | "rest" | "die";
@@ -714,6 +789,10 @@ function Game() {
 
   const [bossHud, setBossHud] = useState<{ hp: number; max: number } | null>(null);
   const [rocketHud, setRocketHud] = useState<number>(0); // seconds remaining
+
+  const resetControls = useCallback(() => {
+    keys.current = { up: false, down: false };
+  }, []);
 
   
   
@@ -833,6 +912,7 @@ function Game() {
 
 
   const resetWorld = useCallback(() => {
+    resetControls();
     planeY.current = H / 2;
     planeVy.current = 0;
     offset.current = 0;
@@ -845,6 +925,20 @@ function Game() {
     coinsRef.current = [];
     coinTimer.current = 90;
     coinCount.current = 0;
+    aiBuddy.current = {
+      x: PLANE_X + 112,
+      y: H / 2 - 34,
+      vy: 0,
+      targetY: H / 2 - 34,
+      mood: "scan",
+      message: "",
+      messageTimer: 0,
+      faceTimer: 70,
+      coinCooldown: 0,
+      warningCooldown: 0,
+      shieldCooldown: 0,
+      shieldPulse: 0,
+    };
     particles.current = [];
     shield.current = 0;
     slowmo.current = 0;
@@ -881,16 +975,17 @@ function Game() {
     ];
     setScore(0);
     setCoins(0);
-    setHud({ shield: 0, slowmo: 0, boost: 0 });
-  }, [mapId]);
+    setHud({ shield: 0, slowmo: 0, boost: 0, buddyShield: 0 });
+  }, [mapId, resetControls]);
 
   const start = useCallback(() => {
+    resetControls();
     resetWorld();
     ensureAudio();
     if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
     startEngine();
     setState("playing");
-  }, [resetWorld, ensureAudio, startEngine]);
+  }, [resetControls, resetWorld, ensureAudio, startEngine]);
 
   useEffect(() => {
     return () => {
@@ -911,13 +1006,27 @@ function Game() {
       if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.current.up = false;
       if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.current.down = false;
     };
+    const clearReleasedPointers = () => resetControls();
+    const onVisibility = () => {
+      if (document.hidden) resetControls();
+    };
     window.addEventListener("keydown", onDown);
     window.addEventListener("keyup", onUp);
+    window.addEventListener("mouseup", clearReleasedPointers);
+    window.addEventListener("touchend", clearReleasedPointers);
+    window.addEventListener("touchcancel", clearReleasedPointers);
+    window.addEventListener("blur", clearReleasedPointers);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       window.removeEventListener("keydown", onDown);
       window.removeEventListener("keyup", onUp);
+      window.removeEventListener("mouseup", clearReleasedPointers);
+      window.removeEventListener("touchend", clearReleasedPointers);
+      window.removeEventListener("touchcancel", clearReleasedPointers);
+      window.removeEventListener("blur", clearReleasedPointers);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, []);
+  }, [resetControls, start]);
 
   // Revive countdown — auto-finalize when time runs out
   useEffect(() => {
@@ -939,6 +1048,7 @@ function Game() {
   }, [state]);
 
   const finalizeOver = useCallback((nextState: GameState = "over") => {
+    resetControls();
     const d = Math.floor(distance.current / 10);
     setScore(d);
     setBest((b) => Math.max(b, d));
@@ -998,7 +1108,7 @@ function Game() {
       return next;
     });
     setState(nextState);
-  }, [user]);
+  }, [resetControls, user]);
 
   const claimQuest = useCallback((id: string) => {
     setQuestState((qs) => {
@@ -1073,6 +1183,7 @@ function Game() {
 
 
   const die = useCallback(() => {
+    resetControls();
     // explosion particles — big arcade explosion
     for (let i = 0; i < 80; i++) {
       const a = Math.random() * Math.PI * 2;
@@ -1112,10 +1223,11 @@ function Game() {
     } else {
       finalizeOver();
     }
-  }, [sfxHit, stopEngine, finalizeOver]);
+  }, [resetControls, sfxHit, stopEngine, finalizeOver]);
 
   const revive = useCallback(() => {
     if (walletRef.current < REVIVE_COST) return;
+    resetControls();
     const next = walletRef.current - REVIVE_COST;
     setWallet(next);
     saveJSON(LS.wallet, next);
@@ -1136,16 +1248,18 @@ function Game() {
     startEngine();
     setHud((h) => ({ ...h, shield: 25 * 60 }));
     setState("playing");
-  }, [ensureAudio, startEngine, user]);
+  }, [resetControls, ensureAudio, startEngine, user]);
 
   const pauseGame = useCallback(() => {
     if (stateRef.current !== "playing") return;
+    resetControls();
     stopEngine();
     setState("paused");
-  }, [stopEngine]);
+  }, [resetControls, stopEngine]);
 
   const resumeGame = useCallback(() => {
     if (stateRef.current !== "paused") return;
+    resetControls();
     setResumeCountdown(3);
     let n = 3;
     const tickDown = () => {
@@ -1162,7 +1276,7 @@ function Game() {
       }
     };
     setTimeout(tickDown, 1000);
-  }, [ensureAudio, startEngine]);
+  }, [resetControls, ensureAudio, startEngine]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1190,6 +1304,33 @@ function Game() {
         const speedMult = 1 + (boostScore / 20) * 0.6;
         const baseSpeed = Math.min(MAX_SPEED, BASE_SPEED + (boostScore * 10) / 6000);
         const speed = baseSpeed * timeScale * speedMult;
+        const activateBuddyShield = (message: string) => {
+          const buddy = aiBuddy.current;
+          if (shield.current > 0 || buddy.shieldCooldown > 0) return false;
+          shield.current = 4 * 60;
+          buddy.shieldCooldown = 12 * 60;
+          buddy.shieldPulse = 42;
+          buddy.mood = "danger";
+          showAiBuddyLine("shield", message);
+          buddy.warningCooldown = Math.max(buddy.warningCooldown, 260);
+          shake.current = Math.max(shake.current, 9);
+          flash.current = Math.max(flash.current, 7);
+          for (let k = 0; k < 24; k++) {
+            const a = Math.random() * Math.PI * 2;
+            particles.current.push({
+              x: PLANE_X,
+              y: planeY.current,
+              vx: Math.cos(a) * 3.4,
+              vy: Math.sin(a) * 3.4,
+              life: 34,
+              maxLife: 34,
+              color: k % 2 === 0 ? "#7df9ff" : "#ffffff",
+              size: 2.2,
+            });
+          }
+          sfxPower();
+          return true;
+        };
 
         offset.current += speed;
         distance.current += speed * (boost.current > 0 ? 1.4 : 1); // boost gives bonus score
@@ -1299,7 +1440,7 @@ function Game() {
                   size: 2,
                 });
               }
-            } else {
+            } else if (!activateBuddyShield("Аварийный щит!")) {
               die();
             }
           }
@@ -1408,6 +1549,89 @@ function Game() {
               });
             }
           }
+        }
+
+        // ===== AI buddy: calm independent scouting =====
+        {
+          const buddy = aiBuddy.current;
+          buddy.x = PLANE_X + 118 + Math.sin(tick.current * 0.018) * 8;
+          buddy.warningCooldown = Math.max(0, buddy.warningCooldown - 1);
+          buddy.shieldCooldown = Math.max(0, buddy.shieldCooldown - 1);
+          buddy.shieldPulse = Math.max(0, buddy.shieldPulse - 1);
+          buddy.messageTimer = Math.max(0, buddy.messageTimer - 1);
+          buddy.faceTimer = Math.max(0, buddy.faceTimer - 1);
+          buddy.coinCooldown = Math.max(0, buddy.coinCooldown - 1);
+
+          const segIdx = Math.floor((buddy.x + offset.current) / SEG_W);
+          const seg = segments.current[segIdx];
+          const topSafe = (seg?.topH ?? 40) + 38;
+          const botSafe = H - (seg?.botH ?? 40) - 38;
+          const safeCenter = (topSafe + botSafe) / 2;
+          const soloDrift =
+            Math.sin(tick.current * 0.012) * 58 +
+            Math.sin(tick.current * 0.005 + 1.7) * 28;
+          let targetY = clamp(safeCenter + soloDrift, topSafe, botSafe);
+          let nearestThreat: { x: number; y: number; r: number } | null = null;
+          let interestingCoin: Coin | null = null;
+
+          for (const m of missiles.current) {
+            if (m.x < PLANE_X - 10 || m.x > buddy.x + 220) continue;
+            const futureY = m.y + m.vy * 24;
+            const close = Math.abs(futureY - buddy.y) < 58 || Math.abs(futureY - planeY.current) < 64;
+            if (!close) continue;
+            if (!nearestThreat || m.x < nearestThreat.x) nearestThreat = { x: m.x, y: futureY, r: 58 };
+          }
+          for (const m of bigMissiles.current) {
+            if (m.x < PLANE_X - 20 || m.x > buddy.x + 240) continue;
+            if (!nearestThreat || m.x < nearestThreat.x) nearestThreat = { x: m.x, y: m.y, r: m.r + 42 };
+          }
+          for (const c of coinsRef.current) {
+            if (c.x < buddy.x - 20 || c.x > buddy.x + 190) continue;
+            if (!interestingCoin || c.x < interestingCoin.x) interestingCoin = c;
+          }
+
+          if (nearestThreat) {
+            const upSpace = nearestThreat.y - topSafe;
+            const downSpace = botSafe - nearestThreat.y;
+            const saferY = downSpace > upSpace
+              ? clamp(nearestThreat.y + nearestThreat.r, topSafe, botSafe)
+              : clamp(nearestThreat.y - nearestThreat.r, topSafe, botSafe);
+            targetY = targetY * 0.72 + saferY * 0.28;
+            buddy.mood = "danger";
+            if (buddy.warningCooldown <= 0 && nearestThreat.x < PLANE_X + 260) {
+              showAiBuddyLine("danger", "Опасность впереди!");
+              buddy.warningCooldown = 190;
+            }
+          } else {
+            const aheadIdx = Math.floor((buddy.x + 135 + offset.current) / SEG_W);
+            const aheadSeg = segments.current[aheadIdx];
+            if (aheadSeg) {
+              const aheadTop = aheadSeg.topH + 42;
+              const aheadBot = H - aheadSeg.botH - 42;
+              const corridor = aheadBot - aheadTop;
+              if (corridor < 205 && buddy.warningCooldown <= 0) {
+                showAiBuddyLine("narrow", "Узкий проход!");
+                buddy.warningCooldown = 230;
+              }
+              targetY = clamp(targetY, aheadTop, aheadBot);
+            }
+            if (interestingCoin && buddy.coinCooldown <= 0) {
+              targetY = targetY * 0.74 + interestingCoin.y * 0.26;
+              buddy.mood = "coin";
+              buddy.coinCooldown = 42;
+            } else if (buddy.messageTimer <= 0) {
+              buddy.mood = "scan";
+            }
+            if (buddy.faceTimer <= 0 && buddy.messageTimer <= 0 && Math.random() < 0.004) {
+              buddy.faceTimer = 45 + Math.floor(Math.random() * 40);
+            }
+          }
+
+          buddy.targetY = targetY;
+          buddy.vy += (buddy.targetY - buddy.y) * 0.012;
+          buddy.vy *= 0.94;
+          buddy.vy = clamp(buddy.vy, -2.2, 2.2);
+          buddy.y = clamp(buddy.y + buddy.vy, topSafe, botSafe);
         }
 
         // ===== Rare events =====
@@ -1615,7 +1839,7 @@ function Game() {
               if (shield.current > 0) {
                 shield.current = 0;
                 sfxShieldHit();
-              } else {
+              } else if (!activateBuddyShield("Прикрываю!")) {
                 die();
               }
             }
@@ -1660,7 +1884,7 @@ function Game() {
                   sfxShieldHit();
                   bossHitCd.current = 30;
                   planeVy.current = -5;
-                } else {
+                } else if (!activateBuddyShield("Прикрываю от босса!")) {
                   die();
                 }
               }
@@ -1709,13 +1933,26 @@ function Game() {
               }
               shake.current = 8;
               flash.current = 6;
+            } else if (activateBuddyShield("Держу щит!")) {
+              if (planeTop < seg.topH) {
+                planeY.current = seg.topH + PLANE_SIZE / 2 + 2;
+                planeVy.current = 3;
+              } else {
+                planeY.current = H - seg.botH - PLANE_SIZE / 2 - 2;
+                planeVy.current = -3;
+              }
             } else {
               die();
             }
           }
         }
         if (planeY.current < 0 || planeY.current > H) {
-          die();
+          if (activateBuddyShield("Возвращаю в коридор!")) {
+            planeY.current = clamp(planeY.current, PLANE_SIZE / 2, H - PLANE_SIZE / 2);
+            planeVy.current *= -0.35;
+          } else {
+            die();
+          }
         }
         setScore(Math.floor(distance.current / 10));
 
@@ -1778,6 +2015,7 @@ function Game() {
           shield: shield.current,
           slowmo: slowmo.current,
           boost: boost.current,
+          buddyShield: aiBuddy.current.shieldCooldown,
         });
       }
 
@@ -1833,12 +2071,6 @@ function Game() {
 
       // ============ RENDER ============
       ctx.save();
-      if (shake.current > 0.4) {
-        ctx.translate(
-          (Math.random() - 0.5) * shake.current * 0.35,
-          (Math.random() - 0.5) * shake.current * 0.35,
-        );
-      }
 
       // sky gradient (from selected map)
       const theme = mapRef.current;
@@ -2187,6 +2419,7 @@ function Game() {
 
       // jet
       if (stateRef.current !== "over") {
+        drawAiBuddy(ctx, aiBuddy.current, tick.current);
         drawJet(ctx, planeY.current, keys.current, boost.current > 0, shield.current > 0, tick.current, skinRef.current, planeVy.current);
       }
 
@@ -2224,7 +2457,7 @@ function Game() {
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [die, sfxCoin, sfxPower, sfxShieldHit]);
+  }, [die, sfxCoin, sfxPower, sfxShieldHit, showAiBuddyLine]);
 
   // touch controls — tap/hold top half = up, bottom half = down
   const touchHandlers = (which: "up" | "down") => ({
@@ -2233,6 +2466,10 @@ function Game() {
       keys.current[which] = true;
     },
     onTouchEnd: (e: React.TouchEvent) => {
+      e.preventDefault();
+      keys.current[which] = false;
+    },
+    onTouchCancel: (e: React.TouchEvent) => {
       e.preventDefault();
       keys.current[which] = false;
     },
@@ -2304,6 +2541,12 @@ function Game() {
             <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-cyan-300/60 bg-cyan-500/15 px-2 py-0.5 text-[11px] font-bold text-cyan-100 backdrop-blur-sm">
               <span>🛡️</span>
               <span className="tabular-nums">{Math.ceil(hud.shield / 60)}с</span>
+            </div>
+          )}
+          {hud.buddyShield > 0 && (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/35 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-cyan-100 backdrop-blur-sm">
+              <span>AI</span>
+              <span className="tabular-nums">{Math.ceil(hud.buddyShield / 60)}с</span>
             </div>
           )}
         </div>
@@ -2522,6 +2765,14 @@ function Game() {
             </div>
 
 
+            {user?.email && (
+              <div className="absolute inset-x-3 bottom-14 z-20 flex justify-center">
+                <div className="max-w-[calc(100%-1.5rem)] truncate rounded-full border border-white/15 bg-black/60 px-3 py-1 text-center font-mono text-[11px] text-white/75 backdrop-blur-sm">
+                  {user.email}
+                </div>
+              </div>
+            )}
+
             {/* Bottom row: Stats, Settings, Leave */}
             <div className="absolute inset-x-3 bottom-3 z-20 flex items-center justify-center gap-2">
               <button
@@ -2606,7 +2857,7 @@ function Game() {
                 {user && (
                   <div className="rounded-lg bg-black/40 px-4 py-3 text-sm text-white/70">
                     <div className="text-[10px] uppercase tracking-widest text-white/40">Аккаунт</div>
-                    <div className="mt-1 truncate font-mono">{user.user_metadata?.display_name || user.email}</div>
+                    <div className="mt-1 truncate font-mono">{user.email}</div>
                   </div>
                 )}
               </div>
@@ -3417,31 +3668,34 @@ function drawRareEvent(
 }
 
 function drawDistantMountains(ctx: CanvasRenderingContext2D, off: number) {
-  ctx.fillStyle = "rgba(40,20,40,0.55)";
-  ctx.beginPath();
-  ctx.moveTo(0, H * 0.55);
-  for (let x = 0; x <= W; x += 30) {
-    const n =
-      Math.sin((x + off) * 0.012) * 18 + Math.sin((x + off) * 0.03) * 8 + Math.cos((x + off) * 0.005) * 14;
-    ctx.lineTo(x, H * 0.55 + n);
-  }
-  ctx.lineTo(W, H);
-  ctx.lineTo(0, H);
-  ctx.closePath();
-  ctx.fill();
+  const mountainNoise = (index: number, salt: number) => {
+    const n = Math.sin(index * 12.9898 + salt * 78.233) * 43758.5453;
+    return n - Math.floor(n);
+  };
+  const drawLayer = (baseY: number, step: number, color: string, amp: number, speed: number, salt: number) => {
+    const scroll = off * speed;
+    const phase = scroll % step;
+    const firstIndex = Math.floor(scroll / step) - 1;
 
-  ctx.fillStyle = "rgba(25,12,25,0.7)";
-  ctx.beginPath();
-  ctx.moveTo(0, H * 0.62);
-  for (let x = 0; x <= W; x += 25) {
-    const n =
-      Math.sin((x + off * 1.4) * 0.018) * 22 + Math.cos((x + off * 1.4) * 0.04) * 10;
-    ctx.lineTo(x, H * 0.62 + n);
-  }
-  ctx.lineTo(W, H);
-  ctx.lineTo(0, H);
-  ctx.closePath();
-  ctx.fill();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(-step, baseY);
+    for (let i = -1; i <= Math.ceil(W / step) + 2; i++) {
+      const index = firstIndex + i;
+      const x = i * step - phase;
+      const n =
+        (mountainNoise(index, salt) - 0.5) * amp +
+        (mountainNoise(index, salt + 1) - 0.5) * amp * 0.45;
+      ctx.lineTo(x, baseY + n);
+    }
+    ctx.lineTo(W + step, H);
+    ctx.lineTo(-step, H);
+    ctx.closePath();
+    ctx.fill();
+  };
+
+  drawLayer(H * 0.55, 36, "rgba(40,20,40,0.55)", 42, 0.55, 12);
+  drawLayer(H * 0.62, 30, "rgba(25,12,25,0.7)", 50, 0.82, 77);
 }
 
 function drawCanyon(
@@ -3453,25 +3707,34 @@ function drawCanyon(
   otherWorld: boolean = false,
   chernobyl: boolean = false,
 ) {
+  const baseIndex = Math.floor(distance / SEG_W);
+  const stableNoise = (index: number, salt: number) => {
+    const n = Math.sin(index * 12.9898 + salt * 78.233) * 43758.5453;
+    return n - Math.floor(n);
+  };
+  const edgeY = (i: number, isTop: boolean) => {
+    const seg = segs[i];
+    const roughness = (stableNoise(baseIndex + i, isTop ? 1 : 2) - 0.5) * 8;
+    return isTop ? seg.topH + roughness : H - seg.botH - roughness;
+  };
+  const drawEdgePath = (isTop: boolean) => {
+    for (let i = 0; i < segs.length; i++) {
+      const x = i * SEG_W - offset;
+      const y = edgeY(i, isTop);
+      if (i === 0) ctx.lineTo(x, y);
+      ctx.lineTo(x + SEG_W, y);
+    }
+  };
+
   const drawBand = (isTop: boolean) => {
     ctx.beginPath();
     if (isTop) {
       ctx.moveTo(-SEG_W, -10);
-      for (let i = 0; i < segs.length; i++) {
-        const x = i * SEG_W - offset;
-        const seed = Math.floor(distance / SEG_W) + i;
-        const j = ((Math.sin(seed * 12.9898) * 43758.5453) % 1) * 16;
-        ctx.lineTo(x + SEG_W / 2, segs[i].topH + j - 4);
-      }
+      drawEdgePath(true);
       ctx.lineTo(W + SEG_W, -10);
     } else {
       ctx.moveTo(-SEG_W, H + 10);
-      for (let i = 0; i < segs.length; i++) {
-        const x = i * SEG_W - offset;
-        const seed = Math.floor(distance / SEG_W) + i + 999;
-        const j = ((Math.sin(seed * 12.9898) * 43758.5453) % 1) * 16;
-        ctx.lineTo(x + SEG_W / 2, H - segs[i].botH - j + 4);
-      }
+      drawEdgePath(false);
       ctx.lineTo(W + SEG_W, H + 10);
     }
     ctx.closePath();
@@ -3524,11 +3787,9 @@ function drawCanyon(
     ctx.beginPath();
     for (let i = 0; i < segs.length; i++) {
       const x = i * SEG_W - offset;
-      const seed = Math.floor(distance / SEG_W) + i + (isTop ? 0 : 999);
-      const j = ((Math.sin(seed * 12.9898) * 43758.5453) % 1) * 16;
-      const y = isTop ? segs[i].topH + j - 4 : H - segs[i].botH - j + 4;
-      if (i === 0) ctx.moveTo(x + SEG_W / 2, y);
-      else ctx.lineTo(x + SEG_W / 2, y);
+      const y = edgeY(i, isTop);
+      if (i === 0) ctx.moveTo(x, y);
+      ctx.lineTo(x + SEG_W, y);
     }
     ctx.stroke();
 
@@ -3545,16 +3806,16 @@ function drawCanyon(
     ctx.lineWidth = 1;
     for (let i = 0; i < segs.length; i += 2) {
       const x = i * SEG_W - offset;
-      const seed = Math.floor(distance / SEG_W) + i + (isTop ? 333 : 777);
-      const r1 = (((Math.sin(seed * 7.13) * 43758.5453) % 1) + 1) % 1;
-      const r2 = (((Math.sin(seed * 3.71) * 43758.5453) % 1) + 1) % 1;
+      const r1 = stableNoise(baseIndex + i, isTop ? 333 : 777);
+      const r2 = stableNoise(baseIndex + i, isTop ? 334 : 778);
+      const y = edgeY(i, isTop);
       ctx.beginPath();
       if (isTop) {
-        ctx.moveTo(x, segs[i].topH - 4 - r1 * 40);
-        ctx.lineTo(x + SEG_W * 1.5, segs[i].topH - 18 - r2 * 60);
+        ctx.moveTo(x, y - 8 - r1 * 30);
+        ctx.lineTo(x + SEG_W * 1.5, y - 18 - r2 * 46);
       } else {
-        ctx.moveTo(x, H - segs[i].botH + 4 + r1 * 40);
-        ctx.lineTo(x + SEG_W * 1.5, H - segs[i].botH + 18 + r2 * 60);
+        ctx.moveTo(x, y + 8 + r1 * 30);
+        ctx.lineTo(x + SEG_W * 1.5, y + 18 + r2 * 46);
       }
       ctx.stroke();
     }
@@ -3563,10 +3824,9 @@ function drawCanyon(
     ctx.fillStyle = "rgba(255,210,150,0.25)";
     for (let i = 0; i < segs.length; i++) {
       const x = i * SEG_W - offset;
-      const seed = Math.floor(distance / SEG_W) + i + (isTop ? 111 : 555);
-      const r = (((Math.sin(seed * 5.17) * 43758.5453) % 1) + 1) % 1;
+      const r = stableNoise(baseIndex + i, isTop ? 111 : 555);
       if (r > 0.65) {
-        const y = isTop ? segs[i].topH - 6 - r * 28 : H - segs[i].botH + 6 + r * 28;
+        const y = isTop ? edgeY(i, true) - 6 - r * 20 : edgeY(i, false) + 6 + r * 20;
         ctx.fillRect(x + 4, y, 3, 2);
       }
     }
@@ -3718,6 +3978,171 @@ function drawPowerup(ctx: CanvasRenderingContext2D, p: PowerUp) {
     ctx.closePath();
     ctx.fill();
   }
+  ctx.restore();
+}
+
+function drawAiBuddy(ctx: CanvasRenderingContext2D, buddy: AiBuddy, tick: number) {
+  const bob = Math.sin(tick * 0.08) * 3;
+  const x = buddy.x;
+  const y = buddy.y + bob;
+  const danger = buddy.mood === "danger";
+  const coin = buddy.mood === "coin";
+  const glow = danger ? "255,90,90" : coin ? "255,220,110" : "125,249,255";
+  const accent = danger ? "#ff6b6b" : coin ? "#ffd86b" : "#7df9ff";
+  const lookingBack = buddy.faceTimer > 0;
+
+  ctx.save();
+
+  // subtle scan glow, quieter than the player's shield
+  const aura = ctx.createRadialGradient(x, y, 3, x, y, 34);
+  aura.addColorStop(0, `rgba(${glow},0.28)`);
+  aura.addColorStop(1, `rgba(${glow},0)`);
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.arc(x, y, 34, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (buddy.shieldPulse > 0) {
+    const pulse = buddy.shieldPulse / 42;
+    ctx.strokeStyle = `rgba(170,245,255,${pulse})`;
+    ctx.lineWidth = 2.2;
+    ctx.shadowColor = "rgba(125,249,255,0.95)";
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(x, y, 24 + (1 - pulse) * 34, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  if (!danger && (lookingBack || buddy.mood === "scan")) {
+    const sweep = ((tick * 0.035) % 1) * Math.PI * 2;
+    ctx.strokeStyle = `rgba(${glow},${lookingBack ? 0.32 : 0.16})`;
+    ctx.lineWidth = lookingBack ? 1.2 : 0.7;
+    ctx.beginPath();
+    ctx.arc(x, y, 23 + Math.sin(tick * 0.12) * 2, sweep, sweep + Math.PI * 0.75);
+    ctx.stroke();
+  }
+
+  // small black companion plane; sometimes it turns back to check on the player
+  const pitch = clamp(buddy.vy * 0.07, -0.22, 0.22);
+  ctx.save();
+  ctx.translate(x, y);
+
+  if (lookingBack) {
+    const blink = Math.sin(tick * 0.22) > 0.92;
+    ctx.rotate(-pitch * 0.45);
+
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = `rgba(${glow},${0.24 - i * 0.06})`;
+      ctx.beginPath();
+      ctx.ellipse(23 + i * 7, Math.sin(tick * 0.18 + i) * 1.8, 8 - i * 1.7, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const jet = getJetImg();
+    if (jet) {
+      const w = 58;
+      const h = (jet.naturalHeight / jet.naturalWidth) * w;
+      const tinted = getTintedJet(jet, {
+        id: "ai-buddy-black",
+        name: "AI Buddy",
+        price: 0,
+        fuse: ["#151515", "#050505", "#000000"],
+        wing: ["#151515", "#050505", "#000000"],
+        accent,
+        emoji: "",
+      });
+      ctx.drawImage(tinted, -w / 2, -h / 2, w, h);
+    } else {
+      ctx.fillStyle = "#050505";
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-24, 0);
+      ctx.lineTo(-6, -5);
+      ctx.lineTo(18, -4);
+      ctx.lineTo(18, 4);
+      ctx.lineTo(-6, 5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = blink ? "rgba(255,255,255,0.9)" : accent;
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(-10, -1, blink ? 2 : 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  } else {
+    ctx.rotate(pitch);
+
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = `rgba(${glow},${0.34 - i * 0.08})`;
+      ctx.beginPath();
+      ctx.ellipse(-23 - i * 7, Math.sin(tick * 0.18 + i) * 1.8, 9 - i * 2, 2.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const jet = getJetImg();
+    if (jet) {
+      const w = 58;
+      const h = (jet.naturalHeight / jet.naturalWidth) * w;
+      const tinted = getTintedJet(jet, {
+        id: "ai-buddy-black",
+        name: "AI Buddy",
+        price: 0,
+        fuse: ["#151515", "#050505", "#000000"],
+        wing: ["#151515", "#050505", "#000000"],
+        accent,
+        emoji: "",
+      });
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.drawImage(tinted, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = "#050505";
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(24, 0);
+      ctx.lineTo(6, -5);
+      ctx.lineTo(-18, -4);
+      ctx.lineTo(-18, 4);
+      ctx.lineTo(6, 5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.arc(10, -1, danger ? 3.2 + Math.sin(tick * 0.35) : 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  if (buddy.messageTimer > 0 && buddy.message) {
+    const text = buddy.message;
+    ctx.font = "bold 11px system-ui, sans-serif";
+    const w = Math.min(170, Math.max(74, ctx.measureText(text).width + 18));
+    const bx = clamp(x - w / 2, 8, W - w - 8);
+    const by = clamp(y - 55, 8, H - 48);
+    ctx.fillStyle = "rgba(0,0,0,0.68)";
+    ctx.strokeStyle = `rgba(${glow},0.75)`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, w, 26, 7);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, bx + w / 2, by + 13);
+  }
+
   ctx.restore();
 }
 
