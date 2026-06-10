@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import gameIcon from "../assets/game-icon.png";
 import playerJetSrc from "../assets/player-jet.png";
 import gameOverBg from "../assets/game-over.jpg";
@@ -828,6 +829,7 @@ function Game() {
   const faceVideoRef = useRef<HTMLVideoElement | null>(null);
   const faceStreamRef = useRef<MediaStream | null>(null);
   const faceDetectorRef = useRef<BrowserFaceDetector | null>(null);
+  const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
   const noseBaselineY = useRef<number | null>(null);
   const lastNoseHudUpdate = useRef(0);
 
@@ -950,6 +952,8 @@ function Game() {
     faceStreamRef.current = null;
     if (faceVideoRef.current) faceVideoRef.current.srcObject = null;
     faceDetectorRef.current = null;
+    faceLandmarkerRef.current?.close();
+    faceLandmarkerRef.current = null;
     noseBaselineY.current = null;
     keys.current.up = false;
     keys.current.down = false;
@@ -992,6 +996,68 @@ function Game() {
     }
   }, []);
 
+
+  const startMediaPipeNoseControl = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setNoseControlStatus("Камера не поддерживается");
+      return false;
+    }
+
+    try {
+      setNoseControlStatus("Запускаю камеру");
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 320 }, height: { ideal: 240 } },
+        audio: false,
+      });
+      faceStreamRef.current?.getTracks().forEach((track) => track.stop());
+      faceStreamRef.current = stream;
+      const video = faceVideoRef.current;
+      if (video) {
+        video.srcObject = stream;
+        await video.play();
+      }
+
+      setNoseControlStatus("Загружаю захват лица");
+      const fileset = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.26/wasm",
+      );
+      faceLandmarkerRef.current?.close();
+      faceLandmarkerRef.current = await FaceLandmarker.createFromOptions(fileset, {
+        baseOptions: {
+          modelAssetPath:
+            "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
+          delegate: "GPU",
+        },
+        runningMode: "VIDEO",
+        numFaces: 1,
+      });
+
+      faceDetectorRef.current = {
+        async detect(source: CanvasImageSource) {
+          const video = source as HTMLVideoElement;
+          const landmarker = faceLandmarkerRef.current;
+          if (!landmarker || !video.videoWidth || !video.videoHeight) return [];
+          const result = landmarker.detectForVideo(video, performance.now());
+          const landmarks = result.faceLandmarks[0];
+          if (!landmarks?.length) return [];
+          const nose = landmarks[1] ?? landmarks[4];
+          const top = landmarks[10] ?? landmarks[151] ?? nose;
+          const bottom = landmarks[152] ?? landmarks[199] ?? nose;
+          const height = Math.max(90, Math.abs(bottom.y - top.y) * video.videoHeight);
+          const y = nose.y * video.videoHeight - height * 0.58;
+          return [{ boundingBox: { y, height } as DOMRectReadOnly }];
+        },
+      };
+      noseBaselineY.current = null;
+      setNoseControl(true);
+      setNoseControlStatus("Лицо ищется");
+      return true;
+    } catch (error) {
+      console.warn("MediaPipe face capture failed", error);
+      setNoseControlStatus("Камера или модель лица не запустилась");
+      return false;
+    }
+  }, []);
 
   const resetWorld = useCallback(() => {
     resetControls();
@@ -1094,9 +1160,9 @@ function Game() {
   }, [stopNoseControl, openBriefing]);
 
   const openNoseBriefing = useCallback(async () => {
-    const ready = await startNoseControl();
+    const ready = await startMediaPipeNoseControl();
     if (ready) openBriefing();
-  }, [startNoseControl, openBriefing]);
+  }, [startMediaPipeNoseControl, openBriefing]);
 
   const launchFromBriefing = useCallback(() => {
     if (playIrisClosing || briefingTakeoff) return;
