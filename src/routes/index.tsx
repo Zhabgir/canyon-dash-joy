@@ -1019,7 +1019,7 @@ function Game() {
 
       setNoseControlStatus("Загружаю захват лица");
       const fileset = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.26/wasm",
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm",
       );
       faceLandmarkerRef.current?.close();
       faceLandmarkerRef.current = await FaceLandmarker.createFromOptions(fileset, {
