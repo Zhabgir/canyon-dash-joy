@@ -2,8 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import gameIcon from "../assets/game-icon.png";
 import playerJetSrc from "../assets/player-jet.png";
-import asgoreMusic from "../assets/asgore.mp3.asset.json";
 import gameOverBg from "../assets/game-over.jpg";
+
+type BrowserFaceDetector = {
+  detect(source: CanvasImageSource): Promise<Array<{ boundingBox: DOMRectReadOnly }>>;
+};
+
+type FaceDetectorWindow = Window & {
+  FaceDetector?: new (options?: { fastMode?: boolean; maxDetectedFaces?: number }) => BrowserFaceDetector;
+};
 
 // Cached player jet sprite (loaded once)
 let _jetImg: HTMLImageElement | null = null;
@@ -541,6 +548,9 @@ function Game() {
   const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
   const [playIrisClosing, setPlayIrisClosing] = useState(false);
   const [briefingTakeoff, setBriefingTakeoff] = useState(false);
+  const [noseControl, setNoseControl] = useState(false);
+  const [noseControlStatus, setNoseControlStatus] = useState<string | null>(null);
+  const [noseControlOffset, setNoseControlOffset] = useState(0);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -814,6 +824,12 @@ function Game() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const engineRef = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+  const faceVideoRef = useRef<HTMLVideoElement | null>(null);
+  const faceStreamRef = useRef<MediaStream | null>(null);
+  const faceDetectorRef = useRef<BrowserFaceDetector | null>(null);
+  const noseBaselineY = useRef<number | null>(null);
+  const lastNoseHudUpdate = useRef(0);
 
   const ensureAudio = useCallback(() => {
     if (audioCtxRef.current) return audioCtxRef.current;
@@ -914,6 +930,68 @@ function Game() {
     engineRef.current = null;
   }, []);
 
+  const playMusic = useCallback(() => {
+    const a = musicRef.current;
+    if (!a || mutedRef.current) return;
+    a.volume = 0.45;
+    a.loop = true;
+    a.play().catch(() => {});
+  }, []);
+
+  const stopMusic = useCallback((reset = false) => {
+    const a = musicRef.current;
+    if (!a) return;
+    a.pause();
+    if (reset) a.currentTime = 0;
+  }, []);
+
+  const stopNoseControl = useCallback(() => {
+    faceStreamRef.current?.getTracks().forEach((track) => track.stop());
+    faceStreamRef.current = null;
+    if (faceVideoRef.current) faceVideoRef.current.srcObject = null;
+    faceDetectorRef.current = null;
+    noseBaselineY.current = null;
+    keys.current.up = false;
+    keys.current.down = false;
+    setNoseControl(false);
+    setNoseControlStatus(null);
+    setNoseControlOffset(0);
+  }, []);
+
+  const startNoseControl = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setNoseControlStatus("Камера не поддерживается");
+      return false;
+    }
+    const Detector = (window as FaceDetectorWindow).FaceDetector;
+    if (!Detector) {
+      setNoseControlStatus("Захват лица не поддерживается в этом браузере");
+      return false;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 320 }, height: { ideal: 240 } },
+        audio: false,
+      });
+      faceStreamRef.current?.getTracks().forEach((track) => track.stop());
+      faceStreamRef.current = stream;
+      const video = faceVideoRef.current;
+      if (video) {
+        video.srcObject = stream;
+        await video.play();
+      }
+      faceDetectorRef.current = new Detector({ fastMode: true, maxDetectedFaces: 1 });
+      noseBaselineY.current = null;
+      setNoseControl(true);
+      setNoseControlStatus("Лицо ищется");
+      return true;
+    } catch {
+      setNoseControlStatus("Камера не разрешена");
+      return false;
+    }
+  }, []);
+
 
   const resetWorld = useCallback(() => {
     resetControls();
@@ -990,8 +1068,9 @@ function Game() {
     ensureAudio();
     if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
     startEngine();
+    playMusic();
     setState("playing");
-  }, [resetControls, resetWorld, ensureAudio, startEngine]);
+  }, [resetControls, resetWorld, ensureAudio, startEngine, playMusic]);
 
   const openBriefing = useCallback(() => {
     if (playIrisClosing) return;
@@ -1008,6 +1087,16 @@ function Game() {
       setPlayIrisClosing(false);
     }, 520);
   }, [playIrisClosing, resetControls]);
+
+  const openNormalBriefing = useCallback(() => {
+    stopNoseControl();
+    openBriefing();
+  }, [stopNoseControl, openBriefing]);
+
+  const openNoseBriefing = useCallback(async () => {
+    const ready = await startNoseControl();
+    if (ready) openBriefing();
+  }, [startNoseControl, openBriefing]);
 
   const launchFromBriefing = useCallback(() => {
     if (playIrisClosing || briefingTakeoff) return;
@@ -1035,7 +1124,7 @@ function Game() {
       if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.current.up = true;
       if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.current.down = true;
       if (e.key === " " || e.key === "Enter") {
-        if (stateRef.current === "menu") openBriefing();
+        if (stateRef.current === "menu") openNormalBriefing();
         else if (stateRef.current === "briefing") launchFromBriefing();
         else if (stateRef.current !== "playing") start();
       }
@@ -1064,7 +1153,75 @@ function Game() {
       window.removeEventListener("blur", clearReleasedPointers);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [resetControls, start, openBriefing, launchFromBriefing]);
+  }, [resetControls, start, openNormalBriefing, launchFromBriefing]);
+
+  useEffect(() => {
+    if (!noseControl) return;
+    let cancelled = false;
+    let raf = 0;
+
+    const detectFace = async () => {
+      if (cancelled) return;
+      const video = faceVideoRef.current;
+      const detector = faceDetectorRef.current;
+      const playing = stateRef.current === "playing";
+
+      if (!video || !detector || video.readyState < 2) {
+        raf = requestAnimationFrame(detectFace);
+        return;
+      }
+
+      try {
+        const faces = await detector.detect(video);
+        const face = faces[0];
+        if (!face) {
+          if (playing) {
+            keys.current.up = false;
+            keys.current.down = false;
+          }
+          const now = performance.now();
+          if (now - lastNoseHudUpdate.current > 350) {
+            lastNoseHudUpdate.current = now;
+            setNoseControlStatus("Лицо не найдено");
+            setNoseControlOffset(0);
+          }
+        } else {
+          const box = face.boundingBox;
+          const noseY = box.y + box.height * 0.58;
+          if (noseBaselineY.current == null || !playing) {
+            noseBaselineY.current = noseY;
+          }
+          const delta = (noseY - noseBaselineY.current) / Math.max(90, box.height);
+          const deadZone = 0.075;
+          keys.current.down = playing && delta > deadZone;
+          keys.current.up = playing && delta < -deadZone;
+          if (!playing) {
+            keys.current.down = false;
+            keys.current.up = false;
+          }
+
+          const now = performance.now();
+          if (now - lastNoseHudUpdate.current > 120) {
+            lastNoseHudUpdate.current = now;
+            setNoseControlStatus("Лицо захвачено");
+            setNoseControlOffset(Math.max(-1, Math.min(1, delta * 3.5)));
+          }
+        }
+      } catch {
+        setNoseControlStatus("Ошибка захвата лица");
+      }
+
+      raf = requestAnimationFrame(detectFace);
+    };
+
+    raf = requestAnimationFrame(detectFace);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      keys.current.up = false;
+      keys.current.down = false;
+    };
+  }, [noseControl]);
 
   // Revive countdown — auto-finalize when time runs out
   useEffect(() => {
@@ -1284,9 +1441,10 @@ function Game() {
     ensureAudio();
     if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
     startEngine();
+    playMusic();
     setHud((h) => ({ ...h, shield: 25 * 60 }));
     setState("playing");
-  }, [resetControls, ensureAudio, startEngine, user]);
+  }, [resetControls, ensureAudio, startEngine, playMusic, user]);
 
   const pauseGame = useCallback(() => {
     if (stateRef.current !== "playing") return;
@@ -1307,6 +1465,7 @@ function Game() {
         ensureAudio();
         if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
         startEngine();
+        playMusic();
         setState("playing");
       } else {
         setResumeCountdown(n);
@@ -1314,7 +1473,7 @@ function Game() {
       }
     };
     setTimeout(tickDown, 1000);
-  }, [resetControls, ensureAudio, startEngine]);
+  }, [resetControls, ensureAudio, startEngine, playMusic]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -2527,7 +2686,6 @@ function Game() {
   });
 
   // Background music (Undertale - Asgore). Loops automatically.
-  const musicRef = useRef<HTMLAudioElement | null>(null);
   useEffect(() => {
     const a = musicRef.current;
     if (!a) return;
@@ -2536,29 +2694,43 @@ function Game() {
     const restartMusic = () => {
       if (state === "playing") {
         a.currentTime = 0;
-        a.play().catch(() => {});
+        playMusic();
       }
     };
     a.addEventListener("ended", restartMusic);
     if (state === "playing") {
-      a.play().catch(() => {});
+      playMusic();
     } else if (state === "menu" || state === "briefing") {
-      a.pause();
+      stopMusic();
     } else if (state === "paused") {
-      a.pause();
+      stopMusic();
     } else if (state === "over" || state === "revive") {
-      a.pause();
-      a.currentTime = 0;
+      stopMusic(true);
     }
     return () => {
       a.removeEventListener("ended", restartMusic);
     };
-  }, [state]);
+  }, [state, playMusic, stopMusic]);
+
+  useEffect(() => {
+    if (muted) {
+      stopEngine();
+      stopMusic();
+      return;
+    }
+    if (state === "playing") {
+      ensureAudio();
+      if (audioCtxRef.current?.state === "suspended") audioCtxRef.current.resume();
+      startEngine();
+      playMusic();
+    }
+  }, [muted, state, ensureAudio, startEngine, stopEngine, playMusic, stopMusic]);
 
   return (
     <div className="fixed inset-0 bg-black">
       <div className="relative h-full w-full overflow-hidden">
-        <audio ref={musicRef} src={asgoreMusic.url} preload="auto" loop />
+        <audio ref={musicRef} src="/077.%20ASGORE%20(UNDERTALE%20Soundtrack)%20-%20Toby%20Fox.mp3" preload="auto" loop />
+        <video ref={faceVideoRef} className="hidden" muted playsInline autoPlay />
         <canvas
           ref={canvasRef}
           width={W}
@@ -2652,6 +2824,22 @@ function Game() {
           </button>
         )}
 
+        {noseControl && (state === "playing" || state === "briefing" || state === "paused") && (
+          <div className="pointer-events-none absolute left-3 bottom-3 z-30 w-44 rounded-md border border-cyan-200/25 bg-black/65 p-2 font-mono text-[10px] text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.18)] backdrop-blur-sm">
+            <div className="flex items-center justify-between gap-2">
+              <span>{noseControlStatus ?? "Захват лица"}</span>
+              <span className="text-white/60">нос</span>
+            </div>
+            <div className="relative mt-2 h-2 rounded-full bg-white/10">
+              <div className="absolute left-1/2 top-0 h-2 w-px bg-white/45" />
+              <div
+                className="absolute top-0 h-2 w-3 rounded-full bg-cyan-200 shadow-[0_0_10px_rgba(125,249,255,0.85)]"
+                style={{ left: `calc(50% + ${noseControlOffset * 42}% - 6px)` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* in-game pause button */}
         {state === "playing" && (
           <button
@@ -2678,6 +2866,7 @@ function Game() {
             <button
               onClick={() => {
                 setResumeCountdown(null);
+                stopNoseControl();
                 setState("menu");
               }}
               className="rounded-full border border-white/30 bg-black/60 px-6 py-2 font-mono text-sm text-white/80 hover:bg-black/80"
@@ -2774,12 +2963,24 @@ function Game() {
 
             {/* PLAY button */}
             <button
-              onClick={openBriefing}
+              onClick={openNormalBriefing}
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 group relative overflow-hidden rounded-full bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 px-12 py-4 text-2xl font-black uppercase tracking-widest text-white shadow-[0_10px_40px_-5px_rgba(236,72,153,0.6)] ring-2 ring-white/30 transition-transform hover:scale-110 active:scale-95 focus:outline-none sm:px-16 sm:py-5 sm:text-3xl"
             >
               <span className="relative z-10 drop-shadow-md">▶ Играть</span>
               <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
             </button>
+
+            <button
+              onClick={openNoseBriefing}
+              className="absolute left-1/2 top-[61%] z-20 -translate-x-1/2 rounded-full border border-cyan-200/45 bg-black/70 px-5 py-2.5 text-xs font-black uppercase tracking-[0.22em] text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.24)] backdrop-blur-md transition hover:scale-105 hover:bg-cyan-950/65 active:scale-95"
+            >
+              Играть носом
+            </button>
+            {noseControlStatus && state === "menu" && (
+              <div className="absolute left-1/2 top-[68%] z-20 -translate-x-1/2 rounded-full border border-white/15 bg-black/65 px-3 py-1 font-mono text-[10px] text-white/75 backdrop-blur-sm">
+                {noseControlStatus}
+              </div>
+            )}
 
             {/* Shop row (4 buttons) */}
             <div className="absolute inset-x-3 bottom-[15%] z-20 grid grid-cols-5 gap-2 sm:gap-3">
@@ -3141,7 +3342,10 @@ function Game() {
               </div>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <button
-                  onClick={() => setState("menu")}
+                  onClick={() => {
+                    stopNoseControl();
+                    setState("menu");
+                  }}
                   className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:bg-white/15"
                 >
                   Назад
@@ -3407,7 +3611,10 @@ function Game() {
                 ↻  Играть дальше
               </button>
               <button
-                onClick={() => setState("menu")}
+                onClick={() => {
+                  stopNoseControl();
+                  setState("menu");
+                }}
                 className="w-full rounded-full border border-white/20 bg-white/10 px-6 py-2.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20 sm:px-8"
               >
                 🏠  Главное меню
