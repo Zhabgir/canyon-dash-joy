@@ -74,7 +74,7 @@ export const Route = createFileRoute("/")({
   component: Game,
 });
 
-type GameState = "menu" | "playing" | "paused" | "revive" | "over" | "choice";
+type GameState = "menu" | "briefing" | "playing" | "paused" | "revive" | "over" | "choice";
 
 const REVIVE_COST = 100;
 const REVIVE_SECONDS = 10;
@@ -539,6 +539,8 @@ function Game() {
   const mutedRef = useRef(false);
   mutedRef.current = muted;
   const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
+  const [playIrisClosing, setPlayIrisClosing] = useState(false);
+  const [briefingTakeoff, setBriefingTakeoff] = useState(false);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -697,7 +699,7 @@ function Game() {
     mood: "scan",
     message: "",
     messageTimer: 0,
-    faceTimer: 70,
+    faceTimer: 0,
     coinCooldown: 0,
     warningCooldown: 0,
     shieldCooldown: 0,
@@ -708,6 +710,7 @@ function Game() {
   const particles = useRef<Particle[]>([]);
   const stars = useRef<Star[]>([]);
   const shield = useRef(0); // frames remaining
+  const usedBuddyShield = useRef(false);
   const slowmo = useRef(0); // frames remaining
   const boost = useRef(0); // frames remaining
   const shake = useRef(0);
@@ -736,7 +739,7 @@ function Game() {
 
       buddy.message = fallback;
       buddy.messageTimer = urgent ? 120 : warning ? 130 : 90;
-      buddy.faceTimer = Math.max(buddy.faceTimer, urgent ? 70 : warning ? 55 : 38);
+      buddy.faceTimer = Math.max(buddy.faceTimer, urgent ? 36 : warning ? 28 : 18);
       nextAiLineAt.current = now + (urgent ? 8_000 : warning ? 5_500 : 18_000);
 
       if (aiLinePending.current || (!urgent && !warning && Math.random() < 0.35)) return;
@@ -756,7 +759,7 @@ function Game() {
           const freshBuddy = aiBuddy.current;
           freshBuddy.message = result.line;
           freshBuddy.messageTimer = urgent ? 130 : warning ? 140 : 100;
-          freshBuddy.faceTimer = Math.max(freshBuddy.faceTimer, 54);
+          freshBuddy.faceTimer = Math.max(freshBuddy.faceTimer, urgent ? 34 : warning ? 26 : 18);
         })
         .catch((error) => {
           console.warn("Gemini buddy line failed", error);
@@ -935,7 +938,7 @@ function Game() {
       mood: "scan",
       message: "",
       messageTimer: 0,
-      faceTimer: 70,
+      faceTimer: 0,
       coinCooldown: 0,
       warningCooldown: 0,
       shieldCooldown: 0,
@@ -943,6 +946,7 @@ function Game() {
     };
     particles.current = [];
     shield.current = 0;
+    usedBuddyShield.current = false;
     slowmo.current = 0;
     boost.current = 0;
     shake.current = 0;
@@ -989,6 +993,36 @@ function Game() {
     setState("playing");
   }, [resetControls, resetWorld, ensureAudio, startEngine]);
 
+  const openBriefing = useCallback(() => {
+    if (playIrisClosing) return;
+    resetControls();
+    setBriefingTakeoff(false);
+    setStatsOpen(false);
+    setSettingsOpen(false);
+    setShopTab(null);
+    setQuestsOpen(false);
+    setRewardsOpen(false);
+    setPlayIrisClosing(true);
+    window.setTimeout(() => {
+      setState("briefing");
+      setPlayIrisClosing(false);
+    }, 520);
+  }, [playIrisClosing, resetControls]);
+
+  const launchFromBriefing = useCallback(() => {
+    if (playIrisClosing || briefingTakeoff) return;
+    resetControls();
+    setBriefingTakeoff(true);
+    window.setTimeout(() => {
+      setPlayIrisClosing(true);
+      window.setTimeout(() => {
+        start();
+        setBriefingTakeoff(false);
+        setPlayIrisClosing(false);
+      }, 520);
+    }, 880);
+  }, [playIrisClosing, briefingTakeoff, resetControls, start]);
+
   useEffect(() => {
     return () => {
       stopEngine();
@@ -1001,7 +1035,9 @@ function Game() {
       if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.current.up = true;
       if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.current.down = true;
       if (e.key === " " || e.key === "Enter") {
-        if (stateRef.current !== "playing") start();
+        if (stateRef.current === "menu") openBriefing();
+        else if (stateRef.current === "briefing") launchFromBriefing();
+        else if (stateRef.current !== "playing") start();
       }
     };
     const onUp = (e: KeyboardEvent) => {
@@ -1028,7 +1064,7 @@ function Game() {
       window.removeEventListener("blur", clearReleasedPointers);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [resetControls, start]);
+  }, [resetControls, start, openBriefing, launchFromBriefing]);
 
   // Revive countdown — auto-finalize when time runs out
   useEffect(() => {
@@ -1311,9 +1347,10 @@ function Game() {
         const speed = baseSpeed * timeScale * speedMult;
         const activateBuddyShield = (message: string) => {
           const buddy = aiBuddy.current;
-          if (shield.current > 0 || buddy.shieldCooldown > 0) return false;
+          if (shield.current > 0 || usedBuddyShield.current) return false;
+          usedBuddyShield.current = true;
           shield.current = 4 * 60;
-          buddy.shieldCooldown = 12 * 60;
+          buddy.shieldCooldown = 0;
           buddy.shieldPulse = 42;
           buddy.mood = "danger";
           showAiBuddyLine("shield", message);
@@ -1573,8 +1610,8 @@ function Game() {
           const botSafe = H - (seg?.botH ?? 40) - 38;
           const safeCenter = (topSafe + botSafe) / 2;
           const soloDrift =
-            Math.sin(tick.current * 0.012) * 58 +
-            Math.sin(tick.current * 0.005 + 1.7) * 28;
+            Math.sin(tick.current * 0.007) * 30 +
+            Math.sin(tick.current * 0.003 + 1.7) * 14;
           let targetY = clamp(safeCenter + soloDrift, topSafe, botSafe);
           let nearestThreat: { x: number; y: number; r: number } | null = null;
           let interestingCoin: Coin | null = null;
@@ -1601,7 +1638,7 @@ function Game() {
             const saferY = downSpace > upSpace
               ? clamp(nearestThreat.y + nearestThreat.r, topSafe, botSafe)
               : clamp(nearestThreat.y - nearestThreat.r, topSafe, botSafe);
-            targetY = targetY * 0.72 + saferY * 0.28;
+            targetY = targetY * 0.84 + saferY * 0.16;
             buddy.mood = "danger";
             if (buddy.warningCooldown <= 0 && nearestThreat.x < PLANE_X + 260) {
               showAiBuddyLine("danger", "Опасность впереди!");
@@ -1621,21 +1658,21 @@ function Game() {
               targetY = clamp(targetY, aheadTop, aheadBot);
             }
             if (interestingCoin && buddy.coinCooldown <= 0) {
-              targetY = targetY * 0.74 + interestingCoin.y * 0.26;
+              targetY = targetY * 0.9 + interestingCoin.y * 0.1;
               buddy.mood = "coin";
-              buddy.coinCooldown = 42;
+              buddy.coinCooldown = 70;
             } else if (buddy.messageTimer <= 0) {
               buddy.mood = "scan";
             }
-            if (buddy.faceTimer <= 0 && buddy.messageTimer <= 0 && Math.random() < 0.004) {
-              buddy.faceTimer = 45 + Math.floor(Math.random() * 40);
+            if (buddy.faceTimer <= 0 && buddy.messageTimer <= 0 && Math.random() < 0.0008) {
+              buddy.faceTimer = 14 + Math.floor(Math.random() * 12);
             }
           }
 
           buddy.targetY = targetY;
-          buddy.vy += (buddy.targetY - buddy.y) * 0.012;
-          buddy.vy *= 0.94;
-          buddy.vy = clamp(buddy.vy, -2.2, 2.2);
+          buddy.vy += (buddy.targetY - buddy.y) * 0.006;
+          buddy.vy *= 0.9;
+          buddy.vy = clamp(buddy.vy, -1.15, 1.15);
           buddy.y = clamp(buddy.y + buddy.vy, topSafe, botSafe);
         }
 
@@ -2505,7 +2542,7 @@ function Game() {
     a.addEventListener("ended", restartMusic);
     if (state === "playing") {
       a.play().catch(() => {});
-    } else if (state === "menu") {
+    } else if (state === "menu" || state === "briefing") {
       a.pause();
     } else if (state === "paused") {
       a.pause();
@@ -2531,6 +2568,11 @@ function Game() {
         />
 
 
+        {playIrisClosing && (
+          <div className="pointer-events-none absolute inset-0 z-50 overflow-hidden bg-transparent">
+            <div className="play-iris-close" />
+          </div>
+        )}
 
         {/* HUD: score & best */}
         <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-0.5 font-mono text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
@@ -2732,7 +2774,7 @@ function Game() {
 
             {/* PLAY button */}
             <button
-              onClick={start}
+              onClick={openBriefing}
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 group relative overflow-hidden rounded-full bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 px-12 py-4 text-2xl font-black uppercase tracking-widest text-white shadow-[0_10px_40px_-5px_rgba(236,72,153,0.6)] ring-2 ring-white/30 transition-transform hover:scale-110 active:scale-95 focus:outline-none sm:px-16 sm:py-5 sm:text-3xl"
             >
               <span className="relative z-10 drop-shadow-md">▶ Играть</span>
@@ -2807,6 +2849,310 @@ function Game() {
                   <span>🔑</span> Войти
                 </Link>
               )}
+            </div>
+          </div>
+        )}
+
+        {state === "briefing" && (
+          <div className="absolute inset-0 z-20 overflow-hidden bg-[#050611] text-white">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_12%,rgba(79,209,255,0.2),transparent_26%),radial-gradient(circle_at_82%_16%,rgba(255,120,200,0.16),transparent_24%),linear-gradient(180deg,#07111f_0%,#0d1523_44%,#0a0a0b_100%)]" />
+            <div className="absolute inset-x-0 top-0 h-[45%] opacity-70">
+              {Array.from({ length: 36 }).map((_, i) => (
+                <span
+                  key={i}
+                  className="absolute h-0.5 w-0.5 rounded-full bg-white"
+                  style={{
+                    left: `${(i * 23) % 100}%`,
+                    top: `${8 + ((i * 37) % 34)}%`,
+                    opacity: 0.35 + ((i * 13) % 55) / 100,
+                  }}
+                />
+              ))}
+            </div>
+            <div className="absolute left-1/2 top-[14%] z-0 hidden h-[38%] w-[88%] -translate-x-1/2 overflow-hidden rounded-t-full border border-cyan-100/25 bg-[radial-gradient(circle_at_50%_20%,rgba(125,249,255,0.12),rgba(15,23,42,0.18)_48%,rgba(0,0,0,0.08)_100%)] shadow-[inset_0_0_70px_rgba(125,249,255,0.12),0_0_42px_rgba(34,211,238,0.08)] sm:block">
+              <div className="absolute inset-x-[6%] top-[8%] h-px bg-cyan-100/35" />
+              <div className="absolute left-[12%] top-[22%] h-px w-[76%] bg-cyan-100/15" />
+              <div className="absolute left-[18%] top-[12%] h-24 w-44 rotate-[-12deg] rounded-full bg-fuchsia-400/10 blur-2xl" />
+              <div className="absolute right-[17%] top-[16%] h-20 w-36 rotate-[14deg] rounded-full bg-cyan-300/10 blur-2xl" />
+              {Array.from({ length: 24 }).map((_, i) => (
+                <span
+                  key={i}
+                  className="absolute rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.85)]"
+                  style={{
+                    left: `${8 + ((i * 31) % 84)}%`,
+                    top: `${8 + ((i * 47) % 38)}%`,
+                    width: `${1 + (i % 3)}px`,
+                    height: `${1 + (i % 3)}px`,
+                    opacity: 0.35 + ((i * 11) % 55) / 100,
+                  }}
+                />
+              ))}
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute h-1 w-14 rounded-full bg-white/35 shadow-[0_0_14px_rgba(255,255,255,0.7)]"
+                  style={{ left: `${12 + i * 17}%`, top: `${13 + ((i * 11) % 24)}%`, transform: `rotate(${-18 + i * 9}deg)` }}
+                />
+              ))}
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute h-5 w-7 rounded-full border border-cyan-100/45 bg-slate-950/70 shadow-[0_0_14px_rgba(125,249,255,0.35)]"
+                  style={{ left: `${18 + i * 20}%`, top: `${27 + ((i * 13) % 16)}%` }}
+                >
+                  <div className="absolute -left-3 top-1/2 h-px w-3 bg-cyan-100/45" />
+                  <div className="absolute -right-3 top-1/2 h-px w-3 bg-cyan-100/45" />
+                  <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-200 shadow-[0_0_8px_rgba(125,249,255,0.9)]" />
+                </div>
+              ))}
+              <div className="absolute inset-x-[10%] bottom-0 h-12 bg-gradient-to-t from-cyan-100/10 to-transparent" />
+            </div>
+            <div className="absolute inset-x-0 top-[17%] h-[22%] border-y border-cyan-100/10 bg-slate-950/55 shadow-[inset_0_0_60px_rgba(34,211,238,0.06)]">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute top-0 h-full border-l border-cyan-100/10"
+                  style={{ left: `${8 + i * 12}%` }}
+                />
+              ))}
+              <div className="absolute inset-x-0 top-1/2 h-px bg-cyan-100/10" />
+              <div className="absolute left-[9%] top-[18%] h-11 w-28 border border-cyan-200/15 bg-cyan-200/5 shadow-[0_0_20px_rgba(125,249,255,0.08)]" />
+              <div className="absolute right-[10%] top-[24%] h-12 w-32 border border-pink-200/15 bg-pink-200/5 shadow-[0_0_20px_rgba(255,120,200,0.08)]" />
+            </div>
+
+            <div className="absolute inset-x-4 top-[24%] z-0 hidden h-[23%] overflow-hidden rounded-sm border border-cyan-100/10 bg-black/20 shadow-[inset_0_0_48px_rgba(34,211,238,0.06)] sm:block">
+              <div className="absolute inset-x-0 top-0 h-px bg-cyan-100/25" />
+              <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute left-[3%] top-4 h-3 w-[94%] rounded-full border border-cyan-100/15 bg-slate-950/70" />
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute top-3 h-[78%] w-px bg-cyan-100/10"
+                  style={{ left: `${7 + i * 10}%` }}
+                />
+              ))}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute top-2 h-2 w-2 rounded-full shadow-[0_0_10px_currentColor]"
+                  style={{ left: `${9 + i * 11}%`, backgroundColor: i % 3 === 0 ? "#67e8f9" : i % 3 === 1 ? "#facc15" : "#fb7185", color: i % 3 === 0 ? "#67e8f9" : i % 3 === 1 ? "#facc15" : "#fb7185" }}
+                />
+              ))}
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute bottom-3 h-[76%] w-16 rounded-t-full border border-cyan-100/25 bg-cyan-200/10 shadow-[inset_0_0_22px_rgba(125,249,255,0.18),0_0_18px_rgba(34,211,238,0.08)]"
+                  style={{ left: `${10 + i * 18}%` }}
+                >
+                  <div className="absolute inset-x-2 top-3 h-[72%] rounded-t-full bg-[linear-gradient(180deg,rgba(103,232,249,0.24),rgba(8,47,73,0.48))]" />
+                  <div className="absolute left-1/2 top-[32%] h-10 w-5 -translate-x-1/2 rounded-full bg-slate-200/35 shadow-[0_0_16px_rgba(125,249,255,0.25)]" />
+                  <div className="absolute left-1/2 top-[28%] h-3 w-4 -translate-x-1/2 rounded-full bg-stone-300/45" />
+                  <div className="absolute left-1/2 top-[50%] h-5 w-8 -translate-x-1/2 rounded-full border border-cyan-100/20 bg-cyan-100/10" />
+                  <div className="absolute -bottom-2 left-1/2 h-4 w-20 -translate-x-1/2 rounded-sm border border-cyan-100/15 bg-zinc-900" />
+                </div>
+              ))}
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute bottom-1 h-16 w-12 border border-cyan-100/15 bg-slate-950/80 shadow-[0_0_16px_rgba(34,211,238,0.08)]"
+                  style={{ left: `${8 + i * 12}%` }}
+                >
+                  <div className="absolute left-2 top-2 h-2 w-8 bg-cyan-200/35" />
+                  <div className="absolute left-2 top-6 h-1 w-6 bg-lime-200/45" />
+                  <div className="absolute left-2 top-9 h-1 w-7 bg-fuchsia-200/35" />
+                  <div className="absolute bottom-2 left-2 h-2 w-2 rounded-full bg-red-300/80 shadow-[0_0_8px_rgba(252,165,165,0.8)]" />
+                </div>
+              ))}
+              <div className="absolute bottom-5 right-[8%] h-24 w-32 border border-lime-200/20 bg-lime-200/5 shadow-[0_0_22px_rgba(132,204,22,0.08)]">
+                <div className="absolute left-3 top-4 h-12 w-8 rounded-b-full border border-lime-100/25 bg-lime-300/10" />
+                <div className="absolute left-14 top-5 h-10 w-10 rounded-full border border-fuchsia-100/20 bg-fuchsia-300/10" />
+                <div className="absolute bottom-3 left-3 h-1.5 w-24 bg-lime-200/35" />
+                <div className="absolute bottom-7 left-12 h-px w-16 rotate-[-16deg] bg-cyan-200/25" />
+              </div>
+              <div className="absolute bottom-8 left-[43%] h-24 w-24 rounded-full border border-amber-200/35 bg-amber-300/10 shadow-[0_0_34px_rgba(251,191,36,0.18),inset_0_0_24px_rgba(251,191,36,0.14)]">
+                <div className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-200/35 shadow-[0_0_28px_rgba(251,191,36,0.7)]" />
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="absolute left-1/2 top-1/2 h-px w-14 origin-left bg-amber-100/35" style={{ transform: `rotate(${i * 60}deg)` }} />
+                ))}
+              </div>
+              <div className="absolute bottom-7 left-[78%] h-16 w-24 border border-cyan-100/15 bg-slate-950/70">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="absolute left-2 h-1 rounded-full bg-cyan-200/45" style={{ top: `${10 + i * 9}px`, width: `${26 + ((i * 13) % 34)}px` }} />
+                ))}
+              </div>
+            </div>
+
+            <div className="absolute left-1/2 top-[6%] z-10 -translate-x-1/2 text-center font-mono">
+              <div className="text-[10px] font-bold uppercase tracking-[0.45em] text-cyan-200/80">
+                Орбитальная база “Старт-7”
+              </div>
+              <div className="mt-2 text-2xl font-black uppercase tracking-[0.16em] text-white sm:text-4xl">
+                Предполётный брифинг
+              </div>
+            </div>
+
+            <div className="absolute inset-x-0 bottom-0 h-[52%] bg-gradient-to-b from-slate-900 via-zinc-900 to-black">
+              <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-cyan-300/20 to-transparent" />
+              <div className="absolute inset-x-0 top-[9%] h-px bg-cyan-100/20" />
+              <div className="absolute left-[42%] top-[38%] h-[30%] w-[60%] bg-[linear-gradient(180deg,#555b63_0%,#2b2f35_42%,#17191d_100%)] shadow-[0_0_70px_rgba(125,249,255,0.12),inset_0_0_28px_rgba(0,0,0,0.55)] [clip-path:polygon(0_12%,100%_12%,100%_88%,0_88%)]" />
+              <div className="absolute left-[42%] top-[38%] h-[30%] w-[60%] border-y-2 border-cyan-100/25 [clip-path:polygon(0_12%,100%_12%,100%_88%,0_88%)]" />
+              <div className="absolute left-[45%] top-[52%] h-1 w-[53%] bg-yellow-200/75 shadow-[0_0_10px_rgba(254,240,138,0.35)]" />
+              <div className="absolute left-[45%] top-[61%] h-1 w-[53%] bg-white/45 shadow-[0_0_8px_rgba(255,255,255,0.25)]" />
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="absolute h-2 w-12 rounded-sm bg-white/80 shadow-[0_0_8px_rgba(255,255,255,0.25)]" style={{ left: `${48 + i * 7}%`, top: "56%" }} />
+              ))}
+              {Array.from({ length: 34 }).map((_, i) => (
+                <div key={i} className="absolute h-0.5 w-0.5 rounded-full bg-white/25" style={{ left: `${44 + ((i * 17) % 55)}%`, top: `${42 + ((i * 23) % 20)}%` }} />
+              ))}
+            </div>
+
+            <div className="absolute left-[5%] top-[31%] z-10 hidden h-32 w-44 border border-cyan-200/20 bg-slate-950/75 shadow-[0_0_28px_rgba(125,249,255,0.16)] sm:block">
+              <div className="absolute inset-x-3 top-3 grid grid-cols-3 gap-1">
+                {["#60a5fa", "#67e8f9", "#fef08a", "#34d399", "#f472b6", "#93c5fd"].map((color) => (
+                  <div key={color} className="h-5 border border-white/10 bg-black/60" style={{ boxShadow: `inset 0 0 14px ${color}55` }} />
+                ))}
+              </div>
+              <div className="absolute bottom-4 left-4 h-9 w-28 border border-cyan-100/20 bg-cyan-200/10" />
+              <div className="absolute bottom-0 left-0 h-3 w-full bg-zinc-800" />
+            </div>
+            <div className="absolute right-[5%] top-[29%] z-10 hidden h-36 w-48 border border-pink-200/20 bg-zinc-950/75 shadow-[0_0_28px_rgba(255,120,200,0.14)] md:block">
+              <div className="absolute left-4 top-4 h-16 w-20 border border-pink-100/20 bg-pink-200/10" />
+              <div className="absolute right-4 top-5 h-14 w-12 rounded-t-full border border-cyan-100/25 bg-cyan-200/10 shadow-[inset_0_0_20px_rgba(125,249,255,0.14)]" />
+              <div className="absolute bottom-5 left-4 h-2 w-32 bg-cyan-200/35" />
+              <div className="absolute bottom-0 left-0 h-3 w-full bg-zinc-800" />
+            </div>
+
+            <div className="absolute inset-x-0 top-[43%] z-20 hidden h-28 pointer-events-none sm:block">
+              {[
+                { x: "16%", y: "22px", rot: -12, color: "#67e8f9" },
+                { x: "32%", y: "22px", rot: 10, color: "#fb7185" },
+                { x: "68%", y: "22px", rot: -10, color: "#facc15" },
+                { x: "84%", y: "22px", rot: 12, color: "#a78bfa" },
+              ].map((arm, i) => (
+                <div key={i} className="absolute h-20 w-28" style={{ left: arm.x, top: arm.y, transform: `rotate(${arm.rot}deg)` }}>
+                  <div className="absolute left-0 top-2 h-5 w-8 rounded border border-white/20 bg-zinc-800 shadow-[0_0_12px_rgba(0,0,0,0.45)]" />
+                  <div className="absolute left-7 top-4 h-2 w-20 rounded-full bg-slate-300 shadow-[inset_0_0_6px_rgba(0,0,0,0.45)]" />
+                  <div className="absolute right-0 top-1 h-8 w-7 rounded border border-white/20 bg-zinc-900" />
+                  <div className="absolute right-1 top-2 h-1.5 w-5 rounded-full" style={{ backgroundColor: arm.color, boxShadow: `0 0 10px ${arm.color}` }} />
+                  <div className="absolute right-2 top-8 h-5 w-px bg-slate-300" />
+                </div>
+              ))}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="absolute top-0 h-24 w-px origin-top bg-cyan-100/20" style={{ left: `${10 + i * 11}%`, transform: `rotate(${-10 + (i % 5) * 5}deg)` }} />
+              ))}
+            </div>
+
+            <div className={`absolute bottom-[18%] left-1/2 z-20 w-52 -translate-x-1/2 sm:w-72 ${briefingTakeoff ? "briefing-jet-takeoff" : ""}`}>
+              <img
+                src={playerJetSrc}
+                alt=""
+                draggable={false}
+                className="w-full scale-x-[-1] rotate-[1deg] drop-shadow-[0_18px_30px_rgba(0,0,0,0.75)]"
+              />
+              {briefingTakeoff && (
+                <div className="absolute right-[78%] top-[44%] h-5 w-52 rounded-full bg-gradient-to-l from-cyan-200/80 via-orange-300/55 to-transparent blur-md" />
+              )}
+              <div className="absolute left-1/2 top-[58%] h-4 w-28 -translate-x-1/2 rounded-full bg-cyan-300/30 blur-xl" />
+            </div>
+
+            <div className="absolute bottom-[32%] left-[61%] z-30 flex h-14 w-14 items-center justify-center rounded-full border border-cyan-200/70 bg-black/80 shadow-[0_0_30px_rgba(125,249,255,0.55)]">
+              <div className="h-8 w-10 rounded-[45%] border border-cyan-100/80 bg-zinc-950">
+                <div className="mx-auto mt-2 h-3 w-3 rounded-full bg-cyan-200 shadow-[0_0_14px_rgba(125,249,255,1)]" />
+              </div>
+            </div>
+
+            <div className="absolute bottom-[24%] left-[4%] z-30 hidden h-[116px] w-[45%] sm:block">
+              {[
+                { x: 0, y: 10, skin: "#d6a06f", hair: "#24140e", suit: "#e8eef7", vest: "#38bdf8", pose: -10 },
+                { x: 12, y: 10, skin: "#f1c29a", hair: "#3a2518", suit: "#f8fafc", vest: "#facc15", pose: 10 },
+                { x: 24, y: 10, skin: "#9b6a4d", hair: "#111827", suit: "#dbeafe", vest: "#22c55e", pose: -8 },
+                { x: 36, y: 10, skin: "#c98964", hair: "#4b2f20", suit: "#f1f5f9", vest: "#a78bfa", pose: 8 },
+                { x: 48, y: 10, skin: "#e0b58d", hair: "#1f2937", suit: "#e2e8f0", vest: "#fb7185", pose: -10 },
+                { x: 60, y: 10, skin: "#b77955", hair: "#0f172a", suit: "#f8fafc", vest: "#67e8f9", pose: 10 },
+                { x: 72, y: 10, skin: "#f0c7a5", hair: "#5b3725", suit: "#e5e7eb", vest: "#f97316", pose: -8 },
+              ].map((p, i) => (
+                <div key={i} className="absolute h-[96px] w-12" style={{ left: `${p.x}%`, bottom: `${p.y}px` }}>
+                  <div className="absolute left-1/2 top-0 h-6 w-6 -translate-x-1/2 rounded-[42%] border border-black/20 shadow-[inset_0_-4px_6px_rgba(0,0,0,0.18)]" style={{ backgroundColor: p.skin }}>
+                    <div className="absolute -top-1 left-0 h-3 w-6 rounded-t-full" style={{ backgroundColor: p.hair }} />
+                    <div className="absolute left-1.5 top-3 h-1 w-1 rounded-full bg-slate-950/80" />
+                    <div className="absolute right-1.5 top-3 h-1 w-1 rounded-full bg-slate-950/80" />
+                    <div className="absolute left-1/2 top-[18px] h-px w-2 -translate-x-1/2 bg-rose-900/50" />
+                  </div>
+                  <div className="absolute left-1/2 top-[24px] h-10 w-8 -translate-x-1/2 rounded-t-lg border border-white/45 shadow-[inset_0_-10px_10px_rgba(15,23,42,0.18)]" style={{ backgroundColor: p.suit }}>
+                    <div className="absolute inset-x-1 top-1 h-6 rounded-sm border border-white/25" style={{ backgroundColor: p.vest }} />
+                    <div className="absolute left-1/2 top-2 h-6 w-px -translate-x-1/2 bg-black/20" />
+                  </div>
+                  <div className="absolute left-[5px] top-[31px] h-2 w-8 rounded-full bg-slate-100 shadow-sm" style={{ transform: `rotate(${p.pose}deg)` }} />
+                  <div className="absolute right-[2px] top-[38px] h-5 w-3 rounded-sm border border-cyan-100/30 bg-slate-950/80 shadow-[0_0_8px_rgba(125,249,255,0.25)]" />
+                  <div className="absolute bottom-8 left-[15px] h-8 w-2 rounded-b bg-slate-200" style={{ transform: `rotate(${i % 2 ? -5 : 4}deg)` }} />
+                  <div className="absolute bottom-8 right-[15px] h-8 w-2 rounded-b bg-slate-200" style={{ transform: `rotate(${i % 2 ? 7 : -6}deg)` }} />
+                  <div className="absolute bottom-6 left-[10px] h-2 w-5 rounded bg-slate-700" />
+                  <div className="absolute bottom-6 right-[8px] h-2 w-5 rounded bg-slate-700" />
+                  <div className="absolute bottom-4 left-1/2 h-2 w-9 -translate-x-1/2 rounded-full bg-black/30 blur-sm" />
+                </div>
+              ))}
+            </div>
+
+            <div className="absolute bottom-[43%] right-[3%] z-30 hidden h-[120px] w-[34%] md:block">
+              {[
+                { x: 0, y: 12, skin: "#f1c29a", hair: "#2f1b12", coat: "#f8fafc", vest: "#60a5fa" },
+                { x: 18, y: 12, skin: "#a66b4a", hair: "#111827", coat: "#e0f2fe", vest: "#34d399" },
+                { x: 36, y: 12, skin: "#ddb28d", hair: "#4b2e1c", coat: "#f1f5f9", vest: "#f472b6" },
+                { x: 54, y: 12, skin: "#c28a64", hair: "#172033", coat: "#e5e7eb", vest: "#fde047" },
+                { x: 72, y: 12, skin: "#ecbea1", hair: "#3f2417", coat: "#dbeafe", vest: "#22d3ee" },
+              ].map((p, i) => (
+                <div key={i} className="absolute h-[86px] w-11" style={{ left: `${p.x}%`, bottom: `${p.y}px` }}>
+                  <div className="absolute left-1/2 top-0 h-6 w-6 -translate-x-1/2 rounded-[44%] border border-black/20" style={{ backgroundColor: p.skin }}>
+                    <div className="absolute -top-1 left-0 h-3 w-6 rounded-t-full" style={{ backgroundColor: p.hair }} />
+                    <div className="absolute left-1.5 top-3 h-1 w-1 rounded-full bg-black/80" />
+                    <div className="absolute right-1.5 top-3 h-1 w-1 rounded-full bg-black/80" />
+                  </div>
+                  <div className="absolute left-1/2 top-[24px] h-10 w-8 -translate-x-1/2 rounded-t-md border border-white/35" style={{ backgroundColor: p.coat }}>
+                    <div className="absolute left-1 top-2 h-5 w-6 rounded-sm" style={{ backgroundColor: p.vest }} />
+                  </div>
+                  <div className="absolute left-[3px] top-[34px] h-1.5 w-9 rounded-full bg-slate-100" style={{ transform: `rotate(${i % 2 ? 20 : -16}deg)` }} />
+                  <div className="absolute bottom-4 left-[13px] h-7 w-2 rounded-b bg-slate-200" />
+                  <div className="absolute bottom-4 right-[13px] h-7 w-2 rounded-b bg-slate-200" />
+                  <div className="absolute bottom-2 left-[8px] h-2 w-5 rounded bg-slate-700" />
+                  <div className="absolute bottom-2 right-[7px] h-2 w-5 rounded bg-slate-700" />
+                </div>
+              ))}
+              <div className="absolute bottom-0 left-[8%] h-5 w-28 rounded-sm border border-cyan-100/15 bg-zinc-900 shadow-[0_0_16px_rgba(34,211,238,0.08)]" />
+              <div className="absolute bottom-4 left-[12%] h-8 w-20 border border-cyan-100/20 bg-cyan-200/10" />
+              <div className="absolute bottom-2 right-[7%] h-8 w-24 rounded-sm border border-yellow-100/20 bg-yellow-200/10" />
+            </div>
+
+            <div className="absolute inset-x-0 bottom-[38%] z-10 hidden h-20 pointer-events-none md:block">
+              <div className="absolute left-[12%] top-8 h-px w-[72%] bg-cyan-200/20 shadow-[0_0_12px_rgba(125,249,255,0.3)]" />
+              <div className="absolute left-[18%] top-1 h-16 w-px bg-cyan-200/20" />
+              <div className="absolute left-[84%] top-1 h-16 w-px bg-cyan-200/20" />
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="absolute top-4 h-3 w-3 rounded-full border border-cyan-100/30 bg-cyan-200/20" style={{ left: `${20 + i * 9}%` }} />
+              ))}
+            </div>
+
+            <div className="absolute inset-x-4 bottom-4 z-40 mx-auto max-w-2xl rounded-md border border-cyan-200/25 bg-black/68 p-3 font-mono shadow-[0_0_26px_rgba(34,211,238,0.14)] backdrop-blur-md sm:bottom-6 sm:p-4">
+              <div className="hidden">
+                Главный инженер
+              </div>
+              <div className="text-xs font-semibold leading-relaxed text-white/90 sm:text-sm">
+                Пилот, взлёт разрешён. Твой ИИ-напарник уже подключён к борту:
+                он будет сканировать маршрут, предупреждать об опасностях и прикрывать тебя в этом полёте.
+              </div>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <button
+                  onClick={() => setState("menu")}
+                  className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:bg-white/15"
+                >
+                  Назад
+                </button>
+                <button
+                  onClick={launchFromBriefing}
+                  className="rounded-full bg-gradient-to-r from-cyan-300 via-white to-orange-300 px-5 py-2 text-xs font-black uppercase tracking-widest text-black shadow-[0_0_22px_rgba(125,249,255,0.42)] transition hover:scale-105 active:scale-95"
+                >
+                  Взлёт
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -3987,14 +4333,15 @@ function drawPowerup(ctx: CanvasRenderingContext2D, p: PowerUp) {
 }
 
 function drawAiBuddy(ctx: CanvasRenderingContext2D, buddy: AiBuddy, tick: number) {
-  const bob = Math.sin(tick * 0.08) * 3;
+  const bob = Math.sin(tick * 0.055) * 1.6;
   const x = buddy.x;
   const y = buddy.y + bob;
   const danger = buddy.mood === "danger";
   const coin = buddy.mood === "coin";
   const glow = danger ? "255,90,90" : coin ? "255,220,110" : "125,249,255";
   const accent = danger ? "#ff6b6b" : coin ? "#ffd86b" : "#7df9ff";
-  const lookingBack = buddy.faceTimer > 0;
+  const lookAmount = buddy.faceTimer > 0 ? Math.min(1, buddy.faceTimer / 18) : 0;
+  const lookingBack = lookAmount > 0;
 
   ctx.save();
 
@@ -4020,27 +4367,27 @@ function drawAiBuddy(ctx: CanvasRenderingContext2D, buddy: AiBuddy, tick: number
   }
 
   if (!danger && (lookingBack || buddy.mood === "scan")) {
-    const sweep = ((tick * 0.035) % 1) * Math.PI * 2;
-    ctx.strokeStyle = `rgba(${glow},${lookingBack ? 0.32 : 0.16})`;
-    ctx.lineWidth = lookingBack ? 1.2 : 0.7;
+    const sweep = ((tick * 0.018) % 1) * Math.PI * 2;
+    ctx.strokeStyle = `rgba(${glow},${lookingBack ? 0.24 : 0.1})`;
+    ctx.lineWidth = lookingBack ? 0.9 : 0.55;
     ctx.beginPath();
-    ctx.arc(x, y, 23 + Math.sin(tick * 0.12) * 2, sweep, sweep + Math.PI * 0.75);
+    ctx.arc(x, y, 22 + Math.sin(tick * 0.07) * 1.2, sweep, sweep + Math.PI * 0.55);
     ctx.stroke();
   }
 
-  // small black companion plane; sometimes it turns back to check on the player
-  const pitch = clamp(buddy.vy * 0.07, -0.22, 0.22);
+  // small black companion plane; it only glances back briefly instead of snapping around
+  const pitch = clamp(buddy.vy * 0.035, -0.09, 0.09);
   ctx.save();
   ctx.translate(x, y);
 
   if (lookingBack) {
-    const blink = Math.sin(tick * 0.22) > 0.92;
-    ctx.rotate(-pitch * 0.45);
+    const blink = Math.sin(tick * 0.16) > 0.96;
+    ctx.rotate(pitch - lookAmount * 0.08);
 
-    for (let i = 0; i < 3; i++) {
-      ctx.fillStyle = `rgba(${glow},${0.24 - i * 0.06})`;
+    for (let i = 0; i < 2; i++) {
+      ctx.fillStyle = `rgba(${glow},${0.18 - i * 0.05})`;
       ctx.beginPath();
-      ctx.ellipse(23 + i * 7, Math.sin(tick * 0.18 + i) * 1.8, 8 - i * 1.7, 2.5, 0, 0, Math.PI * 2);
+      ctx.ellipse(-22 - i * 7, Math.sin(tick * 0.1 + i) * 1.2, 7 - i * 1.5, 2.1, 0, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -4057,17 +4404,20 @@ function drawAiBuddy(ctx: CanvasRenderingContext2D, buddy: AiBuddy, tick: number
         accent,
         emoji: "",
       });
+      ctx.save();
+      ctx.scale(-1, 1);
       ctx.drawImage(tinted, -w / 2, -h / 2, w, h);
+      ctx.restore();
     } else {
       ctx.fillStyle = "#050505";
       ctx.strokeStyle = accent;
       ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.moveTo(-24, 0);
-      ctx.lineTo(-6, -5);
-      ctx.lineTo(18, -4);
-      ctx.lineTo(18, 4);
-      ctx.lineTo(-6, 5);
+      ctx.moveTo(24, 0);
+      ctx.lineTo(6, -5);
+      ctx.lineTo(-18, -4);
+      ctx.lineTo(-18, 4);
+      ctx.lineTo(6, 5);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
@@ -4077,7 +4427,7 @@ function drawAiBuddy(ctx: CanvasRenderingContext2D, buddy: AiBuddy, tick: number
     ctx.shadowColor = accent;
     ctx.shadowBlur = 8;
     ctx.beginPath();
-    ctx.arc(-10, -1, blink ? 2 : 3.2, 0, Math.PI * 2);
+    ctx.arc(8 - lookAmount * 10, -1, blink ? 1.8 : 2.4, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
   } else {
@@ -4086,7 +4436,7 @@ function drawAiBuddy(ctx: CanvasRenderingContext2D, buddy: AiBuddy, tick: number
     for (let i = 0; i < 3; i++) {
       ctx.fillStyle = `rgba(${glow},${0.34 - i * 0.08})`;
       ctx.beginPath();
-      ctx.ellipse(-23 - i * 7, Math.sin(tick * 0.18 + i) * 1.8, 9 - i * 2, 2.8, 0, 0, Math.PI * 2);
+      ctx.ellipse(-23 - i * 7, Math.sin(tick * 0.1 + i) * 1.2, 8 - i * 1.7, 2.4, 0, 0, Math.PI * 2);
       ctx.fill();
     }
 
